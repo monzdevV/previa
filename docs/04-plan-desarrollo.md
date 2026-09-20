@@ -9,24 +9,24 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 - [x] Decidir tecnología y justificar la elección
 - [x] Documentación inicial del proyecto
 - [ ] Entorno de desarrollo completo (Flutter, Android Studio, emulador)
-- [ ] Repositorio privado en GitHub
-- [ ] Proyecto Flutter generado y compilando
-- [ ] Proyecto de Supabase creado y conectado
+- [x] Repositorio privado en GitHub
+- [x] Proyecto Flutter generado y compilando
+- [x] Proyecto de Supabase creado y conectado
 
 ### Fase 1 — Identidad · *octubre*
-- [ ] Registro e inicio de sesión con correo electrónico
+- [x] Registro e inicio de sesión con correo electrónico
 - [ ] Inicio de sesión con Google
-- [ ] Verificación de mayoría de edad en el registro
+- [x] Verificación de mayoría de edad en el registro
 - [ ] Creación y edición de perfil, con subida de foto
-- [ ] Esquema de base de datos aplicado con sus políticas RLS
-- [ ] Navegación general y tema visual de la aplicación
+- [x] Esquema de base de datos aplicado con sus políticas RLS
+- [x] Navegación general y tema visual de la aplicación
 
 **Hito:** un usuario puede registrarse, entrar y tener perfil.
 
 ### Fase 2 — El mapa · *noviembre y diciembre*
 - [ ] Permisos de ubicación y obtención de posición
 - [ ] Mapa con previas cercanas
-- [ ] Difuminado de ubicación implementado en base de datos
+- [x] Difuminado de ubicación implementado en base de datos
 - [ ] Formulario de creación de previa
 - [ ] Ficha de detalle de una previa
 - [ ] Filtros por zona, hora, plazas y ambiente
