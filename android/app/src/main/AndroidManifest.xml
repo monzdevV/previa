@@ -1,6 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Conexion con Supabase y descarga de las teselas del mapa. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Ubicacion para buscar previas cercanas.
+         Solo precision aproximada: para un radio de kilometros sobra, y asi
+         la aplicacion pide menos de lo que podria. Android muestra al usuario
+         exactamente esto en el dialogo de permisos. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <application
-        android:label="previa"
+        android:label="Previa"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

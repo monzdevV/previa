@@ -142,6 +142,39 @@ class RepositorioPrevias {
     }
   }
 
+  /// Si soy asistente aceptado de esta previa. Determina si puedo ver la
+  /// direccion exacta y entrar al chat.
+  Future<bool> soyMiembro(String previaId) async {
+    final id = _cliente.auth.currentUser?.id;
+    if (id == null) return false;
+
+    final fila = await _cliente
+        .from('party_members')
+        .select('profile_id')
+        .eq('party_id', previaId)
+        .eq('profile_id', id)
+        .maybeSingle();
+
+    return fila != null;
+  }
+
+  /// Mi solicitud en esta previa, si la hay.
+  Future<Solicitud?> miSolicitudEn(String previaId) async {
+    final id = _cliente.auth.currentUser?.id;
+    if (id == null) return null;
+
+    final fila = await _cliente
+        .from('join_requests')
+        .select()
+        .eq('party_id', previaId)
+        .eq('requester_id', id)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    return fila == null ? null : Solicitud.desdeJson(fila);
+  }
+
   // --- Solicitudes ---------------------------------------------------------
 
   Future<void> solicitarPlaza({

@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Este texto es lo que iOS enseña al pedir el permiso.
+	     Conviene que explique el para qué, no solo el qué. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Previa usa tu ubicación para enseñarte previas cerca de ti. Nunca la compartimos con nadie ni la guardamos.</string>
 </dict>
 </plist>

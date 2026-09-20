@@ -24,19 +24,20 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 **Hito:** un usuario puede registrarse, entrar y tener perfil.
 
 ### Fase 2 — El mapa · *noviembre y diciembre*
-- [ ] Permisos de ubicación y obtención de posición
-- [ ] Mapa con previas cercanas
+- [x] Permisos de ubicación y obtención de posición
+- [x] Mapa con previas cercanas
 - [x] Difuminado de ubicación implementado en base de datos
-- [ ] Formulario de creación de previa
-- [ ] Ficha de detalle de una previa
-- [ ] Filtros por zona, hora, plazas y ambiente
+- [x] Formulario de creación de previa
+- [x] Ficha de detalle de una previa
+- [x] Filtros por distancia, hora y tamaño de grupo
+- [ ] Filtro por ambiente
 
 **Hito:** publicar una previa y verla aparecer en el mapa de otro usuario.
 
 ### Fase 3 — Lo social · *enero y febrero*
-- [ ] Solicitar plaza para un grupo
+- [x] Solicitar plaza para un grupo
 - [ ] Bandeja de solicitudes del anfitrión, con aceptar y rechazar
-- [ ] Revelado de ubicación exacta al aceptar
+- [x] Revelado de ubicación exacta al aceptar
 - [ ] Chat en tiempo real por previa
 - [ ] Notificaciones push
 - [ ] Contador de plazas actualizado automáticamente
@@ -44,8 +45,8 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 **Hito:** el recorrido completo funciona de principio a fin.
 
 ### Fase 4 — Confianza · *marzo*
-- [ ] Reportar usuarios y previas
-- [ ] Bloquear usuarios
+- [x] Reportar usuarios y previas
+- [x] Bloquear usuarios
 - [ ] Valoraciones tras el evento y reputación
 - [ ] Caducidad automática de previas pasadas
 - [ ] Textos legales: privacidad y condiciones de uso
