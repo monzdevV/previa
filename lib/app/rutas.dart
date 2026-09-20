@@ -13,6 +13,8 @@ import '../features/map/pantalla_inicio.dart';
 import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
+import '../features/profile/pantalla_editar_perfil.dart';
+import '../features/requests/pantalla_mis_solicitudes.dart';
 import '../features/requests/pantalla_solicitudes.dart';
 
 abstract final class Rutas {
@@ -22,6 +24,8 @@ abstract final class Rutas {
   static const inicio = '/';
   static const crearPrevia = '/crear';
   static const previa = '/previa';
+  static const misSolicitudes = '/mis-solicitudes';
+  static const editarPerfil = '/editar-perfil';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -84,6 +88,14 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Rutas.crearPrevia,
         builder: (_, _) => const PantallaCrearPrevia(),
+      ),
+      GoRoute(
+        path: Rutas.misSolicitudes,
+        builder: (_, _) => const PantallaMisSolicitudes(),
+      ),
+      GoRoute(
+        path: Rutas.editarPerfil,
+        builder: (_, _) => const PantallaEditarPerfil(),
       ),
       GoRoute(
         path: '${Rutas.previa}/:id',

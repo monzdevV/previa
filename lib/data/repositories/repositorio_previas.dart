@@ -216,7 +216,7 @@ class RepositorioPrevias {
 
     final filas = await _cliente
         .from('join_requests')
-        .select()
+        .select('*, parties ( title, area_label, starts_at, status )')
         .eq('requester_id', id)
         .order('created_at', ascending: false);
 

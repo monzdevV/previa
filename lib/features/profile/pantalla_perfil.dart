@@ -18,7 +18,16 @@ class PantallaPerfil extends ConsumerWidget {
     final textos = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi perfil')),
+      appBar: AppBar(
+        title: const Text('Mi perfil'),
+        actions: [
+          IconButton(
+            tooltip: 'Editar perfil',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => context.push(Rutas.editarPerfil),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(miPerfilProvider);
@@ -132,7 +141,17 @@ class PantallaPerfil extends ConsumerWidget {
                     ),
             ),
 
-            const SizedBox(height: EspaciadoPrevia.xl),
+            const SizedBox(height: EspaciadoPrevia.l),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.waving_hand_outlined),
+              title: const Text('Mis solicitudes'),
+              subtitle: const Text('Las plazas que has pedido'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.misSolicitudes),
+            ),
+
+            const SizedBox(height: EspaciadoPrevia.m),
             const Divider(),
             const SizedBox(height: EspaciadoPrevia.m),
 

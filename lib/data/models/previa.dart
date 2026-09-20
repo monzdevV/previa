@@ -141,6 +141,7 @@ class Solicitud {
     required this.creadaEn,
     this.mensaje,
     this.solicitante,
+    this.previaResumen,
   });
 
   final String id;
@@ -150,7 +151,22 @@ class Solicitud {
   final String? mensaje;
   final EstadoSolicitud estado;
   final DateTime creadaEn;
+
+  /// Datos publicos de quien solicita. Solo viene en la bandeja del anfitrion.
   final Map<String, dynamic>? solicitante;
+
+  /// Datos de la previa. Solo viene al listar mis propias solicitudes.
+  final Map<String, dynamic>? previaResumen;
+
+  String get tituloPrevia =>
+      previaResumen?['title'] as String? ?? 'Previa';
+
+  String? get zonaPrevia => previaResumen?['area_label'] as String?;
+
+  DateTime? get empiezaPrevia {
+    final valor = previaResumen?['starts_at'] as String?;
+    return valor == null ? null : DateTime.parse(valor).toLocal();
+  }
 
   bool get estaPendiente => estado == EstadoSolicitud.pendiente;
 
@@ -183,6 +199,7 @@ class Solicitud {
         },
         creadaEn: DateTime.parse(json['created_at'] as String).toLocal(),
         solicitante: json['profiles'] as Map<String, dynamic>?,
+        previaResumen: json['parties'] as Map<String, dynamic>?,
       );
 }
 
