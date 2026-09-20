@@ -5,18 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../app/tema.dart';
+import '../../core/ambientes.dart';
 import '../../core/entorno.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../map/proveedores_mapa.dart';
-
-/// Ambientes sugeridos. Lista cerrada a proposito: si cada uno escribe lo
-/// suyo, el filtro por ambiente deja de servir para nada.
-const _ambientesSugeridos = [
-  'reggaeton', 'techno', 'tranqui', 'indie', 'latino',
-  'pop', 'rock', 'cachondeo', 'cartas', 'terraza',
-];
 
 class PantallaCrearPrevia extends ConsumerStatefulWidget {
   const PantallaCrearPrevia({super.key});
@@ -256,7 +250,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                   spacing: EspaciadoPrevia.s,
                   runSpacing: EspaciadoPrevia.s,
                   children: [
-                    for (final etiqueta in _ambientesSugeridos)
+                    for (final etiqueta in ambientesDisponibles)
                       FilterChip(
                         label: Text(etiqueta),
                         selected: _ambiente.contains(etiqueta),

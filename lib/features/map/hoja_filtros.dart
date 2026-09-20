@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/tema.dart';
+import '../../core/ambientes.dart';
 import 'proveedores_mapa.dart';
 
 Future<void> mostrarHojaFiltros(BuildContext context) {
@@ -88,6 +89,31 @@ class _HojaFiltros extends ConsumerWidget {
                     selected: filtros.plazasMinimas == n,
                     selectedColor: ColoresPrevia.primario,
                     onSelected: (_) => notificador.fijarPlazas(n),
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: EspaciadoPrevia.l),
+            Text('Ambiente', style: textos.titleLarge),
+            const SizedBox(height: EspaciadoPrevia.s),
+            Text(
+              filtros.ambiente.isEmpty
+                  ? 'Sin marcar nada, te salen todas.'
+                  : 'Verás previas con al menos una de estas.',
+              style: textos.bodyMedium,
+            ),
+            const SizedBox(height: EspaciadoPrevia.m),
+            Wrap(
+              spacing: EspaciadoPrevia.s,
+              runSpacing: EspaciadoPrevia.s,
+              children: [
+                for (final etiqueta in ambientesDisponibles)
+                  FilterChip(
+                    label: Text(etiqueta),
+                    selected: filtros.ambiente.contains(etiqueta),
+                    selectedColor: ColoresPrevia.primario,
+                    checkmarkColor: Colors.white,
+                    onSelected: (_) => notificador.alternarAmbiente(etiqueta),
                   ),
               ],
             ),

@@ -323,6 +323,83 @@ class RepositorioPrevias {
     });
   }
 
+  // --- Valoraciones --------------------------------------------------------
+
+  /// Previas ya pasadas a las que fui y que todavia puedo valorar.
+  Future<List<Previa>> previasPorValorar() async {
+    final id = _cliente.auth.currentUser?.id;
+    if (id == null) return [];
+
+    final asistidas = await _cliente
+        .from('party_members')
+        .select('party_id, parties ( $_camposConAnfitrion )')
+        .eq('profile_id', id);
+
+    final resultado = <Previa>[];
+    for (final fila in asistidas as List) {
+      final datos = (fila as Map)['parties'];
+      if (datos == null) continue;
+
+      final previa = Previa.desdeTabla(Map<String, dynamic>.from(datos as Map));
+      // Solo tiene sentido valorar lo que ya ha ocurrido.
+      if (previa.empiezaEn.isAfter(DateTime.now())) continue;
+      resultado.add(previa);
+    }
+
+    resultado.sort((a, b) => b.empiezaEn.compareTo(a.empiezaEn));
+    return resultado;
+  }
+
+  /// Con quien coincidi, excluyendome a mi.
+  Future<List<Map<String, dynamic>>> companerosDe(String previaId) async {
+    final id = _cliente.auth.currentUser?.id;
+    final miembros = await miembrosDe(previaId);
+    return miembros.where((m) => m['profile_id'] != id).toList();
+  }
+
+  /// Valoraciones que ya he dado en una previa, por si vuelvo a entrar.
+  Future<Map<String, int>> misValoracionesEn(String previaId) async {
+    final id = _cliente.auth.currentUser?.id;
+    if (id == null) return {};
+
+    final filas = await _cliente
+        .from('ratings')
+        .select('rated_id, score')
+        .eq('party_id', previaId)
+        .eq('rater_id', id);
+
+    return {
+      for (final f in filas as List)
+        (f as Map)['rated_id'] as String: (f['score'] as num).toInt(),
+    };
+  }
+
+  /// Guarda o actualiza una valoracion.
+  ///
+  /// El servidor comprueba que ambos estuvisteis en esa previa y que ya ha
+  /// empezado; la media del perfil la recalcula un disparador.
+  Future<void> valorar({
+    required String previaId,
+    required String perfilId,
+    required int puntuacion,
+    String? comentario,
+  }) async {
+    final id = _cliente.auth.currentUser?.id;
+    if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
+
+    try {
+      await _cliente.from('ratings').upsert({
+        'party_id': previaId,
+        'rater_id': id,
+        'rated_id': perfilId,
+        'score': puntuacion,
+        'comment': comentario?.trim(),
+      });
+    } on PostgrestException catch (e) {
+      throw ErrorPrevia(_traducir(e.message));
+    }
+  }
+
   String _traducir(String mensaje) {
     final m = mensaje.toLowerCase();
     if (m.contains('join_requests_una_pendiente')) {
@@ -336,6 +413,12 @@ class RepositorioPrevias {
     }
     if (m.contains('plazas_coherentes')) {
       return 'El número de plazas no es válido.';
+    }
+    if (m.contains('compartiste previa')) {
+      return 'Solo puedes valorar a alguien con quien compartiste previa.';
+    }
+    if (m.contains('aun no ha empezado') || m.contains('aún no ha empezado')) {
+      return 'Todavía no puedes valorar: la previa no ha empezado.';
     }
     return 'Algo ha fallado. Inténtalo de nuevo.';
   }

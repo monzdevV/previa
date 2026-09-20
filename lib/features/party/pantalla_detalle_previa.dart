@@ -433,19 +433,41 @@ class _Accion extends ConsumerWidget {
     }
 
     if (soyMiembro) {
+      final yaPaso = previa.empiezaEn.isBefore(DateTime.now());
+
       return Column(
         children: [
-          const _Nota(
-            icono: Icons.check_circle,
-            texto: 'Estás dentro. Nos vemos allí.',
-            color: ColoresPrevia.acento,
+          _Nota(
+            icono: yaPaso ? Icons.nightlife : Icons.check_circle,
+            texto: yaPaso
+                ? 'Esta previa ya pasó. ¿Qué tal la gente?'
+                : 'Estás dentro. Nos vemos allí.',
+            color: yaPaso ? ColoresPrevia.textoSuave : ColoresPrevia.acento,
           ),
           const SizedBox(height: EspaciadoPrevia.s),
-          FilledButton.icon(
-            onPressed: () => context.push(rutaChat),
-            icon: const Icon(Icons.forum_outlined, size: 18),
-            label: const Text('Abrir el chat'),
-          ),
+          if (yaPaso)
+            FilledButton.icon(
+              onPressed: () => context.push(
+                '${Rutas.previa}/${previa.id}/valorar'
+                '?titulo=${Uri.encodeQueryComponent(previa.titulo)}',
+              ),
+              icon: const Icon(Icons.star_outline_rounded, size: 18),
+              label: const Text('Valorar a quien fue'),
+            )
+          else
+            FilledButton.icon(
+              onPressed: () => context.push(rutaChat),
+              icon: const Icon(Icons.forum_outlined, size: 18),
+              label: const Text('Abrir el chat'),
+            ),
+          if (yaPaso) ...[
+            const SizedBox(height: EspaciadoPrevia.s),
+            OutlinedButton.icon(
+              onPressed: () => context.push(rutaChat),
+              icon: const Icon(Icons.forum_outlined, size: 18),
+              label: const Text('Ver el chat'),
+            ),
+          ],
         ],
       );
     }

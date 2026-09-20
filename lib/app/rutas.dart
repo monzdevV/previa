@@ -13,7 +13,10 @@ import '../features/map/pantalla_inicio.dart';
 import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
+import '../features/profile/pantalla_ajustes.dart';
 import '../features/profile/pantalla_editar_perfil.dart';
+import '../features/ratings/pantalla_por_valorar.dart';
+import '../features/ratings/pantalla_valorar.dart';
 import '../features/requests/pantalla_mis_solicitudes.dart';
 import '../features/requests/pantalla_solicitudes.dart';
 
@@ -26,6 +29,8 @@ abstract final class Rutas {
   static const previa = '/previa';
   static const misSolicitudes = '/mis-solicitudes';
   static const editarPerfil = '/editar-perfil';
+  static const porValorar = '/por-valorar';
+  static const ajustes = '/ajustes';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -116,7 +121,22 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
               titulo: estado.uri.queryParameters['titulo'],
             ),
           ),
+          GoRoute(
+            path: 'valorar',
+            builder: (_, estado) => PantallaValorar(
+              previaId: estado.pathParameters['id']!,
+              titulo: estado.uri.queryParameters['titulo'],
+            ),
+          ),
         ],
+      ),
+      GoRoute(
+        path: Rutas.porValorar,
+        builder: (_, _) => const PantallaPorValorar(),
+      ),
+      GoRoute(
+        path: Rutas.ajustes,
+        builder: (_, _) => const PantallaAjustes(),
       ),
     ],
   );

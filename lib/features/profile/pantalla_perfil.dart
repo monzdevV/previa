@@ -150,6 +150,22 @@ class PantallaPerfil extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(Rutas.misSolicitudes),
             ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.star_outline_rounded),
+              title: const Text('Previas a las que fui'),
+              subtitle: const Text('Valora a la gente que conociste'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.porValorar),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.shield_outlined),
+              title: const Text('Privacidad y convivencia'),
+              subtitle: const Text('Qué guardamos y cómo funciona'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.ajustes),
+            ),
 
             const SizedBox(height: EspaciadoPrevia.m),
             const Divider(),

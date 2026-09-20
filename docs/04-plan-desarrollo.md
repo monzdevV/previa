@@ -30,7 +30,7 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 - [x] Formulario de creación de previa
 - [x] Ficha de detalle de una previa
 - [x] Filtros por distancia, hora y tamaño de grupo
-- [ ] Filtro por ambiente
+- [x] Filtro por ambiente
 
 **Hito:** publicar una previa y verla aparecer en el mapa de otro usuario.
 
@@ -47,9 +47,9 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 ### Fase 4 — Confianza · *marzo*
 - [x] Reportar usuarios y previas
 - [x] Bloquear usuarios
-- [ ] Valoraciones tras el evento y reputación
+- [x] Valoraciones tras el evento y reputación
 - [ ] Caducidad automática de previas pasadas
-- [ ] Textos legales: privacidad y condiciones de uso
+- [x] Textos legales: privacidad y condiciones de uso
 
 **Hito:** la aplicación es defendible desde el punto de vista de la seguridad.
 

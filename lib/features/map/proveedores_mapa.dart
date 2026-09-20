@@ -30,22 +30,40 @@ class Filtros {
     this.radioMetros = Entorno.radioBusquedaPorDefecto,
     this.horas = Entorno.horasPorDefecto,
     this.plazasMinimas = 1,
+    this.ambiente = const {},
   });
 
   final int radioMetros;
   final int horas;
   final int plazasMinimas;
 
-  Filtros copiarCon({int? radioMetros, int? horas, int? plazasMinimas}) => Filtros(
+  /// Etiquetas de ambiente seleccionadas. Vacío significa "me da igual".
+  final Set<String> ambiente;
+
+  Filtros copiarCon({
+    int? radioMetros,
+    int? horas,
+    int? plazasMinimas,
+    Set<String>? ambiente,
+  }) =>
+      Filtros(
         radioMetros: radioMetros ?? this.radioMetros,
         horas: horas ?? this.horas,
         plazasMinimas: plazasMinimas ?? this.plazasMinimas,
+        ambiente: ambiente ?? this.ambiente,
       );
 
   bool get sonLosPorDefecto =>
       radioMetros == Entorno.radioBusquedaPorDefecto &&
       horas == Entorno.horasPorDefecto &&
-      plazasMinimas == 1;
+      plazasMinimas == 1 &&
+      ambiente.isEmpty;
+
+  /// Una previa encaja si comparte al menos una etiqueta con lo pedido.
+  /// Se exige coincidencia parcial y no total a propósito: pedir "techno" y
+  /// "terraza" es pedir un plan así, no un plan que sea exactamente las dos.
+  bool encaja(Previa previa) =>
+      ambiente.isEmpty || previa.ambiente.any(ambiente.contains);
 
   String get radioLegible => radioMetros >= 1000
       ? '${(radioMetros / 1000).toStringAsFixed(radioMetros % 1000 == 0 ? 0 : 1)} km'
@@ -60,6 +78,12 @@ class FiltrosNotifier extends Notifier<Filtros> {
   void fijarHoras(int horas) => state = state.copiarCon(horas: horas);
   void fijarPlazas(int plazas) => state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
+
+  void alternarAmbiente(String etiqueta) {
+    final nuevo = Set<String>.from(state.ambiente);
+    if (!nuevo.remove(etiqueta)) nuevo.add(etiqueta);
+    state = state.copiarCon(ambiente: nuevo);
+  }
 }
 
 final filtrosProvider =
@@ -75,7 +99,7 @@ final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
       elegido ?? await ref.watch(posicionDispositivoProvider.future);
   final filtros = ref.watch(filtrosProvider);
 
-  return ref.watch(repositorioPreviasProvider).buscarCerca(
+  final encontradas = await ref.watch(repositorioPreviasProvider).buscarCerca(
         FiltrosBusqueda(
           centro: centro,
           radioMetros: filtros.radioMetros,
@@ -83,6 +107,11 @@ final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
           plazasMinimas: filtros.plazasMinimas,
         ),
       );
+
+  // El ambiente se filtra en el cliente, no en la consulta: la lista de
+  // etiquetas es corta y ya cerrada, y el servidor devuelve como mucho 50
+  // filas. Meterlo en el SQL complicaria la consulta sin ganar nada.
+  return encontradas.where(filtros.encaja).toList();
 });
 
 /// Las previas que organiza el propio usuario.
