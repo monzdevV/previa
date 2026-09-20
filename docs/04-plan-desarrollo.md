@@ -36,11 +36,11 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 
 ### Fase 3 — Lo social · *enero y febrero*
 - [x] Solicitar plaza para un grupo
-- [ ] Bandeja de solicitudes del anfitrión, con aceptar y rechazar
+- [x] Bandeja de solicitudes del anfitrión, con aceptar y rechazar
 - [x] Revelado de ubicación exacta al aceptar
-- [ ] Chat en tiempo real por previa
+- [x] Chat en tiempo real por previa
 - [ ] Notificaciones push
-- [ ] Contador de plazas actualizado automáticamente
+- [x] Contador de plazas actualizado automáticamente
 
 **Hito:** el recorrido completo funciona de principio a fin.
 

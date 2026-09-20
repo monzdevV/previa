@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
+import '../requests/pantalla_solicitudes.dart';
 import 'hoja_solicitar_plaza.dart';
 
 final _detalleProvider = FutureProvider.family<Previa, String>(
@@ -395,18 +398,55 @@ class _Accion extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final rutaChat = '${Rutas.previa}/${previa.id}/chat'
+        '?titulo=${Uri.encodeQueryComponent(previa.titulo)}';
+
     if (yoSoyElAnfitrion) {
-      return const _Nota(
-        icono: Icons.star,
-        texto: 'Esta previa es tuya. Gestiona las solicitudes desde tu perfil.',
+      final pendientes = ref
+              .watch(solicitudesDeProvider(previa.id))
+              .valueOrNull
+              ?.where((s) => s.estaPendiente)
+              .length ??
+          0;
+
+      return Column(
+        children: [
+          FilledButton.icon(
+            onPressed: () =>
+                context.push('${Rutas.previa}/${previa.id}/solicitudes'),
+            icon: const Icon(Icons.inbox_outlined, size: 18),
+            label: Text(
+              pendientes == 0
+                  ? 'Ver solicitudes'
+                  : '$pendientes ${pendientes == 1 ? "solicitud" : "solicitudes"} '
+                      'por responder',
+            ),
+          ),
+          const SizedBox(height: EspaciadoPrevia.s),
+          OutlinedButton.icon(
+            onPressed: () => context.push(rutaChat),
+            icon: const Icon(Icons.forum_outlined, size: 18),
+            label: const Text('Abrir el chat'),
+          ),
+        ],
       );
     }
 
     if (soyMiembro) {
-      return const _Nota(
-        icono: Icons.check_circle,
-        texto: 'Estás dentro. Nos vemos allí.',
-        color: ColoresPrevia.acento,
+      return Column(
+        children: [
+          const _Nota(
+            icono: Icons.check_circle,
+            texto: 'Estás dentro. Nos vemos allí.',
+            color: ColoresPrevia.acento,
+          ),
+          const SizedBox(height: EspaciadoPrevia.s),
+          FilledButton.icon(
+            onPressed: () => context.push(rutaChat),
+            icon: const Icon(Icons.forum_outlined, size: 18),
+            label: const Text('Abrir el chat'),
+          ),
+        ],
       );
     }
 

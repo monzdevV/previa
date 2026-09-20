@@ -10,8 +10,10 @@ import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
 import '../features/map/pantalla_inicio.dart';
+import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
+import '../features/requests/pantalla_solicitudes.dart';
 
 abstract final class Rutas {
   static const bienvenida = '/bienvenida';
@@ -88,6 +90,21 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         builder: (_, estado) => PantallaDetallePrevia(
           previaId: estado.pathParameters['id']!,
         ),
+        routes: [
+          GoRoute(
+            path: 'solicitudes',
+            builder: (_, estado) => PantallaSolicitudes(
+              previaId: estado.pathParameters['id']!,
+            ),
+          ),
+          GoRoute(
+            path: 'chat',
+            builder: (_, estado) => PantallaChat(
+              previaId: estado.pathParameters['id']!,
+              titulo: estado.uri.queryParameters['titulo'],
+            ),
+          ),
+        ],
       ),
     ],
   );

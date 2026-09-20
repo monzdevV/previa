@@ -157,6 +157,18 @@ class Solicitud {
   String get resumenGrupo =>
       tamanoGrupo == 1 ? 'Va 1 persona' : 'Van $tamanoGrupo personas';
 
+  String get nombreSolicitante =>
+      solicitante?['display_name'] as String? ?? 'Alguien';
+
+  String? get avatarSolicitante => solicitante?['avatar_url'] as String?;
+
+  double? get reputacionSolicitante =>
+      (solicitante?['reputation'] as num?)?.toDouble();
+
+  String get inicialSolicitante => nombreSolicitante.isNotEmpty
+      ? nombreSolicitante[0].toUpperCase()
+      : '?';
+
   factory Solicitud.desdeJson(Map<String, dynamic> json) => Solicitud(
         id: json['id'] as String,
         previaId: json['party_id'] as String,

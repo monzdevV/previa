@@ -245,6 +245,21 @@ class RepositorioPrevias {
         .eq('id', solicitudId);
   }
 
+  /// Quien va a la previa, con sus datos publicos.
+  /// RLS solo lo devuelve si tu tambien eres miembro.
+  Future<List<Map<String, dynamic>>> miembrosDe(String previaId) async {
+    final filas = await _cliente
+        .from('party_members')
+        .select('profile_id, role, group_size, '
+            'profiles!party_members_profile_id_fkey '
+            '( display_name, avatar_url, reputation )')
+        .eq('party_id', previaId);
+
+    return (filas as List)
+        .map((f) => Map<String, dynamic>.from(f as Map))
+        .toList();
+  }
+
   // --- Chat ----------------------------------------------------------------
 
   /// Mensajes en tiempo real. Si no eres miembro, RLS devuelve una lista
