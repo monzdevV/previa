@@ -1,0 +1,58 @@
+name: previa
+description: "Previa - red social de proximidad para organizar previas antes de salir de fiesta"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Textos de Material (calendario, dialogos) en espanol.
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Backend: autenticacion, base de datos, tiempo real y almacenamiento.
+  supabase_flutter: ^2.8.0
+
+  # Estado e inyeccion de dependencias.
+  flutter_riverpod: ^2.6.1
+
+  # Navegacion declarativa con rutas protegidas.
+  go_router: ^14.6.2
+
+  # Mapa sobre OpenStreetMap: sin clave de API ni facturacion asociada.
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Ubicacion del dispositivo y permisos.
+  geolocator: ^13.0.2
+
+  # Configuracion fuera del codigo: las claves no van al repositorio.
+  flutter_dotenv: ^5.2.1
+
+  # Fechas y textos en espanol.
+  intl: ^0.20.3
+
+  # Imagenes de perfil con cache.
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - .env
+    - assets/images/
+    - assets/icons/
+

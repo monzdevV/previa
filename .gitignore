@@ -1,0 +1,52 @@
+
+!.env.example
+# --- Previa ---
+# Android Studio will place build artifacts here
+# Claves y configuracion local (nunca al repositorio)
+# Flutter/Dart/Pub related
+# IntelliJ related
+# Miscellaneous
+# Obfuscation related
+# OneDrive
+# Symbolication related
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# Widget Preview related
+# is commented out by default.
+#.vscode/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+*.class
+*.iml
+*.ipr
+*.iws
+*.log
+*.pyc
+*.swp
+*.tmp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.dart_tool/
+.env
+.env.*
+.flutter-plugins-dependencies
+.history
+.idea/
+.pub-cache/
+.pub/
+.svn/
+.swiftpm/
+.widget_preview/
+/android/app/debug
+/android/app/profile
+/android/app/release
+/build/
+/coverage/
+app.*.map.json
+app.*.symbols
+build/
+desktop.ini
+lib/core/supabase_config.dart
+migrate_working_dir/

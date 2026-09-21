@@ -1,0 +1,9 @@
+# Normaliza finales de linea: LF en el repositorio, nativo en disco.
+# Evita el ruido de CRLF al trabajar entre Windows y otros sistemas.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.ttf binary
+*.otf binary
