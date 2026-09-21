@@ -8,11 +8,15 @@ que releer medio proyecto para entenderlo.
 Red social de proximidad para salir de fiesta. TFG de 2º de DAM, entrega en
 junio de 2026. La idea: que la gente deje de salir siempre con los mismos.
 
-Tres capas de producto:
+Cuatro pestañas:
 
 1. **Feed** — la noche contada en fotos y vídeos. Es la pantalla de entrada.
 2. **Mapa** — previas con plazas libres cerca de ti, pides plaza y te aceptan.
 3. **Noche** — a qué discoteca va la gente esta noche, y su entrada.
+4. **Perfil** — el tuyo, tus noches, tus solicitudes y los ajustes.
+
+Alrededor: perfiles públicos, seguir gente, código QR, buscador y mensajes
+directos.
 
 ## Stack
 
@@ -69,26 +73,38 @@ Añadido para la parte social:
 | `follows` | seguir gente, unidireccional como Instagram |
 | `venues` | discotecas y bares, con enlace de entradas e Instagram |
 | `venue_plans` | "voy a X esta noche"; la noche es una fecha, no un instante |
+| `direct_messages` | mensajes directos entre personas |
 
-Funciones: `feed_publicaciones`, `locales_de_la_noche`, `quien_va`.
+Funciones: `feed_publicaciones`, `locales_de_la_noche`, `quien_va`,
+`mis_conversaciones`.
 Cubos de Storage: `publicaciones` y `avatares`, públicos de lectura, y cada
 quien solo escribe en su carpeta `<uid>/`.
 
-`privado.hay_bloqueo()` vive fuera de `public` a propósito: las políticas la
-llaman pero no debe ser una ruta de la API.
+`privado.hay_bloqueo()` y `privado.hay_contacto()` viven fuera de `public` a
+propósito: las políticas las llaman pero no deben ser rutas de la API.
+
+**Regla de contacto de los mensajes**: solo puedes escribir a quien sigues o a
+quien te sigue, y se aplica en la base de datos. Es lo que separa una red
+social de un buzón abierto a desconocidos.
+
+**Datos de demostración**: seis perfiles, sus publicaciones, seis discotecas de
+Zaragoza y quién va a cada una. Todo lleva `is_demo = true`, así que se borra
+con tres `delete ... where is_demo`. Las cuentas están en `auth.users` sin
+contraseña: nadie puede iniciar sesión como ellas. Las fichas de los locales
+van sin enlace de entradas a propósito, porque inventarlo sería una afirmación
+comercial falsa.
 
 ## Pendiente, por orden
 
 1. **Modo claro.** Los colores están escritos a fuego en ~200 sitios como
    constantes estáticas. Hacerlo bien exige pasarlos a `ThemeExtension`; no
    es un interruptor.
-2. **Foto de perfil**: el cubo `avatares` existe, falta la subida en editar
-   perfil.
-3. **Calendario de noches**: `RepositorioSocial.misNoches()` ya devuelve los
-   datos, falta la pantalla.
-4. **Interruptor público/privado** al crear previa (`parties.is_public` ya
-   existe en base de datos).
-5. Notificaciones push, login con Google, caducidad automática de previas.
+2. **Vídeo en el feed**: se sube y se reproduce, pero no hay miniatura
+   (`posts.thumbnail_url` queda nulo) ni límite de tamaño más allá de los
+   50 MB del cubo.
+3. **Comentarios** en las publicaciones: solo hay likes.
+4. **Notificaciones push**, login con Google, caducidad automática de previas.
+5. **Moderación**: hay reportes y bloqueos, pero nada que los revise.
 
 ## Cosas que te van a morder
 
@@ -98,6 +114,9 @@ llaman pero no debe ser una ruta de la API.
   `npx supabase db pull`.
 - Falta activar la protección de contraseñas filtradas en el panel de
   Supabase (Auth → Passwords).
+- Nada de esto se ha probado con una sesión real: compila, los tests pasan y
+  las funciones devuelven datos por SQL, pero la primera subida de foto y el
+  primer mensaje hay que hacerlos a mano.
 - Los goldens de `test/` usan la Roboto del SDK cargada a mano; si un texto
   sale como bloques blancos es que ese `TextStyle` fija familia nula y no
   hereda. Es artefacto de test, no fallo de la app.
