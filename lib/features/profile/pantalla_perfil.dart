@@ -7,6 +7,7 @@ import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
 import 'cabecera_perfil.dart';
+import 'pestanas_perfil.dart';
 import '../party/tarjeta_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
@@ -46,8 +47,8 @@ class PantallaPerfil extends ConsumerWidget {
               data: (p) => CabeceraPerfil(perfil: p),
             ),
 
-            const SizedBox(height: EspaciadoPrevia.xl),
-            const MisPublicaciones(),
+            const SizedBox(height: EspaciadoPrevia.m),
+            const PestanasPerfil(),
 
             const SizedBox(height: EspaciadoPrevia.xl),
             Row(

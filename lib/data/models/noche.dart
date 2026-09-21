@@ -85,3 +85,33 @@ class ResumenDeNoche {
             : DateTime.parse(json['hasta'] as String).toLocal(),
       );
 }
+
+/// Una salida en el listado del perfil.
+class Salida {
+  const Salida({
+    required this.noche,
+    this.sitios = const [],
+    this.fotos = 0,
+    this.conQuien = 0,
+    this.portada,
+  });
+
+  final DateTime noche;
+  final List<String> sitios;
+  final int fotos;
+  final int conQuien;
+
+  /// Tu ultima foto de esa noche; si no subiste, la de alguien que estuvo
+  /// en el mismo sitio.
+  final String? portada;
+
+  String get donde => sitios.isEmpty ? 'Noche suelta' : sitios.join(' · ');
+
+  factory Salida.desdeJson(Map<String, dynamic> json) => Salida(
+    noche: DateTime.parse(json['noche'] as String),
+    sitios: (json['sitios'] as List?)?.cast<String>() ?? const [],
+    fotos: (json['fotos'] as num?)?.toInt() ?? 0,
+    conQuien: (json['con_quien'] as num?)?.toInt() ?? 0,
+    portada: json['portada'] as String?,
+  );
+}

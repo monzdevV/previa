@@ -312,6 +312,28 @@ class RepositorioSocial {
         '${base.day.toString().padLeft(2, '0')}';
   }
 
+  /// Las ultimas veces que saliste, con su resumen resuelto.
+  Future<List<Salida>> misUltimasSalidas({int limite = 20}) async {
+    final filas = await _cliente.rpc(
+      'mis_ultimas_salidas',
+      params: {'limite': limite},
+    );
+    return (filas as List)
+        .map((f) => Salida.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Lo que subio la gente que estuvo donde tu esa noche.
+  Future<List<Publicacion>> fotosDeMisNoches({int limite = 40}) async {
+    final filas = await _cliente.rpc(
+      'fotos_de_mis_noches',
+      params: {'limite': limite},
+    );
+    return (filas as List)
+        .map((f) => Publicacion.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Tu racha de findes.
   Future<Racha> miRacha() async {
     final filas = await _cliente.rpc('mi_racha');
