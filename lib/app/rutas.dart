@@ -20,6 +20,7 @@ import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
 import '../features/profile/pantalla_ajustes.dart';
+import '../features/profile/pantalla_moderacion.dart';
 import '../features/profile/pantallas_legales.dart';
 import '../features/profile/pantalla_editar_perfil.dart';
 import '../features/ratings/pantalla_por_valorar.dart';
@@ -44,6 +45,7 @@ abstract final class Rutas {
   static const misNoches = '/mis-noches';
   static const privacidad = '/privacidad';
   static const condiciones = '/condiciones';
+  static const moderacion = '/moderacion';
   static const perfilDe = '/perfil';
   static const mensajes = '/mensajes';
   static const conversacion = '/conversacion';
@@ -144,6 +146,10 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const PantallaPorValorar(),
       ),
       GoRoute(path: Rutas.ajustes, builder: (_, _) => const PantallaAjustes()),
+      GoRoute(
+        path: Rutas.moderacion,
+        builder: (_, _) => const PantallaModeracion(),
+      ),
       GoRoute(
         path: Rutas.privacidad,
         builder: (_, _) => const PantallaPrivacidad(),

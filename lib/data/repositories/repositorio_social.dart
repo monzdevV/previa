@@ -334,6 +334,23 @@ class RepositorioSocial {
         .toList();
   }
 
+  // --- Moderacion ---
+
+  Future<List<Reporte>> reportesPendientes() async {
+    final filas = await _cliente.rpc('reportes_pendientes');
+    return (filas as List)
+        .map((f) => Reporte.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> resolverReporte(String id, {required String estado}) =>
+      _cliente.from('reports').update({'status': estado}).eq('id', id);
+
+  /// Retira la publicacion reportada. La comprobacion de que quien lo pide es
+  /// moderador la hace el servidor, no esta aplicacion.
+  Future<void> retirarPublicacion(String reporteId) =>
+      _cliente.rpc('retirar_publicacion', params: {'reporte': reporteId});
+
   /// Tu racha de findes.
   Future<Racha> miRacha() async {
     final filas = await _cliente.rpc('mi_racha');

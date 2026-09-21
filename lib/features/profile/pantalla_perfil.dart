@@ -151,6 +151,18 @@ class PantallaPerfil extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(Rutas.porValorar),
             ),
+            if (perfil.valueOrNull?.esModerador ?? false)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.gavel_rounded,
+                  color: ColoresPrevia.error,
+                ),
+                title: const Text('Moderación'),
+                subtitle: const Text('Lo que ha reportado la gente'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Rutas.moderacion),
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.shield_outlined),

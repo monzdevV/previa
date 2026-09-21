@@ -108,7 +108,7 @@ class RepositorioAuth {
         .from('profiles')
         .select(
           'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count, instagram, city',
+          'reputation, ratings_count, instagram, city, is_moderator',
         )
         .eq('id', id)
         .maybeSingle();
@@ -121,7 +121,7 @@ class RepositorioAuth {
         .from('profiles')
         .select(
           'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count, instagram, city',
+          'reputation, ratings_count, instagram, city, is_moderator',
         )
         .eq('id', id)
         .single();

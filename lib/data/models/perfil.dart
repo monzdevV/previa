@@ -15,6 +15,7 @@ class Perfil {
     this.numeroValoraciones = 0,
     this.instagram,
     this.ciudad,
+    this.esModerador = false,
   });
 
   final String id;
@@ -30,6 +31,9 @@ class Perfil {
   final String? instagram;
 
   final String? ciudad;
+
+  /// Solo se cambia desde el panel de Supabase; la aplicacion no la escribe.
+  final bool esModerador;
 
   /// Iniciales para el avatar cuando no hay foto.
   String get iniciales {
@@ -52,6 +56,7 @@ class Perfil {
     numeroValoraciones: json['ratings_count'] as int? ?? 0,
     instagram: json['instagram'] as String?,
     ciudad: json['city'] as String?,
+    esModerador: json['is_moderator'] as bool? ?? false,
   );
 
   Map<String, dynamic> aJson() => {

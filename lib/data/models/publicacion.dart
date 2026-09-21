@@ -249,3 +249,56 @@ class MensajeDeSala {
         enviadoEn: DateTime.parse(json['created_at'] as String).toLocal(),
       );
 }
+
+/// Un reporte, tal y como lo ve quien modera.
+class Reporte {
+  const Reporte({
+    required this.id,
+    required this.motivo,
+    required this.estado,
+    required this.creadoEn,
+    this.detalles,
+    this.denunciante,
+    this.denunciado,
+    this.denunciadoId,
+    this.postId,
+    this.postUrl,
+    this.postTexto,
+    this.partyId,
+    this.partyTitulo,
+  });
+
+  final String id;
+  final String motivo;
+  final String? detalles;
+
+  /// abierto, revisado o cerrado.
+  final String estado;
+
+  final DateTime creadoEn;
+  final String? denunciante;
+  final String? denunciado;
+  final String? denunciadoId;
+
+  final String? postId;
+  final String? postUrl;
+  final String? postTexto;
+  final String? partyId;
+  final String? partyTitulo;
+
+  factory Reporte.desdeJson(Map<String, dynamic> json) => Reporte(
+    id: json['id'] as String,
+    motivo: json['motivo'] as String? ?? 'otro',
+    detalles: json['detalles'] as String?,
+    estado: json['estado'] as String? ?? 'abierto',
+    creadoEn: DateTime.parse(json['creado_en'] as String).toLocal(),
+    denunciante: json['denunciante'] as String?,
+    denunciado: json['denunciado'] as String?,
+    denunciadoId: json['denunciado_id'] as String?,
+    postId: json['post_id'] as String?,
+    postUrl: json['post_url'] as String?,
+    postTexto: json['post_texto'] as String?,
+    partyId: json['party_id'] as String?,
+    partyTitulo: json['party_titulo'] as String?,
+  );
+}
