@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
+import '../feed/pantalla_feed.dart';
 import '../profile/pantalla_perfil.dart';
 import 'pantalla_mapa.dart';
 
@@ -24,6 +25,7 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
       body: IndexedStack(
         index: _pestana,
         children: [
+          const PantallaFeed(),
           PantallaMapa(
             onCrearPrevia: () => context.push(Rutas.crearPrevia),
             onAbrirPrevia: (previa) =>
@@ -44,14 +46,19 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
           onDestinationSelected: (i) => setState(() => _pestana = i),
           destinations: const [
             NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Feed',
+            ),
+            NavigationDestination(
               icon: Icon(Icons.map_outlined),
-              selectedIcon: Icon(Icons.map),
-              label: 'MAPA',
+              selectedIcon: Icon(Icons.map_rounded),
+              label: 'Mapa',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'PERFIL',
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Perfil',
             ),
           ],
         ),

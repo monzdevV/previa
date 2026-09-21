@@ -9,7 +9,9 @@ import '../data/repositories/repositorio_auth.dart';
 import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
+import '../features/feed/pantalla_publicar.dart';
 import '../features/map/pantalla_inicio.dart';
+import '../features/social/pantalla_buscar.dart';
 import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
@@ -31,6 +33,8 @@ abstract final class Rutas {
   static const editarPerfil = '/editar-perfil';
   static const porValorar = '/por-valorar';
   static const ajustes = '/ajustes';
+  static const buscar = '/buscar';
+  static const publicar = '/publicar';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -128,6 +132,11 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const PantallaPorValorar(),
       ),
       GoRoute(path: Rutas.ajustes, builder: (_, _) => const PantallaAjustes()),
+      GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
+      GoRoute(
+        path: Rutas.publicar,
+        builder: (_, _) => const PantallaPublicar(),
+      ),
     ],
   );
 });

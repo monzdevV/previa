@@ -1,0 +1,115 @@
+/// Una publicacion del feed: la noche contada por quien estuvo.
+class Publicacion {
+  const Publicacion({
+    required this.id,
+    required this.autorId,
+    required this.autorNombre,
+    required this.mediaUrl,
+    required this.esVideo,
+    required this.creadaEn,
+    this.autorUsuario,
+    this.autorAvatar,
+    this.miniaturaUrl,
+    this.texto,
+    this.zona,
+    this.likes = 0,
+    this.leDiLike = false,
+    this.leSigo = false,
+  });
+
+  final String id;
+  final String autorId;
+  final String? autorUsuario;
+  final String autorNombre;
+  final String? autorAvatar;
+
+  final String mediaUrl;
+  final bool esVideo;
+  final String? miniaturaUrl;
+
+  final String? texto;
+
+  /// Zona a la que pertenece, por ejemplo "Zaragoza". Es lo que permite ver
+  /// la noche de una ciudad sin exponer la ubicacion de nadie.
+  final String? zona;
+
+  final int likes;
+  final bool leDiLike;
+  final bool leSigo;
+  final DateTime creadaEn;
+
+  Publicacion copiarCon({int? likes, bool? leDiLike, bool? leSigo}) =>
+      Publicacion(
+        id: id,
+        autorId: autorId,
+        autorUsuario: autorUsuario,
+        autorNombre: autorNombre,
+        autorAvatar: autorAvatar,
+        mediaUrl: mediaUrl,
+        esVideo: esVideo,
+        miniaturaUrl: miniaturaUrl,
+        texto: texto,
+        zona: zona,
+        likes: likes ?? this.likes,
+        leDiLike: leDiLike ?? this.leDiLike,
+        leSigo: leSigo ?? this.leSigo,
+        creadaEn: creadaEn,
+      );
+
+  /// Cuanto hace que se publico, en el formato corto de las redes.
+  String get hace {
+    final d = DateTime.now().difference(creadaEn);
+    if (d.inMinutes < 1) return 'ahora';
+    if (d.inMinutes < 60) return '${d.inMinutes} min';
+    if (d.inHours < 24) return '${d.inHours} h';
+    if (d.inDays < 7) return '${d.inDays} d';
+    return '${(d.inDays / 7).floor()} sem';
+  }
+
+  factory Publicacion.desdeJson(Map<String, dynamic> json) => Publicacion(
+    id: json['id'] as String,
+    autorId: json['author_id'] as String,
+    autorUsuario: json['username'] as String?,
+    autorNombre: json['display_name'] as String? ?? 'Alguien',
+    autorAvatar: json['avatar_url'] as String?,
+    mediaUrl: json['media_url'] as String,
+    esVideo: (json['media_type'] as String?) == 'video',
+    miniaturaUrl: json['thumbnail_url'] as String?,
+    texto: json['caption'] as String?,
+    zona: json['area_label'] as String?,
+    likes: (json['like_count'] as num?)?.toInt() ?? 0,
+    leDiLike: json['le_di_like'] as bool? ?? false,
+    leSigo: json['le_sigo'] as bool? ?? false,
+    creadaEn: DateTime.parse(json['created_at'] as String).toLocal(),
+  );
+}
+
+/// Perfil publico resumido, tal y como sale en buscadores y listas de gente.
+class PerfilResumen {
+  const PerfilResumen({
+    required this.id,
+    required this.nombre,
+    this.usuario,
+    this.avatar,
+    this.reputacion,
+    this.leSigo = false,
+  });
+
+  final String id;
+  final String? usuario;
+  final String nombre;
+  final String? avatar;
+  final double? reputacion;
+  final bool leSigo;
+
+  String get inicial => nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
+
+  factory PerfilResumen.desdeJson(Map<String, dynamic> json) => PerfilResumen(
+    id: json['id'] as String,
+    usuario: json['username'] as String?,
+    nombre: json['display_name'] as String? ?? 'Alguien',
+    avatar: json['avatar_url'] as String?,
+    reputacion: (json['reputation'] as num?)?.toDouble(),
+    leSigo: json['le_sigo'] as bool? ?? false,
+  );
+}
