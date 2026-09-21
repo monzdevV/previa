@@ -6,6 +6,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../feed/pantalla_feed.dart';
 import '../profile/pantalla_perfil.dart';
+import '../social/pantalla_locales.dart';
 import 'pantalla_mapa.dart';
 
 /// Contenedor principal con la navegación inferior.
@@ -31,6 +32,7 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
             onAbrirPrevia: (previa) =>
                 context.push('${Rutas.previa}/${previa.id}'),
           ),
+          const PantallaLocales(),
           const PantallaPerfil(),
         ],
       ),
@@ -54,6 +56,11 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
               icon: Icon(Icons.map_outlined),
               selectedIcon: Icon(Icons.map_rounded),
               label: 'Mapa',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.nightlife_outlined),
+              selectedIcon: Icon(Icons.nightlife),
+              label: 'Noche',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),

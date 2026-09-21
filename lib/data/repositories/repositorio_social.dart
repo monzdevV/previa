@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/local.dart';
 import '../models/publicacion.dart';
 import 'repositorio_auth.dart';
 
@@ -177,6 +178,107 @@ class RepositorioSocial {
     return (filas as List)
         .map((f) => (f as Map)['followee_id'] as String)
         .toSet();
+  }
+
+  /// La noche por delante: que locales hay en una ciudad y cuanta gente va.
+  ///
+  /// [noche] es una fecha y no un instante a proposito: quien sale a las dos
+  /// de la madrugada del sabado sigue estando en la noche del viernes.
+  Future<List<Local>> localesDeLaNoche(String ciudad, {DateTime? noche}) async {
+    final filas = await _cliente.rpc(
+      'locales_de_la_noche',
+      params: {'ciudad': ciudad, 'noche': _comoNoche(noche ?? DateTime.now())},
+    );
+    return (filas as List)
+        .map((f) => Local.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Quien va a un local. Ver caras conocidas es lo que empuja a ir.
+  Future<List<PerfilResumen>> quienVa(String localId, {DateTime? noche}) async {
+    final filas = await _cliente.rpc(
+      'quien_va',
+      params: {
+        'local': localId,
+        'noche': _comoNoche(noche ?? DateTime.now()),
+      },
+    );
+    return (filas as List)
+        .map((f) => PerfilResumen.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> alternarVoy(
+    String localId, {
+    required bool yaIba,
+    DateTime? noche,
+  }) {
+    final fecha = _comoNoche(noche ?? DateTime.now());
+    if (yaIba) {
+      return _cliente
+          .from('venue_plans')
+          .delete()
+          .eq('venue_id', localId)
+          .eq('profile_id', _yo)
+          .eq('night', fecha);
+    }
+    return _cliente.from('venue_plans').insert({
+      'venue_id': localId,
+      'profile_id': _yo,
+      'night': fecha,
+    });
+  }
+
+  Future<Local> crearLocal({
+    required String nombre,
+    required String ciudad,
+    String? zona,
+    String? urlEntradas,
+    String? instagram,
+  }) async {
+    final fila = await _cliente
+        .from('venues')
+        .insert({
+          'name': nombre.trim(),
+          'city': ciudad.trim(),
+          'area_label': ?zona?.trim(),
+          'ticket_url': ?urlEntradas?.trim(),
+          'instagram': ?instagram?.trim(),
+        })
+        .select('id, name, city, area_label, ticket_url, instagram')
+        .single();
+    return Local.desdeJson(fila);
+  }
+
+  /// Las noches que has salido, para el calendario del perfil.
+  Future<Map<DateTime, List<String>>> misNoches() async {
+    final filas = await _cliente
+        .from('venue_plans')
+        .select('night, venues ( name )')
+        .eq('profile_id', _yo)
+        .order('night', ascending: false)
+        .limit(200);
+
+    final salida = <DateTime, List<String>>{};
+    for (final f in filas as List) {
+      final mapa = f as Map;
+      final fecha = DateTime.parse(mapa['night'] as String);
+      final dia = DateTime(fecha.year, fecha.month, fecha.day);
+      final nombre = (mapa['venues'] as Map?)?['name'] as String?;
+      salida.putIfAbsent(dia, () => []).add(nombre ?? 'Un sitio');
+    }
+    return salida;
+  }
+
+  /// Una noche empieza al anochecer: lo que pasa antes de las 6 de la
+  /// manana todavia pertenece al dia anterior.
+  static String _comoNoche(DateTime momento) {
+    final base = momento.hour < 6
+        ? momento.subtract(const Duration(days: 1))
+        : momento;
+    return '${base.year.toString().padLeft(4, '0')}-'
+        '${base.month.toString().padLeft(2, '0')}-'
+        '${base.day.toString().padLeft(2, '0')}';
   }
 
   /// Publicaciones de una persona, para su perfil.
