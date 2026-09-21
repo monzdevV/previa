@@ -9,15 +9,7 @@ import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../social/pantalla_resumen_noche.dart';
-import 'cabecera_perfil.dart';
-
-final _salidasProvider = FutureProvider<List<Salida>>(
-  (ref) => ref.watch(repositorioSocialProvider).misUltimasSalidas(),
-);
-
-final _deEsasNochesProvider = FutureProvider<List<Publicacion>>(
-  (ref) => ref.watch(repositorioSocialProvider).fotosDeMisNoches(),
-);
+import 'proveedores_perfil.dart';
 
 /// Las tres pestañas del perfil.
 ///
@@ -64,7 +56,7 @@ class _Salidas extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final salidas = ref.watch(_salidasProvider);
+    final salidas = ref.watch(misSalidasProvider);
 
     return salidas.when(
       loading: () => const _Cargando(),
@@ -215,7 +207,7 @@ class _DeEsasNoches extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final otras = ref.watch(_deEsasNochesProvider);
+    final otras = ref.watch(deEsasNochesProvider);
 
     return otras.when(
       loading: () => const _Cargando(),

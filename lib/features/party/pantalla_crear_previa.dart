@@ -11,6 +11,7 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../map/proveedores_mapa.dart';
+import '../profile/proveedores_perfil.dart';
 
 class PantallaCrearPrevia extends ConsumerStatefulWidget {
   const PantallaCrearPrevia({super.key});
@@ -129,6 +130,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
       // Que el mapa y "mis previas" se enteren.
       ref.invalidate(previasCercaProvider);
       ref.invalidate(misPreviasProvider);
+      refrescarPerfil(ref);
 
       if (!mounted) return;
       Navigator.of(context).pop(true);

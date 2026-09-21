@@ -519,34 +519,30 @@ class RepositorioSocial {
         .eq('id', perfilId)
         .single();
 
-    // Tres consultas cortas en paralelo salen mas baratas que una vista con
-    // subconsultas, y cada una usa su propio indice.
-    final seguidores = _cliente
-        .from('follows')
-        .count()
-        .eq('followee_id', perfilId);
-    final siguiendo = _cliente
-        .from('follows')
-        .count()
-        .eq('follower_id', perfilId);
-    final loSigo = _cliente
-        .from('follows')
-        .select('followee_id')
-        .eq('follower_id', _yo)
-        .eq('followee_id', perfilId)
-        .maybeSingle();
+    // A la vez y no en fila: awaitarlas una tras otra multiplicaba por tres
+    // la espera de abrir un perfil sin ganar nada, porque no dependen entre si.
+    final resultados = await Future.wait<dynamic>([
+      _cliente.from('follows').count().eq('followee_id', perfilId),
+      _cliente.from('follows').count().eq('follower_id', perfilId),
+      _cliente
+          .from('follows')
+          .select('followee_id')
+          .eq('follower_id', _yo)
+          .eq('followee_id', perfilId)
+          .maybeSingle(),
+    ]);
 
     return PerfilPublico(
       perfil: PerfilResumen.desdeJson({
         ...Map<String, dynamic>.from(fila),
-        'le_sigo': await loSigo != null,
+        'le_sigo': resultados[2] != null,
       }),
       bio: fila['bio'] as String?,
       ciudad: fila['city'] as String?,
       instagram: fila['instagram'] as String?,
       esDemo: fila['is_demo'] as bool? ?? false,
-      seguidores: await seguidores,
-      siguiendo: await siguiendo,
+      seguidores: resultados[0] as int,
+      siguiendo: resultados[1] as int,
     );
   }
 

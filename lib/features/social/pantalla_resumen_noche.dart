@@ -10,15 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../app/tema.dart';
 import '../../data/models/noche.dart';
 import '../../data/repositories/repositorio_auth.dart';
-import '../../data/repositories/repositorio_social.dart';
-
-final resumenProvider = FutureProvider.family<ResumenDeNoche, DateTime>(
-  (ref, noche) => ref.watch(repositorioSocialProvider).resumenDeNoche(noche),
-);
-
-final rachaProvider = FutureProvider<Racha>(
-  (ref) => ref.watch(repositorioSocialProvider).miRacha(),
-);
+import '../profile/proveedores_perfil.dart';
 
 /// La tarjeta del final de la noche.
 ///

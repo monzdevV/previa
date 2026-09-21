@@ -7,6 +7,7 @@ import '../../data/models/local.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import '../profile/proveedores_perfil.dart';
 import 'pantalla_sala.dart';
 
 /// Ciudad que se esta mirando. Se queda fijada mientras dure la sesion.
@@ -205,6 +206,9 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
       await ref
           .read(repositorioSocialProvider)
           .alternarVoy(antes.id, yaIba: antes.voy);
+      // Decir que vas cuenta como noche, asi que mueve la racha, el
+      // calendario y las salidas del perfil.
+      refrescarPerfil(ref);
     } catch (_) {
       if (mounted) setState(() => _l = antes);
     }

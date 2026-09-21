@@ -5,23 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/perfil.dart';
-import '../../data/models/publicacion.dart';
-import '../../data/repositories/repositorio_auth.dart';
-import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../social/pantalla_resumen_noche.dart' show InsigniaDeRacha;
-
-/// Lo que has publicado tu. Vive aqui y no en la pantalla porque tambien lo
-/// necesita la cabecera para el contador.
-final misPublicacionesProvider = FutureProvider<List<Publicacion>>((ref) async {
-  final yo = ref.watch(repositorioAuthProvider).usuarioActual?.id;
-  if (yo == null) return const [];
-  return ref.watch(repositorioSocialProvider).publicacionesDe(yo);
-});
-
-final miFichaProvider = FutureProvider.family<PerfilPublico, String>(
-  (ref, id) => ref.watch(repositorioSocialProvider).perfilPublico(id),
-);
+import 'proveedores_perfil.dart';
 
 /// Cabecera del perfil propio.
 ///

@@ -8,6 +8,7 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
 import 'cabecera_perfil.dart';
 import 'pestanas_perfil.dart';
+import 'proveedores_perfil.dart';
 import '../party/tarjeta_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
@@ -32,7 +33,7 @@ class PantallaPerfil extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(miPerfilProvider);
+          refrescarPerfil(ref);
           ref.invalidate(misPreviasProvider);
         },
         child: ListView(

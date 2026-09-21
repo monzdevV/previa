@@ -427,7 +427,15 @@ class RepositorioPrevias {
       return 'Ya no quedan plazas suficientes para ese grupo.';
     }
     if (m.contains('row-level security') || m.contains('violates row-level')) {
-      return 'No puedes hacer eso. Revisa que tu perfil esté completo.';
+      // El servidor solo deja abrir previas con el perfil completo, y
+      // completo significa tener fecha de nacimiento. Decirlo asi ahorra
+      // que alguien se quede bloqueado sin saber que le falta.
+      return 'Para abrir una previa necesitas tu fecha de nacimiento en el '
+          'perfil. Ve a Editar perfil y ponla.';
+    }
+    if (m.contains('permission denied')) {
+      return 'Tu versión de la aplicación pide un dato que el servidor '
+          'todavía no acepta. Avisa de este error.';
     }
     if (m.contains('plazas_coherentes')) {
       return 'El número de plazas no es válido.';

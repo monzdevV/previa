@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
+import 'proveedores_perfil.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 class PantallaEditarPerfil extends ConsumerStatefulWidget {
@@ -85,6 +86,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                 ? elegida.name.substring(punto + 1).toLowerCase()
                 : 'jpg',
           );
+      // Sin esto, se sube la foto y la cabecera del perfil sigue enseñando
+      // la anterior hasta que se reinicia la aplicacion.
+      refrescarPerfil(ref);
       if (mounted) setState(() => _avatar = url);
     } catch (e) {
       if (mounted) setState(() => _error = 'No se ha podido subir la foto.');
@@ -110,6 +114,17 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) return;
 
+    // Sin fecha de nacimiento el servidor no da el perfil por completo, y sin
+    // perfil completo no se pueden abrir previas. Si se deja guardar sin
+    // ella, la cuenta queda bloqueada sin que nada lo explique.
+    if (_fechaNacimiento == null) {
+      setState(
+        () => _error = 'Pon tu fecha de nacimiento: sin ella no podrás abrir '
+            'previas.',
+      );
+      return;
+    }
+
     setState(() {
       _guardando = true;
       _error = null;
@@ -125,7 +140,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
             instagram: _instagram.text,
             ciudad: _ciudad.text,
           );
-      ref.invalidate(miPerfilProvider);
+      refrescarPerfil(ref);
 
       if (!mounted) return;
       Navigator.of(context).pop();

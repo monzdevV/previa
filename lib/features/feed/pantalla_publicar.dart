@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_social.dart';
+import '../profile/proveedores_perfil.dart';
 
 /// Subir una foto o un video de la noche.
 class PantallaPublicar extends ConsumerStatefulWidget {
@@ -86,6 +87,7 @@ class _PantallaPublicarState extends ConsumerState<PantallaPublicar> {
             zona: _zona.text,
           );
 
+      refrescarPerfil(ref);
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
