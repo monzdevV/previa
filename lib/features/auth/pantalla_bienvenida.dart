@@ -89,7 +89,7 @@ class _Marca extends StatelessWidget {
           ),
           child: const Icon(
             Icons.local_fire_department_rounded,
-            color: Colors.white,
+            color: ColoresPrevia.sobrePrimario,
             size: 30,
           ),
         ),
@@ -125,7 +125,7 @@ class _BotonDeMarca extends StatelessWidget {
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
+        foregroundColor: ColoresPrevia.sobrePrimario,
       ),
       child: Text(texto),
     ),

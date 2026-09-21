@@ -295,7 +295,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                     onPressed: widget.onCrearPrevia,
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      foregroundColor: Colors.white,
+                      foregroundColor: ColoresPrevia.sobrePrimario,
                     ),
                     icon: const Icon(Icons.add_rounded, size: 21),
                     label: const Text('Abrir una previa'),
