@@ -69,6 +69,10 @@ class _RepoDeMuestra extends RepositorioPrevias {
 class _RepoSocialDeMuestra extends RepositorioSocial {
   _RepoSocialDeMuestra() : super(_clienteInerte());
 
+  /// Sin avisos: la chincheta no sale y el golden no depende de la red.
+  @override
+  Stream<int> flujoDeAvisos() => Stream.value(0);
+
   @override
   Future<List<Publicacion>> feed({
     String? zona,

@@ -334,6 +334,39 @@ class RepositorioSocial {
         .toList();
   }
 
+  // --- Avisos ---
+
+  Future<List<Aviso>> misAvisos() async {
+    final filas = await _cliente.rpc('mis_avisos');
+    return (filas as List)
+        .map((f) => Aviso.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Cuantos avisos sin leer hay, para la chincheta de la barra.
+  Future<int> avisosSinLeer() async => _cliente
+      .from('notices')
+      .count()
+      .eq('profile_id', _yo)
+      .isFilter('read_at', null);
+
+  /// Escucha los avisos en vivo, que es lo que hace que la chincheta suba
+  /// sin que haya que recargar nada.
+  Stream<int> flujoDeAvisos() => _cliente
+      .from('notices')
+      .stream(primaryKey: ['id'])
+      .map(
+        (filas) => filas
+            .where((f) => f['profile_id'] == _yo && f['read_at'] == null)
+            .length,
+      );
+
+  Future<void> marcarAvisosLeidos() => _cliente
+      .from('notices')
+      .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+      .eq('profile_id', _yo)
+      .isFilter('read_at', null);
+
   // --- Moderacion ---
 
   Future<List<Reporte>> reportesPendientes() async {

@@ -8,6 +8,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
+import '../social/pantalla_avisos.dart';
 
 /// Zona seleccionada en el feed. Nulo significa "toda la noche".
 class ZonaDelFeed extends Notifier<String?> {
@@ -46,6 +47,15 @@ class PantallaFeed extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.search_rounded),
             onPressed: () => context.push(Rutas.buscar),
+          ),
+          IconButton(
+            icon: const ChinchetaDeAvisos(
+              hijo: Icon(Icons.favorite_border_rounded),
+            ),
+            onPressed: () async {
+              await context.push(Rutas.avisos);
+              ref.invalidate(feedProvider);
+            },
           ),
           IconButton(
             icon: const Icon(Icons.chat_bubble_outline_rounded),

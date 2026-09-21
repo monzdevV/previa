@@ -74,6 +74,8 @@ Añadido para la parte social:
 | `venues` | discotecas y bares, con enlace de entradas e Instagram |
 | `venue_plans` | "voy a X esta noche"; la noche es una fecha, no un instante |
 | `direct_messages` | mensajes directos entre personas |
+| `venue_messages` | la sala de un local, por local y noche |
+| `notices` | avisos; los crean disparadores, nadie los inserta a mano |
 
 Funciones: `feed_publicaciones`, `locales_de_la_noche`, `quien_va`,
 `mis_conversaciones`.
@@ -94,17 +96,28 @@ contraseña: nadie puede iniciar sesión como ellas. Las fichas de los locales
 van sin enlace de entradas a propósito, porque inventarlo sería una afirmación
 comercial falsa.
 
+## Colores
+
+La paleta es una `ThemeExtension`, no constantes: se lee con
+`context.colores.fondo`. Hay dos, `ColoresPrevia.oscuro` y `.claro`.
+
+**Regla que se rompe sola si no la miras**: el amarillo de marca sobre blanco
+no llega al contraste mínimo para texto. Como relleno de botón va bien (con
+texto negro encima), pero para rótulos, iconos y ruletas hay que usar
+`primarioTexto`, que en claro es un ámbar oscuro y en oscuro es el mismo
+amarillo.
+
 ## Pendiente, por orden
 
-1. **Modo claro.** Los colores están escritos a fuego en ~200 sitios como
-   constantes estáticas. Hacerlo bien exige pasarlos a `ThemeExtension`; no
-   es un interruptor.
-2. **Vídeo en el feed**: se sube y se reproduce, pero no hay miniatura
-   (`posts.thumbnail_url` queda nulo) ni límite de tamaño más allá de los
-   50 MB del cubo.
-3. **Comentarios** en las publicaciones: solo hay likes.
-4. **Notificaciones push**, login con Google, caducidad automática de previas.
-5. **Moderación**: hay reportes y bloqueos, pero nada que los revise.
+1. **Notificaciones push.** Los avisos dentro de la aplicación ya funcionan y
+   se guardan en `notices`; falta el proyecto de Firebase y enviar desde un
+   disparador. La lógica de qué avisar ya está hecha.
+2. **Probarla en un móvil.** Nada se ha ejecutado en un teléfono: ni cámara,
+   ni escáner QR, ni compartir, ni permisos. Es el riesgo más serio.
+3. **Vídeo en el feed**: se sube y se reproduce, pero no hay miniatura
+   (`posts.thumbnail_url` queda nulo).
+4. **Comentarios** en las publicaciones: solo hay likes.
+5. Login con Google y caducidad automática de previas.
 
 ## Cosas que te van a morder
 
@@ -114,6 +127,16 @@ comercial falsa.
   `npx supabase db pull`.
 - Falta activar la protección de contraseñas filtradas en el panel de
   Supabase (Auth → Passwords).
+- **`parties` concede privilegios columna a columna.** Cada columna nueva hay
+  que concederla a mano o el alta de previas se cae entera con un error de
+  permisos que no dice qué columna falta. Ya pasó una vez con `is_public`.
+- Un perfil se considera completo cuando tiene fecha de nacimiento, y sin
+  perfil completo la política impide crear previas.
+- El rol de moderador (`profiles.is_moderator`) solo se pone desde el panel de
+  Supabase; la aplicación no puede escribirlo.
+- Las pruebas de seguridad son dos: `supabase/tests/seguridad.sql` (16, el
+  núcleo) y `seguridad_social.sql` (18, la capa social). Se pegan en el editor
+  SQL y deben salir todas en PASA.
 - Nada de esto se ha probado con una sesión real: compila, los tests pasan y
   las funciones devuelven datos por SQL, pero la primera subida de foto y el
   primer mensaje hay que hacerlos a mano.

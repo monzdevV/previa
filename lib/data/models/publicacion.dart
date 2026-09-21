@@ -302,3 +302,62 @@ class Reporte {
     partyTitulo: json['party_titulo'] as String?,
   );
 }
+
+/// Un aviso: alguien ha hecho algo que te toca.
+class Aviso {
+  const Aviso({
+    required this.id,
+    required this.tipo,
+    required this.leido,
+    required this.creadoEn,
+    this.actorId,
+    this.actorNombre,
+    this.actorAvatar,
+    this.previaId,
+    this.previaTitulo,
+    this.postId,
+    this.postUrl,
+  });
+
+  final String id;
+
+  /// solicitud, aceptada, mensaje, like, seguidor o sala.
+  final String tipo;
+
+  final bool leido;
+  final DateTime creadoEn;
+  final String? actorId;
+  final String? actorNombre;
+  final String? actorAvatar;
+  final String? previaId;
+  final String? previaTitulo;
+  final String? postId;
+  final String? postUrl;
+
+  String get quien => actorNombre ?? 'Alguien';
+
+  /// El texto del aviso. Vive aqui y no en la pantalla para que el mismo
+  /// aviso se lea igual en la lista y el dia que llegue como push.
+  String get texto => switch (tipo) {
+    'solicitud' => '$quien ha pedido plaza en ${previaTitulo ?? "tu previa"}',
+    'aceptada' => '$quien te ha aceptado en ${previaTitulo ?? "su previa"}',
+    'mensaje' => '$quien te ha escrito',
+    'like' => 'A $quien le gusta tu publicación',
+    'seguidor' => '$quien ha empezado a seguirte',
+    _ => '$quien ha escrito en la sala',
+  };
+
+  factory Aviso.desdeJson(Map<String, dynamic> json) => Aviso(
+    id: json['id'] as String,
+    tipo: json['tipo'] as String? ?? 'mensaje',
+    leido: json['leido'] as bool? ?? false,
+    creadoEn: DateTime.parse(json['creado_en'] as String).toLocal(),
+    actorId: json['actor_id'] as String?,
+    actorNombre: json['actor_nombre'] as String?,
+    actorAvatar: json['actor_avatar'] as String?,
+    previaId: json['party_id'] as String?,
+    previaTitulo: json['party_titulo'] as String?,
+    postId: json['post_id'] as String?,
+    postUrl: json['post_url'] as String?,
+  );
+}

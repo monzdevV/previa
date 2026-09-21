@@ -14,6 +14,7 @@ import '../features/map/pantalla_inicio.dart';
 import '../features/social/pantalla_buscar.dart';
 import '../features/social/pantalla_locales.dart';
 import '../features/social/pantalla_mis_noches.dart';
+import '../features/social/pantalla_avisos.dart';
 import '../features/social/pantalla_mensajes.dart';
 import '../features/social/pantalla_perfil_publico.dart';
 import '../features/chat/pantalla_chat.dart';
@@ -48,6 +49,7 @@ abstract final class Rutas {
   static const moderacion = '/moderacion';
   static const perfilDe = '/perfil';
   static const mensajes = '/mensajes';
+  static const avisos = '/avisos';
   static const conversacion = '/conversacion';
 }
 
@@ -160,6 +162,7 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
       GoRoute(path: Rutas.mensajes, builder: (_, _) => const PantallaMensajes()),
+      GoRoute(path: Rutas.avisos, builder: (_, _) => const PantallaAvisos()),
       GoRoute(
         path: '${Rutas.conversacion}/:id',
         builder: (_, estado) =>
