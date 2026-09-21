@@ -13,7 +13,7 @@ Future<bool?> mostrarHojaSolicitarPlaza(
 }) {
   return showModalBottomSheet<bool>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
@@ -110,7 +110,7 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                     ChoiceChip(
                       label: Text('$n'),
                       selected: _grupo == n,
-                      selectedColor: ColoresPrevia.primario,
+                      selectedColor: context.colores.primario,
                       onSelected: (_) => setState(() => _grupo = n),
                     ),
                 ],
@@ -136,7 +136,7 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 'de que te acepten.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
 
@@ -145,15 +145,15 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
+                    style: TextStyle(color: context.colores.error),
                   ),
                 ),
               ],

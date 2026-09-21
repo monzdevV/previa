@@ -176,7 +176,7 @@ class _PantallaPublicarState extends ConsumerState<PantallaPublicar> {
             const SizedBox(height: EspaciadoPrevia.m),
             Text(
               _error!,
-              style: const TextStyle(color: ColoresPrevia.error),
+              style: TextStyle(color: context.colores.error),
             ),
           ],
 
@@ -184,12 +184,12 @@ class _PantallaPublicarState extends ConsumerState<PantallaPublicar> {
           FilledButton(
             onPressed: hayMedia && !_subiendo ? _publicar : null,
             child: _subiendo
-                ? const SizedBox(
+                ? SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: ColoresPrevia.sobrePrimario,
+                      color: context.colores.sobrePrimario,
                     ),
                   )
                 : const Text('Publicar'),
@@ -213,23 +213,23 @@ class _Lienzo extends StatelessWidget {
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: ColoresPrevia.superficie,
+          color: context.colores.superficie,
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
         ),
         child: media == null
-            ? const Center(
+            ? Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.add_a_photo_outlined,
                       size: 40,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                     SizedBox(height: EspaciadoPrevia.s),
                     Text(
                       'Elige una foto o un vídeo',
-                      style: TextStyle(color: ColoresPrevia.textoTenue),
+                      style: TextStyle(color: context.colores.textoTenue),
                     ),
                   ],
                 ),
@@ -241,17 +241,17 @@ class _Lienzo extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.movie_rounded,
                       size: 40,
-                      color: ColoresPrevia.primario,
+                      color: context.colores.primarioTexto,
                     ),
                     const SizedBox(height: EspaciadoPrevia.s),
                     Text(
                       media!.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: ColoresPrevia.textoSuave),
+                      style: TextStyle(color: context.colores.textoSuave),
                     ),
                   ],
                 ),
@@ -275,7 +275,7 @@ class _BotonOrigen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-    color: ColoresPrevia.superficieAlta,
+    color: context.colores.superficieAlta,
     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
     child: InkWell(
       onTap: onTap,
@@ -284,7 +284,7 @@ class _BotonOrigen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: EspaciadoPrevia.m),
         child: Column(
           children: [
-            Icon(icono, color: ColoresPrevia.texto),
+            Icon(icono, color: context.colores.texto),
             const SizedBox(height: EspaciadoPrevia.xs + 2),
             Text(
               texto,

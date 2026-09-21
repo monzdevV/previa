@@ -69,8 +69,8 @@ class _PantallaResumenNocheState extends ConsumerState<PantallaResumenNoche> {
     return Scaffold(
       appBar: AppBar(title: const Text('Tu noche')),
       body: resumen.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const Center(
           child: Text('No se ha podido cargar la noche.'),
@@ -136,9 +136,9 @@ class TarjetaDeNoche extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.l),
       decoration: BoxDecoration(
-        color: ColoresPrevia.fondoProfundo,
+        color: context.colores.fondoProfundo,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
-        border: Border.all(color: ColoresPrevia.borde),
+        border: Border.all(color: context.colores.borde),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,13 +150,13 @@ class TarjetaDeNoche extends StatelessWidget {
                 height: 26,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: ColoresPrevia.degradado,
+                  gradient: context.colores.degradado,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.local_fire_department_rounded,
                   size: 17,
-                  color: ColoresPrevia.sobrePrimario,
+                  color: context.colores.sobrePrimario,
                 ),
               ),
               const SizedBox(width: EspaciadoPrevia.s),
@@ -168,9 +168,9 @@ class TarjetaDeNoche extends StatelessWidget {
               if (nombre != null)
                 Text(
                   nombre!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: ColoresPrevia.textoTenue,
+                    color: context.colores.textoTenue,
                   ),
                 ),
             ],
@@ -179,10 +179,10 @@ class TarjetaDeNoche extends StatelessWidget {
           const SizedBox(height: EspaciadoPrevia.l),
           Text(
             titulo,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: ColoresPrevia.textoTenue,
+              color: context.colores.textoTenue,
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.xs),
@@ -239,23 +239,23 @@ class TarjetaDeNoche extends StatelessWidget {
                 vertical: EspaciadoPrevia.s + EspaciadoPrevia.xs,
               ),
               decoration: BoxDecoration(
-                gradient: ColoresPrevia.degradado,
+                gradient: context.colores.degradado,
                 borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.bolt_rounded,
                     size: 20,
-                    color: ColoresPrevia.sobrePrimario,
+                    color: context.colores.sobrePrimario,
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
                   Text(
                     racha!.semanas == 1
                         ? '1 finde seguido'
                         : '${racha!.semanas} findes seguidos',
-                    style: const TextStyle(
-                      color: ColoresPrevia.sobrePrimario,
+                    style: TextStyle(
+                      color: context.colores.sobrePrimario,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
@@ -284,19 +284,19 @@ class _Cifra extends StatelessWidget {
       children: [
         Text(
           valor,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
-            color: ColoresPrevia.primario,
+            color: context.colores.primarioTexto,
             height: 1,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           etiqueta,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: ColoresPrevia.textoTenue,
+            color: context.colores.textoTenue,
           ),
         ),
       ],
@@ -323,8 +323,8 @@ class InsigniaDeRacha extends ConsumerWidget {
         vertical: EspaciadoPrevia.xs + 2,
       ),
       decoration: BoxDecoration(
-        gradient: enRiesgo ? null : ColoresPrevia.degradado,
-        color: enRiesgo ? ColoresPrevia.superficieAlta : null,
+        gradient: enRiesgo ? null : context.colores.degradado,
+        color: enRiesgo ? context.colores.superficieAlta : null,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
       ),
       child: Row(
@@ -334,8 +334,8 @@ class InsigniaDeRacha extends ConsumerWidget {
             Icons.bolt_rounded,
             size: 16,
             color: enRiesgo
-                ? ColoresPrevia.textoTenue
-                : ColoresPrevia.sobrePrimario,
+                ? context.colores.textoTenue
+                : context.colores.sobrePrimario,
           ),
           const SizedBox(width: EspaciadoPrevia.xs),
           Text(
@@ -344,8 +344,8 @@ class InsigniaDeRacha extends ConsumerWidget {
                 : '${racha.semanas} findes',
             style: TextStyle(
               color: enRiesgo
-                  ? ColoresPrevia.textoSuave
-                  : ColoresPrevia.sobrePrimario,
+                  ? context.colores.textoSuave
+                  : context.colores.sobrePrimario,
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),

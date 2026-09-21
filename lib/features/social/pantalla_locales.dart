@@ -70,9 +70,9 @@ class PantallaLocales extends ConsumerWidget {
           ),
           Expanded(
             child: locales.when(
-              loading: () => const Center(
+              loading: () => Center(
                 child: CircularProgressIndicator(
-                  color: ColoresPrevia.primario,
+                  color: context.colores.primarioTexto,
                 ),
               ),
               error: (e, _) => const _Mensaje(
@@ -84,8 +84,8 @@ class PantallaLocales extends ConsumerWidget {
                           'Añade el primero con el botón de arriba.',
                     )
                   : RefreshIndicator(
-                      color: ColoresPrevia.primario,
-                      backgroundColor: ColoresPrevia.superficie,
+                      color: context.colores.primario,
+                      backgroundColor: context.colores.superficie,
                       onRefresh: () async =>
                           ref.refresh(localesProvider.future),
                       child: ListView.separated(
@@ -219,7 +219,7 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
     final textos = Theme.of(context).textTheme;
 
     return Material(
-      color: ColoresPrevia.superficie,
+      color: context.colores.superficie,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       child: InkWell(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
@@ -250,8 +250,8 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
                     Icons.people_alt_rounded,
                     size: 16,
                     color: _l.van > 0
-                        ? ColoresPrevia.disponible
-                        : ColoresPrevia.textoTenue,
+                        ? context.colores.disponible
+                        : context.colores.textoTenue,
                   ),
                   const SizedBox(width: EspaciadoPrevia.xs + 2),
                   Text(
@@ -262,8 +262,8 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
                         : '${_l.van} personas van esta noche',
                     style: textos.bodyMedium?.copyWith(
                       color: _l.van > 0
-                          ? ColoresPrevia.disponible
-                          : ColoresPrevia.textoTenue,
+                          ? context.colores.disponible
+                          : context.colores.textoTenue,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -284,8 +284,8 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
                       ),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(42),
-                        backgroundColor: ColoresPrevia.superficieActiva,
-                        foregroundColor: ColoresPrevia.texto,
+                        backgroundColor: context.colores.superficieActiva,
+                        foregroundColor: context.colores.texto,
                       ),
                       icon: const Icon(Icons.forum_outlined, size: 19),
                       label: const Text('Sala de esta noche'),
@@ -350,11 +350,11 @@ Future<void> _verQuienVa(BuildContext context, WidgetRef ref, Local local) {
               const SizedBox(height: EspaciadoPrevia.m),
 
               if (resultado.connectionState == ConnectionState.waiting)
-                const Center(
+                Center(
                   child: Padding(
                     padding: EdgeInsets.all(EspaciadoPrevia.xl),
                     child: CircularProgressIndicator(
-                      color: ColoresPrevia.primario,
+                      color: context.colores.primario,
                     ),
                   ),
                 )
@@ -378,9 +378,9 @@ Future<void> _verQuienVa(BuildContext context, WidgetRef ref, Local local) {
                     title: Text(p.nombre),
                     subtitle: p.usuario == null ? null : Text('@${p.usuario}'),
                     trailing: p.leSigo
-                        ? const Icon(
+                        ? Icon(
                             Icons.how_to_reg_rounded,
-                            color: ColoresPrevia.disponible,
+                            color: context.colores.disponible,
                           )
                         : null,
                   ),
@@ -404,8 +404,8 @@ class _BotonVoy extends StatelessWidget {
           onPressed: onTap,
           style: FilledButton.styleFrom(
             minimumSize: const Size(96, 38),
-            backgroundColor: ColoresPrevia.disponible,
-            foregroundColor: ColoresPrevia.sobrePrimario,
+            backgroundColor: context.colores.disponible,
+            foregroundColor: context.colores.sobrePrimario,
           ),
           icon: const Icon(Icons.check_rounded, size: 18),
           label: const Text('Voy'),

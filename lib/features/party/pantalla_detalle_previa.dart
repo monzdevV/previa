@@ -46,7 +46,7 @@ class PantallaDetallePrevia extends ConsumerWidget {
                   ? Icons.more_horiz
                   : Icons.more_vert,
             ),
-            color: ColoresPrevia.superficieAlta,
+            color: context.colores.superficieAlta,
             onSelected: (opcion) =>
                 _menu(context, ref, opcion, detalle.valueOrNull),
             itemBuilder: (_) => const [
@@ -148,7 +148,7 @@ class _Contenido extends ConsumerWidget {
         const SizedBox(height: EspaciadoPrevia.s),
         Text(
           cuando,
-          style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave),
+          style: textos.bodyLarge?.copyWith(color: context.colores.textoSuave),
         ),
 
         const SizedBox(height: EspaciadoPrevia.l),
@@ -206,10 +206,10 @@ class _Contenido extends ConsumerWidget {
               width: 44,
               height: 44,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: ColoresPrevia.superficieAlta,
+              decoration: BoxDecoration(
+                color: context.colores.superficieAlta,
                 border: Border.fromBorderSide(
-                  BorderSide(color: ColoresPrevia.borde),
+                  BorderSide(color: context.colores.borde),
                 ),
               ),
               child: Text(
@@ -283,7 +283,7 @@ class _MapaZona extends ConsumerWidget {
               options: MapOptions(
                 initialCenter: previa.ubicacion,
                 initialZoom: soyMiembro ? 16 : 14,
-                backgroundColor: ColoresPrevia.fondo,
+                backgroundColor: context.colores.fondo,
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.none,
                 ),
@@ -304,8 +304,8 @@ class _MapaZona extends ConsumerWidget {
                       point: previa.ubicacion,
                       radius: Entorno.metrosDeDifuminado.toDouble(),
                       useRadiusInMeter: true,
-                      color: ColoresPrevia.primario.withValues(alpha: 0.22),
-                      borderColor: ColoresPrevia.primarioSuave,
+                      color: context.colores.primario.withValues(alpha: 0.22),
+                      borderColor: context.colores.primarioSuave,
                       borderStrokeWidth: 2,
                     ),
                   ],
@@ -349,9 +349,9 @@ class _DireccionRetenida extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
-      decoration: const BoxDecoration(
-        color: ColoresPrevia.superficie,
-        border: Border.fromBorderSide(BorderSide(color: ColoresPrevia.borde)),
+      decoration: BoxDecoration(
+        color: context.colores.superficie,
+        border: Border.fromBorderSide(BorderSide(color: context.colores.borde)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +363,7 @@ class _DireccionRetenida extends StatelessWidget {
               Text(
                 'RETENIDA',
                 style: textos.labelMedium?.copyWith(
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -378,7 +378,7 @@ class _DireccionRetenida extends StatelessWidget {
                 Container(
                   width: ancho,
                   height: 13,
-                  color: ColoresPrevia.superficieActiva,
+                  color: context.colores.superficieActiva,
                 ),
             ],
           ),
@@ -388,7 +388,7 @@ class _DireccionRetenida extends StatelessWidget {
           Text(
             'CELDA ${previa.referenciaCuadricula}  ·  '
             '${previa.zona.toUpperCase()}',
-            style: textos.labelMedium?.copyWith(color: ColoresPrevia.texto),
+            style: textos.labelMedium?.copyWith(color: context.colores.texto),
           ),
           const SizedBox(height: EspaciadoPrevia.m),
           Text(
@@ -437,22 +437,22 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
       return Container(
         padding: const EdgeInsets.all(EspaciadoPrevia.m),
         decoration: BoxDecoration(
-          color: ColoresPrevia.acento.withValues(alpha: 0.1),
+          color: context.colores.acento.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
           border: Border.all(
-            color: ColoresPrevia.acento.withValues(alpha: 0.4),
+            color: context.colores.acento.withValues(alpha: 0.4),
           ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.visibility, color: ColoresPrevia.acento, size: 20),
+            Icon(Icons.visibility, color: context.colores.acento, size: 20),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
                 '${_punto!.latitude.toStringAsFixed(5)}, '
                 '${_punto!.longitude.toStringAsFixed(5)}',
-                style: const TextStyle(
-                  color: ColoresPrevia.texto,
+                style: TextStyle(
+                  color: context.colores.texto,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -532,7 +532,7 @@ class _Accion extends ConsumerWidget {
             texto: yaPaso
                 ? 'Esta previa ya pasó. ¿Qué tal la gente?'
                 : 'Estás dentro. Nos vemos allí.',
-            color: yaPaso ? ColoresPrevia.textoSuave : ColoresPrevia.acento,
+            color: yaPaso ? context.colores.textoSuave : context.colores.acento,
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           if (yaPaso)
@@ -563,10 +563,10 @@ class _Accion extends ConsumerWidget {
     }
 
     if (miSolicitud?.estaPendiente ?? false) {
-      return const _Nota(
+      return _Nota(
         icono: Icons.hourglass_top,
         texto: 'Solicitud enviada. A ver qué dice el anfitrión.',
-        color: ColoresPrevia.aviso,
+        color: context.colores.aviso,
       );
     }
 
@@ -605,30 +605,35 @@ class _Nota extends StatelessWidget {
   const _Nota({
     required this.icono,
     required this.texto,
-    this.color = ColoresPrevia.textoSuave,
+    this.color,
   });
 
   final IconData icono;
   final String texto;
-  final Color color;
+
+  /// Nulo significa el gris secundario del tema, que no se puede nombrar
+  /// aqui porque un valor por defecto tiene que ser constante.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final tinta = color ?? context.colores.textoSuave;
+
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: tinta.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: tinta.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          Icon(icono, color: color, size: 20),
+          Icon(icono, color: tinta, size: 20),
           const SizedBox(width: EspaciadoPrevia.s),
           Expanded(
             child: Text(
               texto,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              style: TextStyle(color: tinta, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -652,19 +657,19 @@ class _Dato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destacado ? ColoresPrevia.acento : ColoresPrevia.texto;
+    final color = destacado ? context.colores.acento : context.colores.texto;
 
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficie,
+        color: context.colores.superficie,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.borde),
+        border: Border.all(color: context.colores.borde),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icono, size: 18, color: ColoresPrevia.textoSuave),
+          Icon(icono, size: 18, color: context.colores.textoSuave),
           const SizedBox(height: EspaciadoPrevia.s),
           Text(
             valor,
@@ -678,8 +683,8 @@ class _Dato extends StatelessWidget {
           ),
           Text(
             etiqueta,
-            style: const TextStyle(
-              color: ColoresPrevia.textoSuave,
+            style: TextStyle(
+              color: context.colores.textoSuave,
               fontSize: 12,
             ),
           ),
@@ -698,7 +703,7 @@ Future<bool?> _confirmar(
   return showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: ColoresPrevia.superficieAlta,
+      backgroundColor: context.colores.superficieAlta,
       title: Text(titulo),
       content: Text(detalle),
       actions: [
@@ -709,7 +714,7 @@ Future<bool?> _confirmar(
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
           style: FilledButton.styleFrom(
-            backgroundColor: ColoresPrevia.error,
+            backgroundColor: context.colores.error,
             minimumSize: const Size(0, 44),
           ),
           child: Text(accion),
@@ -731,7 +736,7 @@ Future<String?> _elegirMotivo(BuildContext context) {
 
   return showModalBottomSheet<String>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(EspaciadoPrevia.radioGrande),

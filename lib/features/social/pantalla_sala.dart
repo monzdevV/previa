@@ -64,15 +64,15 @@ class _PantallaSalaState extends ConsumerState<PantallaSala> {
               Text(
                 esta,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
             ],
           ),
-          bottom: const TabBar(
-            indicatorColor: ColoresPrevia.primario,
-            labelColor: ColoresPrevia.texto,
-            unselectedLabelColor: ColoresPrevia.textoTenue,
+          bottom: TabBar(
+            indicatorColor: context.colores.primario,
+            labelColor: context.colores.texto,
+            unselectedLabelColor: context.colores.textoTenue,
             tabs: [
               Tab(text: 'Chat'),
               Tab(text: 'Fotos'),
@@ -144,8 +144,8 @@ class _ChatState extends ConsumerState<_Chat> {
       children: [
         Expanded(
           child: mensajes.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(color: ColoresPrevia.primario),
+            loading: () => Center(
+              child: CircularProgressIndicator(color: context.colores.primarioTexto),
             ),
             error: (e, _) => const _Cerrada(),
             data: (lista) => lista.isEmpty
@@ -185,8 +185,8 @@ class _ChatState extends ConsumerState<_Chat> {
                   onPressed: _enviando ? null : _enviar,
                   icon: const Icon(Icons.send_rounded),
                   style: IconButton.styleFrom(
-                    backgroundColor: ColoresPrevia.primario,
-                    foregroundColor: ColoresPrevia.sobrePrimario,
+                    backgroundColor: context.colores.primario,
+                    foregroundColor: context.colores.sobrePrimario,
                     minimumSize: const Size(48, 48),
                   ),
                 ),
@@ -232,8 +232,8 @@ class _Burbuja extends StatelessWidget {
               ),
               decoration: BoxDecoration(
                 color: mio
-                    ? ColoresPrevia.primario
-                    : ColoresPrevia.superficieAlta,
+                    ? context.colores.primario
+                    : context.colores.superficieAlta,
                 borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
               ),
               child: Column(
@@ -242,8 +242,8 @@ class _Burbuja extends StatelessWidget {
                   if (!mio)
                     Text(
                       mensaje.autorNombre,
-                      style: const TextStyle(
-                        color: ColoresPrevia.primario,
+                      style: TextStyle(
+                        color: context.colores.primarioTexto,
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
@@ -252,8 +252,8 @@ class _Burbuja extends StatelessWidget {
                     mensaje.texto,
                     style: TextStyle(
                       color: mio
-                          ? ColoresPrevia.sobrePrimario
-                          : ColoresPrevia.texto,
+                          ? context.colores.sobrePrimario
+                          : context.colores.texto,
                       fontSize: 15,
                       height: 1.35,
                     ),
@@ -280,8 +280,8 @@ class _Fotos extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: fotos.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const _Cerrada(),
         data: (lista) => lista.isEmpty
@@ -302,9 +302,9 @@ class _Fotos extends ConsumerWidget {
                   imageUrl: lista[i].mediaUrl,
                   fit: BoxFit.cover,
                   placeholder: (_, _) =>
-                      const ColoredBox(color: ColoresPrevia.superficie),
+                      ColoredBox(color: context.colores.superficie),
                   errorWidget: (_, _, _) =>
-                      const ColoredBox(color: ColoresPrevia.superficie),
+                      ColoredBox(color: context.colores.superficie),
                 ),
               ),
       ),
@@ -359,10 +359,10 @@ class _Cerrada extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.lock_outline_rounded,
             size: 40,
-            color: ColoresPrevia.textoTenue,
+            color: context.colores.textoTenue,
           ),
           const SizedBox(height: EspaciadoPrevia.m),
           Text(

@@ -62,12 +62,12 @@ class PantallaFeed extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        color: ColoresPrevia.primario,
-        backgroundColor: ColoresPrevia.superficie,
+        color: context.colores.primarioTexto,
+        backgroundColor: context.colores.superficie,
         onRefresh: () async => ref.refresh(feedProvider.future),
         child: feed.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: ColoresPrevia.primario),
+          loading: () => Center(
+            child: CircularProgressIndicator(color: context.colores.primarioTexto),
           ),
           error: (e, _) => _Aviso(
             titulo: 'No se ha podido cargar',
@@ -123,13 +123,13 @@ class _Marca extends StatelessWidget {
         height: 26,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: ColoresPrevia.degradado,
+          gradient: context.colores.degradado,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.local_fire_department_rounded,
           size: 17,
-          color: ColoresPrevia.sobrePrimario,
+          color: context.colores.sobrePrimario,
         ),
       ),
       const SizedBox(width: EspaciadoPrevia.s),
@@ -265,7 +265,7 @@ class _PublicacionState extends ConsumerState<_Publicacion> {
                         _p.hace,
                       ].join(' · '),
                       style: textos.labelMedium?.copyWith(
-                        color: ColoresPrevia.textoTenue,
+                        color: context.colores.textoTenue,
                       ),
                     ),
                   ],
@@ -295,9 +295,11 @@ class _PublicacionState extends ConsumerState<_Publicacion> {
                 onPressed: _alternarLike,
                 icon: Icon(
                   _p.leDiLike ? Icons.favorite : Icons.favorite_border,
+                  // El amarillo de marca sobre blanco no se lee como icono;
+                  // en claro el corazon usa el ambar oscuro.
                   color: _p.leDiLike
-                      ? ColoresPrevia.primario
-                      : ColoresPrevia.texto,
+                      ? context.colores.primarioTexto
+                      : context.colores.texto,
                 ),
               ),
               if (_p.likes > 0)
@@ -378,7 +380,7 @@ class _MediaState extends State<_Media> {
     return AspectRatio(
       aspectRatio: 4 / 5,
       child: ColoredBox(
-        color: ColoresPrevia.superficie,
+        color: context.colores.superficie,
         child: p.esVideo ? _construirVideo(p) : _construirFoto(p),
       ),
     );
@@ -389,9 +391,9 @@ class _MediaState extends State<_Media> {
     fit: BoxFit.cover,
     width: double.infinity,
     placeholder: (_, _) =>
-        const ColoredBox(color: ColoresPrevia.superficieAlta),
-    errorWidget: (_, _, _) => const Center(
-      child: Icon(Icons.broken_image_outlined, color: ColoresPrevia.textoTenue),
+        ColoredBox(color: context.colores.superficieAlta),
+    errorWidget: (_, _, _) => Center(
+      child: Icon(Icons.broken_image_outlined, color: context.colores.textoTenue),
     ),
   );
 
@@ -415,7 +417,7 @@ class _MediaState extends State<_Media> {
           else if (p.miniaturaUrl != null)
             CachedNetworkImage(imageUrl: p.miniaturaUrl!, fit: BoxFit.cover)
           else
-            const ColoredBox(color: ColoresPrevia.superficieAlta),
+            ColoredBox(color: context.colores.superficieAlta),
 
           if (!_reproduciendo)
             const Center(
@@ -462,8 +464,8 @@ class AvatarPerfil extends StatelessWidget {
       height: lado,
       clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
-      decoration: const BoxDecoration(
-        color: ColoresPrevia.superficieActiva,
+      decoration: BoxDecoration(
+        color: context.colores.superficieActiva,
         shape: BoxShape.circle,
       ),
       child: url != null && url!.isNotEmpty
@@ -477,7 +479,7 @@ class AvatarPerfil extends StatelessWidget {
           : Text(
               letra,
               style: TextStyle(
-                color: ColoresPrevia.texto,
+                color: context.colores.texto,
                 fontSize: lado * 0.4,
                 fontWeight: FontWeight.w700,
               ),
@@ -499,13 +501,13 @@ class _FeedVacio extends StatelessWidget {
         height: 84,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          gradient: ColoresPrevia.degradado,
+          gradient: context.colores.degradado,
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.auto_awesome_rounded,
           size: 42,
-          color: ColoresPrevia.sobrePrimario,
+          color: context.colores.sobrePrimario,
         ),
       ),
       const SizedBox(height: EspaciadoPrevia.l),
@@ -520,7 +522,7 @@ class _FeedVacio extends StatelessWidget {
         'gente vea dónde está la fiesta.',
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: ColoresPrevia.textoSuave,
+          color: context.colores.textoSuave,
         ),
       ),
     ],

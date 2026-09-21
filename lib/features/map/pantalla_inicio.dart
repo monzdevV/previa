@@ -40,8 +40,8 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
       // filete separa dos bandas del indice. Los colores y la pestaña activa
       // los pone el tema: aqui no se sobrescribe ninguno.
       bottomNavigationBar: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: ColoresPrevia.borde)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: context.colores.borde)),
         ),
         child: NavigationBar(
           selectedIndex: _pestana,

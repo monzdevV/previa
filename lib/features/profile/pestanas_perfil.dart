@@ -25,10 +25,10 @@ class PestanasPerfil extends StatelessWidget {
       length: 3,
       child: Column(
         children: [
-          const TabBar(
-            indicatorColor: ColoresPrevia.primario,
-            labelColor: ColoresPrevia.texto,
-            unselectedLabelColor: ColoresPrevia.textoTenue,
+          TabBar(
+            indicatorColor: context.colores.primario,
+            labelColor: context.colores.texto,
+            unselectedLabelColor: context.colores.textoTenue,
             tabs: [
               Tab(icon: Icon(Icons.nightlife_rounded), text: 'Salidas'),
               Tab(icon: Icon(Icons.grid_on_rounded), text: 'Tuyo'),
@@ -91,7 +91,7 @@ class _FilaSalida extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
 
     return Material(
-      color: ColoresPrevia.superficie,
+      color: context.colores.superficie,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -106,21 +106,21 @@ class _FilaSalida extends StatelessWidget {
               width: 92,
               height: 92,
               child: s.portada == null
-                  ? const ColoredBox(
-                      color: ColoresPrevia.superficieAlta,
+                  ? ColoredBox(
+                      color: context.colores.superficieAlta,
                       child: Icon(
                         Icons.nightlife_rounded,
-                        color: ColoresPrevia.textoTenue,
+                        color: context.colores.textoTenue,
                       ),
                     )
                   : CachedNetworkImage(
                       imageUrl: s.portada!,
                       fit: BoxFit.cover,
-                      placeholder: (_, _) => const ColoredBox(
-                        color: ColoresPrevia.superficieAlta,
+                      placeholder: (_, _) => ColoredBox(
+                        color: context.colores.superficieAlta,
                       ),
-                      errorWidget: (_, _, _) => const ColoredBox(
-                        color: ColoresPrevia.superficieAlta,
+                      errorWidget: (_, _, _) => ColoredBox(
+                        color: context.colores.superficieAlta,
                       ),
                     ),
             ),
@@ -149,7 +149,7 @@ class _FilaSalida extends StatelessWidget {
                           s.fotos == 1 ? '1 foto' : '${s.fotos} fotos',
                       ].join(' · '),
                       style: textos.bodyMedium?.copyWith(
-                        color: ColoresPrevia.primario,
+                        color: context.colores.primarioTexto,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -157,11 +157,11 @@ class _FilaSalida extends StatelessWidget {
                 ),
               ),
             ),
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(right: EspaciadoPrevia.s),
               child: Icon(
                 Icons.chevron_right,
-                color: ColoresPrevia.textoTenue,
+                color: context.colores.textoTenue,
               ),
             ),
           ],
@@ -242,7 +242,7 @@ class _Compartida extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
 
     return Material(
-      color: ColoresPrevia.superficie,
+      color: context.colores.superficie,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -254,9 +254,9 @@ class _Compartida extends StatelessWidget {
               imageUrl: p.mediaUrl,
               fit: BoxFit.cover,
               placeholder: (_, _) =>
-                  const ColoredBox(color: ColoresPrevia.superficieAlta),
+                  ColoredBox(color: context.colores.superficieAlta),
               errorWidget: (_, _, _) =>
-                  const ColoredBox(color: ColoresPrevia.superficieAlta),
+                  ColoredBox(color: context.colores.superficieAlta),
             ),
           ),
           Padding(
@@ -282,7 +282,7 @@ class _Compartida extends StatelessWidget {
                       Text(
                         'Estuvisteis en el mismo sitio',
                         style: textos.labelMedium?.copyWith(
-                          color: ColoresPrevia.primario,
+                          color: context.colores.primarioTexto,
                         ),
                       ),
                     ],
@@ -313,9 +313,9 @@ class _Celda extends ConsumerWidget {
         imageUrl: publicacion.miniaturaUrl ?? publicacion.mediaUrl,
         fit: BoxFit.cover,
         placeholder: (_, _) =>
-            const ColoredBox(color: ColoresPrevia.superficie),
+            ColoredBox(color: context.colores.superficie),
         errorWidget: (_, _, _) =>
-            const ColoredBox(color: ColoresPrevia.superficie),
+            ColoredBox(color: context.colores.superficie),
       ),
       if (publicacion.esVideo)
         const Positioned(
@@ -341,7 +341,7 @@ Future<void> _confirmarBorrado(
   final borrar = await showDialog<bool>(
     context: context,
     builder: (contexto) => AlertDialog(
-      backgroundColor: ColoresPrevia.superficieAlta,
+      backgroundColor: context.colores.superficieAlta,
       title: const Text('¿Borrar la publicación?'),
       content: const Text('No se puede deshacer.'),
       actions: [
@@ -351,7 +351,7 @@ Future<void> _confirmarBorrado(
         ),
         TextButton(
           onPressed: () => Navigator.of(contexto).pop(true),
-          style: TextButton.styleFrom(foregroundColor: ColoresPrevia.error),
+          style: TextButton.styleFrom(foregroundColor: context.colores.error),
           child: const Text('Borrar'),
         ),
       ],
@@ -367,8 +367,8 @@ class _Cargando extends StatelessWidget {
   const _Cargando();
 
   @override
-  Widget build(BuildContext context) => const Center(
-    child: CircularProgressIndicator(color: ColoresPrevia.primario),
+  Widget build(BuildContext context) => Center(
+    child: CircularProgressIndicator(color: context.colores.primarioTexto),
   );
 }
 

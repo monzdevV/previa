@@ -25,8 +25,8 @@ class PantallaMisNoches extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mis noches')),
       body: noches.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const _Mensaje(texto: 'No se ha podido cargar.'),
         data: (mapa) {
@@ -71,7 +71,7 @@ class _Resumen extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(EspaciadoPrevia.l),
     decoration: BoxDecoration(
-      gradient: ColoresPrevia.degradado,
+      gradient: context.colores.degradado,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
     ),
     child: Column(
@@ -79,8 +79,8 @@ class _Resumen extends StatelessWidget {
       children: [
         Text(
           '$total',
-          style: const TextStyle(
-            color: ColoresPrevia.sobrePrimario,
+          style: TextStyle(
+            color: context.colores.sobrePrimario,
             fontSize: 48,
             fontWeight: FontWeight.w900,
             height: 1,
@@ -89,8 +89,8 @@ class _Resumen extends StatelessWidget {
         const SizedBox(height: EspaciadoPrevia.xs),
         Text(
           total == 1 ? 'noche registrada' : 'noches registradas',
-          style: const TextStyle(
-            color: ColoresPrevia.sobrePrimario,
+          style: TextStyle(
+            color: context.colores.sobrePrimario,
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
@@ -166,13 +166,13 @@ class _Dia extends StatelessWidget {
     final celda = Container(
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: salio ? ColoresPrevia.primario : ColoresPrevia.superficie,
+        color: salio ? context.colores.primario : context.colores.superficie,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.s + EspaciadoPrevia.xs),
       ),
       child: Text(
         '$numero',
         style: TextStyle(
-          color: salio ? ColoresPrevia.sobrePrimario : ColoresPrevia.textoTenue,
+          color: salio ? context.colores.sobrePrimario : context.colores.textoTenue,
           fontWeight: salio ? FontWeight.w800 : FontWeight.w500,
           fontSize: 13,
         ),

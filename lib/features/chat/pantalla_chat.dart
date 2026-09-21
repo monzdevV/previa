@@ -110,10 +110,10 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
               nombres.isEmpty
                   ? 'Cargando…'
                   : '${nombres.length} ${nombres.length == 1 ? "persona" : "personas"}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: ColoresPrevia.textoSuave,
+                color: context.colores.textoSuave,
               ),
             ),
           ],
@@ -159,9 +159,9 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
             top: false,
             child: Container(
               padding: const EdgeInsets.all(EspaciadoPrevia.s + 2),
-              decoration: const BoxDecoration(
-                color: ColoresPrevia.superficie,
-                border: Border(top: BorderSide(color: ColoresPrevia.borde)),
+              decoration: BoxDecoration(
+                color: context.colores.superficie,
+                border: Border(top: BorderSide(color: context.colores.borde)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -188,7 +188,7 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                   IconButton.filled(
                     onPressed: _enviando ? null : _enviar,
                     style: IconButton.styleFrom(
-                      backgroundColor: ColoresPrevia.primario,
+                      backgroundColor: context.colores.primario,
                       minimumSize: const Size(48, 48),
                     ),
                     icon: const Icon(Icons.send_rounded, size: 20),
@@ -238,10 +238,10 @@ class _Burbuja extends StatelessWidget {
               ),
               child: Text(
                 nombre,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: ColoresPrevia.textoSuave,
+                  color: context.colores.textoSuave,
                 ),
               ),
             ),
@@ -255,8 +255,8 @@ class _Burbuja extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: esMio
-                  ? ColoresPrevia.primario
-                  : ColoresPrevia.superficieAlta,
+                  ? context.colores.primario
+                  : context.colores.superficieAlta,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(EspaciadoPrevia.radio),
                 topRight: const Radius.circular(EspaciadoPrevia.radio),
@@ -270,7 +270,7 @@ class _Burbuja extends StatelessWidget {
                 Text(
                   mensaje.texto,
                   style: TextStyle(
-                    color: esMio ? Colors.white : ColoresPrevia.texto,
+                    color: esMio ? Colors.white : context.colores.texto,
                     fontSize: 15,
                     height: 1.35,
                   ),
@@ -282,7 +282,7 @@ class _Burbuja extends StatelessWidget {
                     fontSize: 10,
                     color: esMio
                         ? Colors.white.withValues(alpha: 0.7)
-                        : ColoresPrevia.textoTenue,
+                        : context.colores.textoTenue,
                   ),
                 ),
               ],
@@ -305,10 +305,10 @@ class _ChatVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.forum_outlined,
               size: 40,
-              color: ColoresPrevia.textoTenue,
+              color: context.colores.textoTenue,
             ),
             const SizedBox(height: EspaciadoPrevia.m),
             Text(

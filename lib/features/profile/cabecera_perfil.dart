@@ -44,14 +44,14 @@ class CabeceraPerfil extends ConsumerWidget {
                     bottom: 0,
                     child: Container(
                       padding: const EdgeInsets.all(5),
-                      decoration: const BoxDecoration(
-                        color: ColoresPrevia.primario,
+                      decoration: BoxDecoration(
+                        color: context.colores.primario,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.edit_rounded,
                         size: 14,
-                        color: ColoresPrevia.sobrePrimario,
+                        color: context.colores.sobrePrimario,
                       ),
                     ),
                   ),
@@ -163,7 +163,7 @@ class _Etiqueta extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(icono, size: 16, color: ColoresPrevia.textoTenue),
+      Icon(icono, size: 16, color: context.colores.textoTenue),
       const SizedBox(width: EspaciadoPrevia.xs),
       Text(texto, style: Theme.of(context).textTheme.bodyMedium),
     ],

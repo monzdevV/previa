@@ -12,7 +12,7 @@ class PantallaBienvenida extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: ColoresPrevia.fondo,
+      backgroundColor: context.colores.fondo,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -38,7 +38,7 @@ class PantallaBienvenida extends StatelessWidget {
                 'Encuentra previas con sitio cerca de ti, '
                 'pide plaza para tu grupo y conoce gente antes de salir.',
                 style: textos.bodyLarge?.copyWith(
-                  color: ColoresPrevia.textoSuave,
+                  color: context.colores.textoSuave,
                   height: 1.5,
                 ),
               ),
@@ -61,7 +61,7 @@ class PantallaBienvenida extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
             ],
@@ -84,12 +84,12 @@ class _Marca extends StatelessWidget {
           height: 54,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: ColoresPrevia.degradado,
+            gradient: context.colores.degradado,
             borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.local_fire_department_rounded,
-            color: ColoresPrevia.sobrePrimario,
+            color: context.colores.sobrePrimario,
             size: 30,
           ),
         ),
@@ -118,14 +118,14 @@ class _BotonDeMarca extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
-      gradient: ColoresPrevia.degradado,
+      gradient: context.colores.degradado,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
     ),
     child: FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         backgroundColor: Colors.transparent,
-        foregroundColor: ColoresPrevia.sobrePrimario,
+        foregroundColor: context.colores.sobrePrimario,
       ),
       child: Text(texto),
     ),

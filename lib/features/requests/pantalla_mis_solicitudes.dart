@@ -42,10 +42,10 @@ class PantallaMisSolicitudes extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.inbox_outlined,
                       size: 40,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                     const SizedBox(height: EspaciadoPrevia.m),
                     Text(
@@ -94,22 +94,22 @@ class _Tarjeta extends ConsumerWidget {
     final (etiqueta, color, explicacion) = switch (solicitud.estado) {
       EstadoSolicitud.pendiente => (
         'Pendiente',
-        ColoresPrevia.aviso,
+        context.colores.aviso,
         'Esperando a que el anfitrión responda.',
       ),
       EstadoSolicitud.aceptada => (
         'Aceptada',
-        ColoresPrevia.acento,
+        context.colores.acento,
         'Estás dentro. Ya puedes ver la dirección y el chat.',
       ),
       EstadoSolicitud.rechazada => (
         'Rechazada',
-        ColoresPrevia.textoTenue,
+        context.colores.textoTenue,
         'Esta vez no ha podido ser.',
       ),
       EstadoSolicitud.cancelada => (
         'Cancelada',
-        ColoresPrevia.textoTenue,
+        context.colores.textoTenue,
         'La cancelaste tú.',
       ),
     };

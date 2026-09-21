@@ -127,12 +127,12 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                       FilledButton(
                         onPressed: _cargando ? null : _entrar,
                         child: _cargando
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: ColoresPrevia.fondoProfundo,
+                                  color: context.colores.fondoProfundo,
                                 ),
                               )
                             : const Text('ENTRAR'),
@@ -164,17 +164,17 @@ class _AvisoError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.error.withValues(alpha: 0.12),
-        border: Border.all(color: ColoresPrevia.error.withValues(alpha: 0.5)),
+        color: context.colores.error.withValues(alpha: 0.12),
+        border: Border.all(color: context.colores.error.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: ColoresPrevia.error, size: 20),
+          Icon(Icons.error_outline, color: context.colores.error, size: 20),
           const SizedBox(width: EspaciadoPrevia.s),
           Expanded(
             child: Text(
               mensaje,
-              style: const TextStyle(color: ColoresPrevia.error, fontSize: 14),
+              style: TextStyle(color: context.colores.error, fontSize: 14),
             ),
           ),
         ],

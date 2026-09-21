@@ -213,7 +213,7 @@ class _Documento extends StatelessWidget {
           Text(
             Titular.version,
             style: textos.labelMedium?.copyWith(
-              color: ColoresPrevia.textoTenue,
+              color: context.colores.textoTenue,
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),
@@ -225,7 +225,7 @@ class _Documento extends StatelessWidget {
               Text(
                 parrafo,
                 style: textos.bodyLarge?.copyWith(
-                  color: ColoresPrevia.textoSuave,
+                  color: context.colores.textoSuave,
                   height: 1.55,
                 ),
               ),
@@ -249,17 +249,17 @@ class _NotaDeRevision extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(EspaciadoPrevia.m),
     decoration: BoxDecoration(
-      color: ColoresPrevia.superficie,
+      color: context.colores.superficie,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-      border: Border.all(color: ColoresPrevia.borde),
+      border: Border.all(color: context.colores.borde),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(
+        Icon(
           Icons.info_outline_rounded,
           size: 20,
-          color: ColoresPrevia.textoTenue,
+          color: context.colores.textoTenue,
         ),
         const SizedBox(width: EspaciadoPrevia.s + EspaciadoPrevia.xs),
         Expanded(

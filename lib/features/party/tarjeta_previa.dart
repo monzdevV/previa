@@ -34,7 +34,7 @@ class TarjetaPrevia extends StatelessWidget {
     final ocupacion = Ocupacion.desde(previa.plazasLibres);
 
     return Material(
-      color: ColoresPrevia.superficie,
+      color: context.colores.superficie,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -199,7 +199,7 @@ class _Fondo extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: foto,
         fit: BoxFit.cover,
-        placeholder: (_, _) => const ColoredBox(color: ColoresPrevia.superficieAlta),
+        placeholder: (_, _) => ColoredBox(color: context.colores.superficieAlta),
         errorWidget: (_, _, _) => const _Relleno(),
       );
     }
@@ -211,8 +211,8 @@ class _Relleno extends StatelessWidget {
   const _Relleno();
 
   @override
-  Widget build(BuildContext context) => const DecoratedBox(
-    decoration: BoxDecoration(gradient: ColoresPrevia.degradado),
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(gradient: context.colores.degradado),
   );
 }
 
@@ -232,7 +232,7 @@ class _Avatar extends StatelessWidget {
       height: 30,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficieActiva,
+        color: context.colores.superficieActiva,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white24),
       ),
@@ -267,7 +267,9 @@ class _PastillaPlazas extends StatelessWidget {
         vertical: EspaciadoPrevia.xs + 2,
       ),
       decoration: BoxDecoration(
-        color: ocupacion.viva ? ocupacion.color : const Color(0xCC000000),
+        color: ocupacion.viva
+            ? ocupacion.color(context.colores)
+            : const Color(0xCC000000),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
       ),
       child: Row(
@@ -282,7 +284,7 @@ class _PastillaPlazas extends StatelessWidget {
             style: TextStyle(
               color: ocupacion.viva
                   ? const Color(0xFF07130C)
-                  : ColoresPrevia.textoSuave,
+                  : context.colores.textoSuave,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -320,13 +322,13 @@ class _Etiqueta extends StatelessWidget {
       vertical: EspaciadoPrevia.xs + 1,
     ),
     decoration: BoxDecoration(
-      color: ColoresPrevia.superficieAlta,
+      color: context.colores.superficieAlta,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
     ),
     child: Text(
       texto,
-      style: const TextStyle(
-        color: ColoresPrevia.textoSuave,
+      style: TextStyle(
+        color: context.colores.textoSuave,
         fontSize: 12,
         fontWeight: FontWeight.w600,
       ),

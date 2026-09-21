@@ -32,8 +32,8 @@ class PantallaModeracion extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Moderación')),
       body: reportes.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const _Mensaje(
           texto: 'No se ha podido cargar. ¿Tienes permiso de moderación?',
@@ -41,8 +41,8 @@ class PantallaModeracion extends ConsumerWidget {
         data: (lista) => lista.isEmpty
             ? const _Mensaje(texto: 'No hay nada reportado. Buena señal.')
             : RefreshIndicator(
-                color: ColoresPrevia.primario,
-                backgroundColor: ColoresPrevia.superficie,
+                color: context.colores.primario,
+                backgroundColor: context.colores.superficie,
                 onRefresh: () async => ref.refresh(reportesProvider.future),
                 child: ListView.separated(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
@@ -94,10 +94,10 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
 
     return Container(
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficie,
+        color: context.colores.superficie,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
         border: Border.all(
-          color: abierto ? ColoresPrevia.error : ColoresPrevia.borde,
+          color: abierto ? context.colores.error : context.colores.borde,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -111,9 +111,9 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
                 imageUrl: r.postUrl!,
                 fit: BoxFit.cover,
                 placeholder: (_, _) =>
-                    const ColoredBox(color: ColoresPrevia.superficieAlta),
+                    ColoredBox(color: context.colores.superficieAlta),
                 errorWidget: (_, _, _) =>
-                    const ColoredBox(color: ColoresPrevia.superficieAlta),
+                    ColoredBox(color: context.colores.superficieAlta),
               ),
             ),
 
@@ -131,8 +131,8 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
                       ),
                       decoration: BoxDecoration(
                         color: abierto
-                            ? ColoresPrevia.error
-                            : ColoresPrevia.superficieActiva,
+                            ? context.colores.error
+                            : context.colores.superficieActiva,
                         borderRadius: BorderRadius.circular(
                           EspaciadoPrevia.pastilla,
                         ),
@@ -144,7 +144,7 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
                           fontWeight: FontWeight.w700,
                           color: abierto
                               ? Colors.white
-                              : ColoresPrevia.textoSuave,
+                              : context.colores.textoSuave,
                         ),
                       ),
                     ),
@@ -203,7 +203,7 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
                                     () => repo.retirarPublicacion(r.id),
                                   ),
                             style: FilledButton.styleFrom(
-                              backgroundColor: ColoresPrevia.error,
+                              backgroundColor: context.colores.error,
                               foregroundColor: Colors.white,
                             ),
                             child: const Text('Retirar'),

@@ -164,8 +164,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                           : formatoFecha.format(_fechaNacimiento!),
                       style: TextStyle(
                         color: _fechaNacimiento == null
-                            ? ColoresPrevia.textoTenue
-                            : ColoresPrevia.texto,
+                            ? context.colores.textoTenue
+                            : context.colores.texto,
                         fontSize: 16,
                       ),
                     ),
@@ -178,7 +178,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                     'Solo guardamos tu edad. Nadie ve tu fecha de nacimiento.',
                     style: textos.bodyMedium?.copyWith(
                       fontSize: 12,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                   ),
                 ),
@@ -227,7 +227,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                       setState(() => _aceptaCondiciones = v ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
-                  activeColor: ColoresPrevia.primario,
+                  activeColor: context.colores.primario,
                   title: Text(
                     'Soy mayor de 18 años y acepto las condiciones de uso y la '
                     'política de privacidad.',
@@ -240,27 +240,27 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                   Container(
                     padding: const EdgeInsets.all(EspaciadoPrevia.m),
                     decoration: BoxDecoration(
-                      color: ColoresPrevia.error.withValues(alpha: 0.12),
+                      color: context.colores.error.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(
                         EspaciadoPrevia.radio,
                       ),
                       border: Border.all(
-                        color: ColoresPrevia.error.withValues(alpha: 0.4),
+                        color: context.colores.error.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.error_outline,
-                          color: ColoresPrevia.error,
+                          color: context.colores.error,
                           size: 20,
                         ),
                         const SizedBox(width: EspaciadoPrevia.s),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(
-                              color: ColoresPrevia.error,
+                            style: TextStyle(
+                              color: context.colores.error,
                               fontSize: 14,
                             ),
                           ),

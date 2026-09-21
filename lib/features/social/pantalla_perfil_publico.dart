@@ -35,8 +35,8 @@ class PantallaPerfilPublico extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(perfil.valueOrNull?.perfil.nombre ?? 'Perfil')),
       body: perfil.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const Center(
           child: Padding(
@@ -174,10 +174,10 @@ class _ContenidoState extends ConsumerState<_Contenido> {
         const SizedBox(height: EspaciadoPrevia.m),
 
         publicaciones.when(
-          loading: () => const Center(
+          loading: () => Center(
             child: Padding(
               padding: EdgeInsets.all(EspaciadoPrevia.xl),
-              child: CircularProgressIndicator(color: ColoresPrevia.primario),
+              child: CircularProgressIndicator(color: context.colores.primarioTexto),
             ),
           ),
           error: (e, _) => const SizedBox.shrink(),
@@ -228,9 +228,9 @@ class _Miniatura extends StatelessWidget {
         imageUrl: publicacion.miniaturaUrl ?? publicacion.mediaUrl,
         fit: BoxFit.cover,
         placeholder: (_, _) =>
-            const ColoredBox(color: ColoresPrevia.superficie),
+            ColoredBox(color: context.colores.superficie),
         errorWidget: (_, _, _) =>
-            const ColoredBox(color: ColoresPrevia.superficie),
+            ColoredBox(color: context.colores.superficie),
       ),
       if (publicacion.esVideo)
         const Positioned(
@@ -274,7 +274,7 @@ class _Dato extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(icono, size: 16, color: ColoresPrevia.textoTenue),
+      Icon(icono, size: 16, color: context.colores.textoTenue),
       const SizedBox(width: EspaciadoPrevia.xs),
       Text(texto, style: Theme.of(context).textTheme.bodyMedium),
     ],
@@ -288,15 +288,15 @@ class _AvisoDemo extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(EspaciadoPrevia.s + EspaciadoPrevia.xs),
     decoration: BoxDecoration(
-      color: ColoresPrevia.superficieAlta,
+      color: context.colores.superficieAlta,
       borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
     ),
     child: Row(
       children: [
-        const Icon(
+        Icon(
           Icons.science_outlined,
           size: 18,
-          color: ColoresPrevia.textoTenue,
+          color: context.colores.textoTenue,
         ),
         const SizedBox(width: EspaciadoPrevia.s),
         Expanded(

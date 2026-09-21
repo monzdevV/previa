@@ -53,10 +53,10 @@ class PantallaSolicitudes extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.inbox_outlined,
                       size: 40,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                     const SizedBox(height: EspaciadoPrevia.m),
                     Text(
@@ -186,12 +186,12 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
+                  backgroundColor: context.colores.superficieAlta,
                   child: Text(
                     s.inicialSolicitante,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
+                      color: context.colores.texto,
                     ),
                   ),
                 ),
@@ -204,10 +204,10 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                       Row(
                         children: [
                           if (s.reputacionSolicitante != null) ...[
-                            const Icon(
+                            Icon(
                               Icons.star_rounded,
                               size: 14,
-                              color: ColoresPrevia.aviso,
+                              color: context.colores.aviso,
                             ),
                             const SizedBox(width: 2),
                             Text(
@@ -236,7 +236,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                 vertical: EspaciadoPrevia.xs + 2,
               ),
               decoration: BoxDecoration(
-                color: ColoresPrevia.acento.withValues(alpha: 0.12),
+                color: context.colores.acento.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(
                   EspaciadoPrevia.radioGrande,
                 ),
@@ -244,16 +244,16 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.group,
                     size: 14,
-                    color: ColoresPrevia.acento,
+                    color: context.colores.acento,
                   ),
                   const SizedBox(width: EspaciadoPrevia.xs),
                   Text(
                     s.resumenGrupo,
-                    style: const TextStyle(
-                      color: ColoresPrevia.acento,
+                    style: TextStyle(
+                      color: context.colores.acento,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -318,7 +318,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                 'Si aceptas, verá la dirección exacta.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 11,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
             ],
@@ -336,10 +336,10 @@ class _Insignia extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (texto, color) = switch (solicitud.estado) {
-      EstadoSolicitud.pendiente => ('Pendiente', ColoresPrevia.aviso),
-      EstadoSolicitud.aceptada => ('Aceptada', ColoresPrevia.acento),
-      EstadoSolicitud.rechazada => ('Rechazada', ColoresPrevia.textoTenue),
-      EstadoSolicitud.cancelada => ('Cancelada', ColoresPrevia.textoTenue),
+      EstadoSolicitud.pendiente => ('Pendiente', context.colores.aviso),
+      EstadoSolicitud.aceptada => ('Aceptada', context.colores.acento),
+      EstadoSolicitud.rechazada => ('Rechazada', context.colores.textoTenue),
+      EstadoSolicitud.cancelada => ('Cancelada', context.colores.textoTenue),
     };
 
     return Container(

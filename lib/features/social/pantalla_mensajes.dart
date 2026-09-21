@@ -28,8 +28,8 @@ class PantallaMensajes extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mensajes')),
       body: conversaciones.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: ColoresPrevia.primario),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const _Mensaje(texto: 'No se ha podido cargar.'),
         data: (lista) => lista.isEmpty
@@ -38,8 +38,8 @@ class PantallaMensajes extends ConsumerWidget {
                     'Solo puedes escribir a quien sigues o te sigue.',
               )
             : RefreshIndicator(
-                color: ColoresPrevia.primario,
-                backgroundColor: ColoresPrevia.superficie,
+                color: context.colores.primario,
+                backgroundColor: context.colores.superficie,
                 onRefresh: () async => ref.refresh(conversacionesProvider.future),
                 child: ListView.builder(
                   itemCount: lista.length,
@@ -78,7 +78,7 @@ class _Fila extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: textos.bodyMedium?.copyWith(
-          color: sinLeer ? ColoresPrevia.texto : ColoresPrevia.textoTenue,
+          color: sinLeer ? context.colores.texto : context.colores.textoTenue,
           fontWeight: sinLeer ? FontWeight.w600 : FontWeight.w400,
         ),
       ),
@@ -89,7 +89,7 @@ class _Fila extends StatelessWidget {
           Text(
             _cuando(c.ultimoEn),
             style: textos.labelMedium?.copyWith(
-              color: ColoresPrevia.textoTenue,
+              color: context.colores.textoTenue,
             ),
           ),
           if (sinLeer) ...[
@@ -97,13 +97,13 @@ class _Fila extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: ColoresPrevia.primario,
+                color: context.colores.primario,
                 borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
               ),
               child: Text(
                 '${c.sinLeer}',
-                style: const TextStyle(
-                  color: ColoresPrevia.sobrePrimario,
+                style: TextStyle(
+                  color: context.colores.sobrePrimario,
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
                 ),
@@ -195,9 +195,9 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
         children: [
           Expanded(
             child: mensajes.when(
-              loading: () => const Center(
+              loading: () => Center(
                 child: CircularProgressIndicator(
-                  color: ColoresPrevia.primario,
+                  color: context.colores.primarioTexto,
                 ),
               ),
               error: (e, _) =>
@@ -244,8 +244,8 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
                     onPressed: _enviando ? null : _enviar,
                     icon: const Icon(Icons.send_rounded),
                     style: IconButton.styleFrom(
-                      backgroundColor: ColoresPrevia.primario,
-                      foregroundColor: ColoresPrevia.sobrePrimario,
+                      backgroundColor: context.colores.primario,
+                      foregroundColor: context.colores.sobrePrimario,
                       minimumSize: const Size(48, 48),
                     ),
                   ),
@@ -280,7 +280,7 @@ class _Burbuja extends StatelessWidget {
           maxWidth: MediaQuery.sizeOf(context).width * 0.78,
         ),
         decoration: BoxDecoration(
-          color: mio ? ColoresPrevia.primario : ColoresPrevia.superficieAlta,
+          color: mio ? context.colores.primario : context.colores.superficieAlta,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(EspaciadoPrevia.radio),
             topRight: const Radius.circular(EspaciadoPrevia.radio),
@@ -294,7 +294,7 @@ class _Burbuja extends StatelessWidget {
             Text(
               mensaje.texto,
               style: TextStyle(
-                color: mio ? ColoresPrevia.sobrePrimario : ColoresPrevia.texto,
+                color: mio ? context.colores.sobrePrimario : context.colores.texto,
                 fontSize: 15,
                 height: 1.35,
               ),
@@ -305,8 +305,8 @@ class _Burbuja extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 color: mio
-                    ? ColoresPrevia.sobrePrimario.withValues(alpha: 0.6)
-                    : ColoresPrevia.textoTenue,
+                    ? context.colores.sobrePrimario.withValues(alpha: 0.6)
+                    : context.colores.textoTenue,
               ),
             ),
           ],

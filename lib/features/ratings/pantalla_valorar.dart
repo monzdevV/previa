@@ -174,14 +174,14 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
+                  backgroundColor: context.colores.superficieAlta,
                   child: Text(
                     widget.nombre.isNotEmpty
                         ? widget.nombre[0].toUpperCase()
                         : '?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
+                      color: context.colores.texto,
                     ),
                   ),
                 ),
@@ -197,9 +197,9 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                   ),
                 ),
                 if (_guardada)
-                  const Icon(
+                  Icon(
                     Icons.check_circle,
-                    color: ColoresPrevia.acento,
+                    color: context.colores.acento,
                     size: 20,
                   ),
               ],
@@ -225,8 +225,8 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                           : Icons.star_outline_rounded,
                       size: 32,
                       color: (_puntuacion ?? 0) >= i
-                          ? ColoresPrevia.aviso
-                          : ColoresPrevia.textoTenue,
+                          ? context.colores.aviso
+                          : context.colores.textoTenue,
                     ),
                   ),
               ],

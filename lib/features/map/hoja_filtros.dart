@@ -8,7 +8,7 @@ import 'proveedores_mapa.dart';
 Future<void> mostrarHojaFiltros(BuildContext context) {
   return showModalBottomSheet(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
@@ -54,7 +54,7 @@ class _HojaFiltros extends ConsumerWidget {
               min: 500,
               max: 20000,
               divisions: 39,
-              activeColor: ColoresPrevia.primario,
+              activeColor: context.colores.primario,
               onChanged: (v) => notificador.fijarRadio(v.round()),
             ),
 
@@ -68,7 +68,7 @@ class _HojaFiltros extends ConsumerWidget {
               min: 1,
               max: 24,
               divisions: 23,
-              activeColor: ColoresPrevia.primario,
+              activeColor: context.colores.primario,
               onChanged: (v) => notificador.fijarHoras(v.round()),
             ),
 
@@ -87,7 +87,7 @@ class _HojaFiltros extends ConsumerWidget {
                   ChoiceChip(
                     label: Text('$n'),
                     selected: filtros.plazasMinimas == n,
-                    selectedColor: ColoresPrevia.primario,
+                    selectedColor: context.colores.primario,
                     onSelected: (_) => notificador.fijarPlazas(n),
                   ),
               ],
@@ -111,7 +111,7 @@ class _HojaFiltros extends ConsumerWidget {
                   FilterChip(
                     label: Text(etiqueta),
                     selected: filtros.ambiente.contains(etiqueta),
-                    selectedColor: ColoresPrevia.primario,
+                    selectedColor: context.colores.primario,
                     checkmarkColor: Colors.white,
                     onSelected: (_) => notificador.alternarAmbiente(etiqueta),
                   ),
@@ -143,8 +143,8 @@ class _Etiqueta extends StatelessWidget {
         Text(titulo, style: Theme.of(context).textTheme.titleLarge),
         Text(
           valor,
-          style: const TextStyle(
-            color: ColoresPrevia.primarioSuave,
+          style: TextStyle(
+            color: context.colores.primarioSuave,
             fontWeight: FontWeight.w700,
             fontSize: 15,
           ),

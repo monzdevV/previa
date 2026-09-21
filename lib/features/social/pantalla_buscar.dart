@@ -44,10 +44,10 @@ class PantallaBuscar extends ConsumerWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Gente'),
-          bottom: const TabBar(
-            indicatorColor: ColoresPrevia.primario,
-            labelColor: ColoresPrevia.texto,
-            unselectedLabelColor: ColoresPrevia.textoTenue,
+          bottom: TabBar(
+            indicatorColor: context.colores.primario,
+            labelColor: context.colores.texto,
+            unselectedLabelColor: context.colores.textoTenue,
             tabs: [
               Tab(text: 'Buscar'),
               Tab(text: 'Siguiendo'),
@@ -120,14 +120,14 @@ class _BuscadorState extends ConsumerState<_Buscador> {
               hintText: 'Nombre o usuario',
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: _buscando
-                  ? const Padding(
+                  ? Padding(
                       padding: EdgeInsets.all(14),
                       child: SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: ColoresPrevia.textoTenue,
+                          color: context.colores.textoTenue,
                         ),
                       ),
                     )
@@ -219,8 +219,8 @@ class _Siguiendo extends ConsumerWidget {
     final amigos = ref.watch(_amigosProvider);
 
     return amigos.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: ColoresPrevia.primario),
+      loading: () => Center(
+        child: CircularProgressIndicator(color: context.colores.primarioTexto),
       ),
       error: (e, _) => const _Vacio(texto: 'No se ha podido cargar.'),
       data: (lista) => lista.isEmpty
@@ -244,8 +244,8 @@ class _MiCodigo extends ConsumerWidget {
     final perfil = ref.watch(_miPerfilProvider);
 
     return perfil.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: ColoresPrevia.primario),
+      loading: () => Center(
+        child: CircularProgressIndicator(color: context.colores.primarioTexto),
       ),
       error: (e, _) => const _Vacio(texto: 'No se ha podido cargar tu perfil.'),
       data: (datos) {

@@ -78,18 +78,18 @@ class PantallaPerfil extends ConsumerWidget {
                   ? Container(
                       padding: const EdgeInsets.all(EspaciadoPrevia.l),
                       decoration: BoxDecoration(
-                        color: ColoresPrevia.superficie,
+                        color: context.colores.superficie,
                         borderRadius: BorderRadius.circular(
                           EspaciadoPrevia.radio,
                         ),
-                        border: Border.all(color: ColoresPrevia.borde),
+                        border: Border.all(color: context.colores.borde),
                       ),
                       child: Column(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.grid_off,
                             size: 32,
-                            color: ColoresPrevia.textoTenue,
+                            color: context.colores.textoTenue,
                           ),
                           const SizedBox(height: EspaciadoPrevia.s),
                           Text(
@@ -154,9 +154,9 @@ class PantallaPerfil extends ConsumerWidget {
             if (perfil.valueOrNull?.esModerador ?? false)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(
+                leading: Icon(
                   Icons.gavel_rounded,
-                  color: ColoresPrevia.error,
+                  color: context.colores.error,
                 ),
                 title: const Text('Moderación'),
                 subtitle: const Text('Lo que ha reportado la gente'),
@@ -189,13 +189,13 @@ class PantallaPerfil extends ConsumerWidget {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
+              leading: Icon(
                 Icons.delete_outline,
-                color: ColoresPrevia.error,
+                color: context.colores.error,
               ),
-              title: const Text(
+              title: Text(
                 'Eliminar mi cuenta',
-                style: TextStyle(color: ColoresPrevia.error),
+                style: TextStyle(color: context.colores.error),
               ),
               subtitle: const Text('Se borra todo y no hay vuelta atrás'),
               onTap: () => _eliminarCuenta(context, ref),
@@ -234,7 +234,7 @@ class PantallaPerfil extends ConsumerWidget {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: ColoresPrevia.superficieAlta,
+        backgroundColor: context.colores.superficieAlta,
         title: const Text('¿Eliminar tu cuenta?'),
         content: const Text(
           'Se borrarán tu perfil, tus previas, tus mensajes y tus '
@@ -248,7 +248,7 @@ class PantallaPerfil extends ConsumerWidget {
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: ColoresPrevia.error,
+              backgroundColor: context.colores.error,
               minimumSize: const Size(0, 44),
             ),
             child: const Text('Eliminar'),

@@ -42,10 +42,10 @@ class PantallaPorValorar extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.history,
                       size: 40,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                     const SizedBox(height: EspaciadoPrevia.m),
                     Text(

@@ -78,7 +78,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                     maxZoom: 17,
                     // Mientras las teselas no llegan, el hueco es la carta y no un
                     // blanco: en una app que se abre de noche ese fogonazo deslumbra.
-                    backgroundColor: ColoresPrevia.fondo,
+                    backgroundColor: context.colores.fondo,
                     onPositionChanged: (camara, porGesto) {
                       if (!porGesto) return;
                       final destino = camara.center;
@@ -113,7 +113,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                           radius: filtros.radioMetros.toDouble(),
                           useRadiusInMeter: true,
                           color: Colors.transparent,
-                          borderColor: ColoresPrevia.textoTenue.withValues(
+                          borderColor: context.colores.textoTenue.withValues(
                             alpha: 0.5,
                           ),
                           borderStrokeWidth: 1,
@@ -131,12 +131,12 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                             useRadiusInMeter: true,
                             // La celda resaltada no estrena color: sube de tinta y
                             // se contornea en letra de mapa.
-                            color: ColoresPrevia.primario.withValues(
+                            color: context.colores.primario.withValues(
                               alpha: _previaResaltada == p.id ? 0.34 : 0.18,
                             ),
                             borderColor: _previaResaltada == p.id
-                                ? ColoresPrevia.texto
-                                : ColoresPrevia.primario.withValues(alpha: 0.7),
+                                ? context.colores.texto
+                                : context.colores.primario.withValues(alpha: 0.7),
                             borderStrokeWidth: _previaResaltada == p.id ? 2 : 1,
                           ),
                       ],
@@ -153,9 +153,9 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                             // vivo esta reservado a las previas con sitio.
                             child: Container(
                               decoration: BoxDecoration(
-                                color: ColoresPrevia.texto,
+                                color: context.colores.texto,
                                 border: Border.all(
-                                  color: ColoresPrevia.fondoProfundo,
+                                  color: context.colores.fondoProfundo,
                                 ),
                               ),
                             ),
@@ -286,7 +286,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                 ),
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    gradient: ColoresPrevia.degradado,
+                    gradient: context.colores.degradado,
                     borderRadius: BorderRadius.circular(
                       EspaciadoPrevia.radio - 4,
                     ),
@@ -295,7 +295,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                     onPressed: widget.onCrearPrevia,
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.transparent,
-                      foregroundColor: ColoresPrevia.sobrePrimario,
+                      foregroundColor: context.colores.sobrePrimario,
                     ),
                     icon: const Icon(Icons.add_rounded, size: 21),
                     label: const Text('Abrir una previa'),
@@ -330,7 +330,9 @@ class _PlacaPlazas extends StatelessWidget {
         height: 34,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: viva ? ocupacion.color : ColoresPrevia.superficieAlta,
+          color: viva
+              ? ocupacion.color(context.colores)
+              : context.colores.superficieAlta,
           shape: BoxShape.circle,
           border: Border.all(
             color: resaltada ? Colors.white : Colors.black26,
@@ -340,7 +342,7 @@ class _PlacaPlazas extends StatelessWidget {
         child: Text(
           viva ? '$plazas' : '·',
           style: TextStyle(
-            color: viva ? const Color(0xFF07130C) : ColoresPrevia.textoTenue,
+            color: viva ? const Color(0xFF07130C) : context.colores.textoTenue,
             fontWeight: FontWeight.w800,
             fontSize: 15,
           ),
@@ -362,18 +364,18 @@ class _PastillaResumen extends StatelessWidget {
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficie.withValues(alpha: 0.96),
+        color: context.colores.superficie.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
       ),
       child: Row(
         children: [
           if (cargando) ...[
-            const SizedBox(
+            SizedBox(
               width: 14,
               height: 14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                color: ColoresPrevia.textoSuave,
+                color: context.colores.textoSuave,
               ),
             ),
             const SizedBox(width: EspaciadoPrevia.s),
@@ -381,8 +383,8 @@ class _PastillaResumen extends StatelessWidget {
           Expanded(
             child: Text(
               texto,
-              style: const TextStyle(
-                color: ColoresPrevia.texto,
+              style: TextStyle(
+                color: context.colores.texto,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -417,14 +419,14 @@ class _BotonFiltros extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: resaltado
-              ? ColoresPrevia.primario
-              : ColoresPrevia.superficie.withValues(alpha: 0.96),
+              ? context.colores.primario
+              : context.colores.superficie.withValues(alpha: 0.96),
           shape: BoxShape.circle,
         ),
         child: Icon(
           icono,
           size: 21,
-          color: resaltado ? Colors.white : ColoresPrevia.texto,
+          color: resaltado ? Colors.white : context.colores.texto,
         ),
       ),
     );
@@ -450,26 +452,26 @@ class _AvisoUbicacion extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficie,
+        color: context.colores.superficie,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.aviso.withValues(alpha: 0.5)),
+        border: Border.all(color: context.colores.aviso.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_off_outlined,
                 size: 18,
-                color: ColoresPrevia.aviso,
+                color: context.colores.aviso,
               ),
               const SizedBox(width: EspaciadoPrevia.s),
               Expanded(
                 child: Text(
                   mensaje,
-                  style: const TextStyle(
-                    color: ColoresPrevia.texto,
+                  style: TextStyle(
+                    color: context.colores.texto,
                     fontSize: 14,
                   ),
                 ),
@@ -477,9 +479,9 @@ class _AvisoUbicacion extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: EspaciadoPrevia.xs),
-          const Text(
+          Text(
             'Puedes seguir moviendo el mapa a mano y buscar por zona.',
-            style: TextStyle(color: ColoresPrevia.textoSuave, fontSize: 12),
+            style: TextStyle(color: context.colores.textoSuave, fontSize: 12),
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           Align(
@@ -517,8 +519,8 @@ class _ListaInferior extends StatelessWidget {
       snapSizes: const [0.16, 0.66, 0.94],
       builder: (context, controlador) {
         return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: ColoresPrevia.fondo,
+          decoration: BoxDecoration(
+            color: context.colores.fondo,
             borderRadius: BorderRadius.vertical(
               top: Radius.circular(EspaciadoPrevia.radioGrande),
             ),
@@ -532,7 +534,7 @@ class _ListaInferior extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: ColoresPrevia.superficieActiva,
+                  color: context.colores.superficieActiva,
                   borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
                 ),
               ),
@@ -601,7 +603,7 @@ class _Vacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icono, size: 40, color: ColoresPrevia.textoTenue),
+            Icon(icono, size: 40, color: context.colores.textoTenue),
             const SizedBox(height: EspaciadoPrevia.m),
             Text(titulo, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: EspaciadoPrevia.xs),

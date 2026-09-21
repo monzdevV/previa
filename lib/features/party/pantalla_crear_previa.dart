@@ -221,8 +221,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                     ),
                     child: Text(
                       formatoCuando.format(_empiezaEn),
-                      style: const TextStyle(
-                        color: ColoresPrevia.texto,
+                      style: TextStyle(
+                        color: context.colores.texto,
                         fontSize: 16,
                       ),
                     ),
@@ -248,7 +248,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         child: Text(
                           '$_plazas',
                           style: textos.displaySmall?.copyWith(
-                            color: ColoresPrevia.acento,
+                            color: context.colores.acento,
                           ),
                         ),
                       ),
@@ -274,7 +274,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                   value: _enSitioPublico,
                   onChanged: (v) => setState(() => _enSitioPublico = v),
                   contentPadding: EdgeInsets.zero,
-                  activeThumbColor: ColoresPrevia.primario,
+                  activeThumbColor: context.colores.primario,
                   title: Text(
                     _enSitioPublico ? 'Sitio público' : 'En una casa',
                     style: textos.titleMedium,
@@ -283,7 +283,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                     _enSitioPublico
                         ? Icons.park_rounded
                         : Icons.home_rounded,
-                    color: ColoresPrevia.texto,
+                    color: context.colores.texto,
                   ),
                 ),
               ),
@@ -300,7 +300,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       FilterChip(
                         label: Text(etiqueta),
                         selected: _ambiente.contains(etiqueta),
-                        selectedColor: ColoresPrevia.primario,
+                        selectedColor: context.colores.primario,
                         checkmarkColor: Colors.white,
                         onSelected: (marcada) => setState(() {
                           if (marcada) {
@@ -352,11 +352,11 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         ),
                         // La chincheta se queda fija en el centro y es el mapa
                         // el que se mueve: mas facil de afinar con el pulgar.
-                        const IgnorePointer(
+                        IgnorePointer(
                           child: Icon(
                             Icons.place,
                             size: 42,
-                            color: ColoresPrevia.acento,
+                            color: context.colores.acento,
                             shadows: [
                               Shadow(blurRadius: 8, color: Colors.black),
                             ],
@@ -373,15 +373,15 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
+                    style: TextStyle(color: context.colores.error),
                   ),
                 ),
               ],

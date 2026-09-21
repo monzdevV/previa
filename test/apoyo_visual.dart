@@ -71,8 +71,13 @@ Future<void> cargarTipografias() async {
 
 /// El tema de produccion deja el cuerpo en la cara del sistema, que en una
 /// prueba no existe; aqui se nombra la misma que pondria Android.
-ThemeData temaDePrueba({TargetPlatform? plataforma}) =>
-    construirTemaPrevia(caraDelSistema: 'Roboto').copyWith(platform: plataforma);
+ThemeData temaDePrueba({
+  TargetPlatform? plataforma,
+  Brightness brillo = Brightness.dark,
+}) => construirTemaPrevia(
+  brillo: brillo,
+  caraDelSistema: 'Roboto',
+).copyWith(platform: plataforma);
 
 /// Margenes de sistema de cada plataforma.
 ///

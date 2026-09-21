@@ -196,7 +196,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                       right: 0,
                       bottom: 0,
                       child: Material(
-                        color: ColoresPrevia.primario,
+                        color: context.colores.primario,
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
@@ -204,18 +204,18 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                           child: Padding(
                             padding: const EdgeInsets.all(EspaciadoPrevia.s),
                             child: _subiendoAvatar
-                                ? const SizedBox(
+                                ? SizedBox(
                                     width: 18,
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2.5,
-                                      color: ColoresPrevia.sobrePrimario,
+                                      color: context.colores.sobrePrimario,
                                     ),
                                   )
-                                : const Icon(
+                                : Icon(
                                     Icons.photo_camera_rounded,
                                     size: 18,
-                                    color: ColoresPrevia.sobrePrimario,
+                                    color: context.colores.sobrePrimario,
                                   ),
                           ),
                         ),
@@ -275,8 +275,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                         : formatoFecha.format(_fechaNacimiento!),
                     style: TextStyle(
                       color: _fechaNacimiento == null
-                          ? ColoresPrevia.textoTenue
-                          : ColoresPrevia.texto,
+                          ? context.colores.textoTenue
+                          : context.colores.texto,
                       fontSize: 16,
                     ),
                   ),
@@ -287,7 +287,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                 'Nadie más puede verla. Solo se publica tu edad.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
 
@@ -296,15 +296,15 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
+                    style: TextStyle(color: context.colores.error),
                   ),
                 ),
               ],

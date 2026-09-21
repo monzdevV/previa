@@ -114,6 +114,7 @@ Widget _app(
   required EdgeInsets margen,
   TargetPlatform? plataforma,
   double escalaDeTexto = 1.0,
+  Brightness brillo = Brightness.dark,
 }) => ProviderScope(
   overrides: [
     // El cliente real exige Supabase.initialize; uno suelto basta porque
@@ -125,7 +126,7 @@ Widget _app(
     repositorioSocialProvider.overrideWithValue(_RepoSocialDeMuestra()),
   ],
   child: MaterialApp(
-    theme: temaDePrueba(plataforma: plataforma),
+    theme: temaDePrueba(plataforma: plataforma, brillo: brillo),
     home: pantalla,
     builder: (context, child) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
@@ -252,6 +253,26 @@ void main() {
     await expectLater(
       find.byType(PantallaFeed),
       matchesGoldenFile('goldens/feed.png'),
+    );
+  });
+
+  testWidgets('el feed tambien se lee en modo claro', (tester) async {
+    tester.view.physicalSize = const Size(390, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _app(
+        const PantallaFeed(),
+        margen: margenAndroid,
+        brillo: Brightness.light,
+      ),
+    );
+    await _asentar(tester);
+
+    await expectLater(
+      find.byType(PantallaFeed),
+      matchesGoldenFile('goldens/feed_claro.png'),
     );
   });
 
