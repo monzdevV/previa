@@ -7,6 +7,7 @@ import '../../data/models/local.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import 'pantalla_sala.dart';
 
 /// Ciudad que se esta mirando. Se queda fijada mientras dure la sesion.
 class CiudadDeLaNoche extends Notifier<String> {
@@ -264,17 +265,46 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
                   ),
                 ],
               ),
-              if (_l.tieneEntradas) ...[
-                const SizedBox(height: EspaciadoPrevia.s + 4),
-                OutlinedButton.icon(
-                  onPressed: () => _abrir(_l.urlEntradas!),
-                  icon: const Icon(Icons.local_activity_outlined, size: 19),
-                  label: const Text('Comprar entrada'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(42),
+              const SizedBox(height: EspaciadoPrevia.s + 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PantallaSala(
+                            localId: _l.id,
+                            nombreLocal: _l.nombre,
+                          ),
+                        ),
+                      ),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(42),
+                        backgroundColor: ColoresPrevia.superficieActiva,
+                        foregroundColor: ColoresPrevia.texto,
+                      ),
+                      icon: const Icon(Icons.forum_outlined, size: 19),
+                      label: const Text('Sala de esta noche'),
+                    ),
                   ),
-                ),
-              ],
+                  if (_l.tieneEntradas) ...[
+                    const SizedBox(width: EspaciadoPrevia.s),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => _abrir(_l.urlEntradas!),
+                        icon: const Icon(
+                          Icons.local_activity_outlined,
+                          size: 19,
+                        ),
+                        label: const Text('Entrada'),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(42),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),

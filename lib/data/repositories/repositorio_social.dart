@@ -311,6 +311,95 @@ class RepositorioSocial {
         '${base.day.toString().padLeft(2, '0')}';
   }
 
+  // --- La sala de un local durante la noche ---
+
+  /// Los mensajes de la sala. Solo responde si has dicho que vas.
+  Future<List<MensajeDeSala>> salaMensajes(String localId, {DateTime? noche}) async {
+    final filas = await _cliente.rpc(
+      'sala_mensajes',
+      params: {
+        'local': localId,
+        'noche': _comoNoche(noche ?? DateTime.now()),
+      },
+    );
+    return (filas as List)
+        .map((f) => MensajeDeSala.desdeJson(f as Map<String, dynamic>, _yo))
+        .toList();
+  }
+
+  /// Escucha la sala en vivo. Se filtra en el cliente porque el flujo de
+  /// Supabase no acepta condiciones sobre dos columnas a la vez.
+  Stream<List<String>> flujoDeSala(String localId, {DateTime? noche}) {
+    final fecha = _comoNoche(noche ?? DateTime.now());
+    return _cliente
+        .from('venue_messages')
+        .stream(primaryKey: ['id'])
+        .map(
+          (filas) => filas
+              .where((f) => f['venue_id'] == localId && f['night'] == fecha)
+              .map((f) => f['id'] as String)
+              .toList(),
+        );
+  }
+
+  Future<void> escribirEnSala(String localId, String texto, {DateTime? noche}) async {
+    final limpio = texto.trim();
+    if (limpio.isEmpty) return;
+    await _cliente.from('venue_messages').insert({
+      'venue_id': localId,
+      'night': _comoNoche(noche ?? DateTime.now()),
+      'sender_id': _yo,
+      'body': limpio,
+    });
+  }
+
+  Future<List<Publicacion>> salaFotos(String localId, {DateTime? noche}) async {
+    final filas = await _cliente.rpc(
+      'sala_fotos',
+      params: {
+        'local': localId,
+        'noche': _comoNoche(noche ?? DateTime.now()),
+      },
+    );
+    return (filas as List)
+        .map((f) => Publicacion.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Sube una foto directamente a la sala del local.
+  Future<void> publicarEnSala({
+    required String localId,
+    required List<int> bytes,
+    required String extension,
+    required bool esVideo,
+    String? texto,
+    String? zona,
+    DateTime? noche,
+  }) async {
+    final nombre = '$_yo/${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+    await _cliente.storage
+        .from('publicaciones')
+        .uploadBinary(
+          nombre,
+          Uint8List.fromList(bytes),
+          fileOptions: FileOptions(
+            contentType: esVideo ? 'video/mp4' : 'image/jpeg',
+            upsert: false,
+          ),
+        );
+
+    await _cliente.from('posts').insert({
+      'author_id': _yo,
+      'media_url': _cliente.storage.from('publicaciones').getPublicUrl(nombre),
+      'media_type': esVideo ? 'video' : 'photo',
+      'venue_id': localId,
+      'night': _comoNoche(noche ?? DateTime.now()),
+      if (texto != null && texto.trim().isNotEmpty) 'caption': texto.trim(),
+      if (zona != null && zona.trim().isNotEmpty) 'area_label': zona.trim(),
+    });
+  }
+
   /// La bandeja de mensajes: una fila por persona con lo ultimo dicho.
   Future<List<Conversacion>> misConversaciones() async {
     final filas = await _cliente.rpc('mis_conversaciones');

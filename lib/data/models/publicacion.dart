@@ -214,3 +214,38 @@ class MensajeDirecto {
         enviadoEn: DateTime.parse(json['created_at'] as String).toLocal(),
       );
 }
+
+/// Un mensaje de la sala de un local.
+class MensajeDeSala {
+  const MensajeDeSala({
+    required this.id,
+    required this.autorId,
+    required this.autorNombre,
+    required this.texto,
+    required this.mio,
+    required this.enviadoEn,
+    this.autorAvatar,
+  });
+
+  final String id;
+  final String autorId;
+  final String autorNombre;
+  final String? autorAvatar;
+  final String texto;
+
+  /// Si lo has escrito tu. Decide de que lado se pinta la burbuja.
+  final bool mio;
+
+  final DateTime enviadoEn;
+
+  factory MensajeDeSala.desdeJson(Map<String, dynamic> json, String yo) =>
+      MensajeDeSala(
+        id: json['id'] as String,
+        autorId: json['sender_id'] as String,
+        autorNombre: json['display_name'] as String? ?? 'Alguien',
+        autorAvatar: json['avatar_url'] as String?,
+        texto: json['body'] as String,
+        mio: json['sender_id'] == yo,
+        enviadoEn: DateTime.parse(json['created_at'] as String).toLocal(),
+      );
+}

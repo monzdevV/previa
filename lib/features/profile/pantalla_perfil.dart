@@ -6,6 +6,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
+import 'cabecera_perfil.dart';
 import '../party/tarjeta_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
@@ -42,49 +43,11 @@ class PantallaPerfil extends ConsumerWidget {
                 'No se ha podido cargar tu perfil.',
                 style: textos.bodyMedium,
               ),
-              data: (p) => Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: ColoresPrevia.primario,
-                    child: Text(
-                      p?.iniciales ?? '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: EspaciadoPrevia.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p?.nombre ?? '', style: textos.titleLarge),
-                        Text('@${p?.username ?? ''}', style: textos.bodyMedium),
-                        if (p != null && p.tieneReputacion)
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                size: 15,
-                                color: ColoresPrevia.aviso,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${p.reputacion!.toStringAsFixed(1)} '
-                                '· ${p.numeroValoraciones} valoraciones',
-                                style: textos.bodyMedium,
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              data: (p) => CabeceraPerfil(perfil: p),
             ),
+
+            const SizedBox(height: EspaciadoPrevia.xl),
+            const MisPublicaciones(),
 
             const SizedBox(height: EspaciadoPrevia.xl),
             Row(
