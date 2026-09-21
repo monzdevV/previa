@@ -48,6 +48,10 @@ class PantallaFeed extends ConsumerWidget {
             onPressed: () => context.push(Rutas.buscar),
           ),
           IconButton(
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            onPressed: () => context.push(Rutas.mensajes),
+          ),
+          IconButton(
             icon: const Icon(Icons.add_box_outlined),
             onPressed: () async {
               await context.push(Rutas.publicar);

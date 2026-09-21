@@ -311,6 +311,67 @@ class RepositorioSocial {
         '${base.day.toString().padLeft(2, '0')}';
   }
 
+  /// La bandeja de mensajes: una fila por persona con lo ultimo dicho.
+  Future<List<Conversacion>> misConversaciones() async {
+    final filas = await _cliente.rpc('mis_conversaciones');
+    return (filas as List)
+        .map((f) => Conversacion.desdeJson(f as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Los mensajes con alguien, del mas antiguo al mas nuevo.
+  Future<List<MensajeDirecto>> mensajesCon(String otroId) async {
+    final filas = await _cliente
+        .from('direct_messages')
+        .select('id, sender_id, recipient_id, body, read_at, created_at')
+        .or(
+          'and(sender_id.eq.$_yo,recipient_id.eq.$otroId),'
+          'and(sender_id.eq.$otroId,recipient_id.eq.$_yo)',
+        )
+        .order('created_at')
+        .limit(200);
+
+    return (filas as List)
+        .map((f) => MensajeDirecto.desdeJson(f as Map<String, dynamic>, _yo))
+        .toList();
+  }
+
+  /// Escucha en vivo la conversacion. Es lo que hace que un chat se sienta
+  /// como un chat y no como una bandeja que hay que recargar.
+  Stream<List<MensajeDirecto>> flujoDeMensajes(String otroId) => _cliente
+      .from('direct_messages')
+      .stream(primaryKey: ['id'])
+      .order('created_at')
+      .map(
+        (filas) => filas
+            .where(
+              (f) =>
+                  (f['sender_id'] == _yo && f['recipient_id'] == otroId) ||
+                  (f['sender_id'] == otroId && f['recipient_id'] == _yo),
+            )
+            .map((f) => MensajeDirecto.desdeJson(f, _yo))
+            .toList(),
+      );
+
+  Future<void> enviarMensaje(String paraId, String texto) async {
+    final limpio = texto.trim();
+    if (limpio.isEmpty) return;
+    await _cliente.from('direct_messages').insert({
+      'sender_id': _yo,
+      'recipient_id': paraId,
+      'body': limpio,
+    });
+  }
+
+  Future<void> marcarLeidos(String deId) async {
+    await _cliente
+        .from('direct_messages')
+        .update({'read_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('sender_id', deId)
+        .eq('recipient_id', _yo)
+        .isFilter('read_at', null);
+  }
+
   /// Ficha publica de alguien, con sus contadores y si le sigues.
   Future<PerfilPublico> perfilPublico(String perfilId) async {
     final fila = await _cliente

@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
@@ -141,13 +143,31 @@ class _ContenidoState extends ConsumerState<_Contenido> {
         ],
 
         const SizedBox(height: EspaciadoPrevia.m),
-        _p.leSigo
-            ? OutlinedButton.icon(
-                onPressed: _alternar,
-                icon: const Icon(Icons.check_rounded, size: 19),
-                label: const Text('Siguiendo'),
-              )
-            : FilledButton(onPressed: _alternar, child: const Text('Seguir')),
+        Row(
+          children: [
+            Expanded(
+              child: _p.leSigo
+                  ? OutlinedButton.icon(
+                      onPressed: _alternar,
+                      icon: const Icon(Icons.check_rounded, size: 19),
+                      label: const Text('Siguiendo'),
+                    )
+                  : FilledButton(
+                      onPressed: _alternar,
+                      child: const Text('Seguir'),
+                    ),
+            ),
+            const SizedBox(width: EspaciadoPrevia.s),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    context.push('${Rutas.conversacion}/${_p.id}'),
+                icon: const Icon(Icons.send_rounded, size: 19),
+                label: const Text('Mensaje'),
+              ),
+            ),
+          ],
+        ),
 
         const SizedBox(height: EspaciadoPrevia.l),
         const Divider(),

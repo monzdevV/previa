@@ -148,3 +148,69 @@ class PerfilPublico {
   final int seguidores;
   final int siguiendo;
 }
+
+/// Una fila de la bandeja de mensajes.
+class Conversacion {
+  const Conversacion({
+    required this.otroId,
+    required this.nombre,
+    required this.ultimoEn,
+    this.usuario,
+    this.avatar,
+    this.ultimo,
+    this.ultimoMio = false,
+    this.sinLeer = 0,
+  });
+
+  final String otroId;
+  final String? usuario;
+  final String nombre;
+  final String? avatar;
+  final String? ultimo;
+
+  /// Si el ultimo mensaje lo escribiste tu. Sirve para anteponer "Tú:".
+  final bool ultimoMio;
+
+  final int sinLeer;
+  final DateTime ultimoEn;
+
+  factory Conversacion.desdeJson(Map<String, dynamic> json) => Conversacion(
+    otroId: json['id'] as String,
+    usuario: json['username'] as String?,
+    nombre: json['display_name'] as String? ?? 'Alguien',
+    avatar: json['avatar_url'] as String?,
+    ultimo: json['ultimo'] as String?,
+    ultimoMio: json['ultimo_mio'] as bool? ?? false,
+    sinLeer: (json['sin_leer'] as num?)?.toInt() ?? 0,
+    ultimoEn: DateTime.parse(json['ultimo_en'] as String).toLocal(),
+  );
+}
+
+/// Un mensaje directo.
+class MensajeDirecto {
+  const MensajeDirecto({
+    required this.id,
+    required this.texto,
+    required this.mio,
+    required this.enviadoEn,
+    this.leido = false,
+  });
+
+  final String id;
+  final String texto;
+
+  /// Si lo has escrito tu. Decide de que lado de la pantalla se pinta.
+  final bool mio;
+
+  final bool leido;
+  final DateTime enviadoEn;
+
+  factory MensajeDirecto.desdeJson(Map<String, dynamic> json, String yo) =>
+      MensajeDirecto(
+        id: json['id'] as String,
+        texto: json['body'] as String,
+        mio: json['sender_id'] == yo,
+        leido: json['read_at'] != null,
+        enviadoEn: DateTime.parse(json['created_at'] as String).toLocal(),
+      );
+}
