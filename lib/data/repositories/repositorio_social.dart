@@ -81,6 +81,36 @@ class RepositorioSocial {
     });
   }
 
+  /// Sube la foto de perfil y la deja apuntada en el perfil.
+  ///
+  /// Siempre el mismo nombre de fichero, asi que reemplaza en lugar de
+  /// acumular. Como la URL publica no cambia, se le anade una marca de
+  /// tiempo: sin ella se seguiria viendo la foto anterior durante horas.
+  Future<String> subirAvatar({
+    required List<int> bytes,
+    required String extension,
+  }) async {
+    final nombre = '$_yo/avatar.$extension';
+
+    await _cliente.storage
+        .from('avatares')
+        .uploadBinary(
+          nombre,
+          Uint8List.fromList(bytes),
+          fileOptions: const FileOptions(
+            contentType: 'image/jpeg',
+            upsert: true,
+          ),
+        );
+
+    final url =
+        '${_cliente.storage.from('avatares').getPublicUrl(nombre)}'
+        '?v=${DateTime.now().millisecondsSinceEpoch}';
+
+    await _cliente.from('profiles').update({'avatar_url': url}).eq('id', _yo);
+    return url;
+  }
+
   Future<void> borrarPublicacion(String id) async {
     await _cliente.from('posts').delete().eq('id', id);
   }

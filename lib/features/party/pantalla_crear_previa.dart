@@ -32,6 +32,10 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
   int _plazas = 3;
   final Set<String> _ambiente = {};
   bool _guardando = false;
+
+  /// Una quedada en una plaza o en un parque no tiene nada que esconder, asi
+  /// que su direccion deja de difuminarse y no hace falta pedir plaza.
+  bool _enSitioPublico = false;
   String? _error;
 
   static DateTime _proximaHoraRedonda() {
@@ -119,6 +123,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
             empiezaEn: _empiezaEn,
             plazas: _plazas,
             ambiente: _ambiente.toList(),
+            enSitioPublico: _enSitioPublico,
           );
 
       // Que el mapa y "mis previas" se enteren.
@@ -253,6 +258,31 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       icon: const Icon(Icons.add),
                     ),
                   ],
+                ),
+              ),
+
+              _Bloque(
+                titulo: '¿Dónde es?',
+                subtitulo: _enSitioPublico
+                    ? 'Al ser público, cualquiera ve el sitio exacto y '
+                          'puede presentarse sin pedir plaza.'
+                    : 'En una casa la dirección se guarda: solo la ven los '
+                          'que aceptes.',
+                child: SwitchListTile.adaptive(
+                  value: _enSitioPublico,
+                  onChanged: (v) => setState(() => _enSitioPublico = v),
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: ColoresPrevia.primario,
+                  title: Text(
+                    _enSitioPublico ? 'Sitio público' : 'En una casa',
+                    style: textos.titleMedium,
+                  ),
+                  secondary: Icon(
+                    _enSitioPublico
+                        ? Icons.park_rounded
+                        : Icons.home_rounded,
+                    color: ColoresPrevia.texto,
+                  ),
                 ),
               ),
 

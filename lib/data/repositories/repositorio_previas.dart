@@ -92,6 +92,7 @@ class RepositorioPrevias {
     List<String> ambiente = const [],
     int edadMinima = 18,
     int? edadMaxima,
+    bool enSitioPublico = false,
   }) async {
     final id = _cliente.auth.currentUser?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
@@ -115,6 +116,7 @@ class RepositorioPrevias {
             'spots_total': plazas,
             'min_age': edadMinima,
             'max_age': edadMaxima,
+            'is_public': enSitioPublico,
           })
           .select('id')
           .single();

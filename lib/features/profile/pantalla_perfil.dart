@@ -156,6 +156,22 @@ class PantallaPerfil extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.l),
             ListTile(
               contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: const Text('Mis noches'),
+              subtitle: const Text('El calendario de cuándo has salido'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.misNoches),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.people_alt_outlined),
+              title: const Text('Gente'),
+              subtitle: const Text('Busca, sigue y comparte tu código'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.buscar),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.inbox_outlined),
               title: const Text('Mis solicitudes'),
               subtitle: const Text('Las plazas que has pedido'),

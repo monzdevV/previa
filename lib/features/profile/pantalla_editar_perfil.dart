@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../../data/repositories/repositorio_social.dart';
+import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 class PantallaEditarPerfil extends ConsumerStatefulWidget {
   const PantallaEditarPerfil({super.key});
@@ -19,6 +22,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _bio = TextEditingController();
 
   DateTime? _fechaNacimiento;
+  String? _avatar;
+  bool _subiendoAvatar = false;
   bool _cargandoDatos = true;
   bool _guardando = false;
   String? _error;
@@ -40,6 +45,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     setState(() {
       _nombre.text = perfil?.nombre ?? '';
       _bio.text = perfil?.bio ?? '';
+      _avatar = perfil?.avatarUrl;
       _fechaNacimiento = fecha;
       _cargandoDatos = false;
     });
@@ -50,6 +56,35 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     _nombre.dispose();
     _bio.dispose();
     super.dispose();
+  }
+
+  Future<void> _cambiarFoto() async {
+    final elegida = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      // Un avatar no necesita mas: se ve a 44 px en la mayoria de sitios.
+      maxWidth: 800,
+      imageQuality: 85,
+    );
+    if (elegida == null) return;
+
+    setState(() => _subiendoAvatar = true);
+    try {
+      final bytes = await elegida.readAsBytes();
+      final punto = elegida.name.lastIndexOf('.');
+      final url = await ref
+          .read(repositorioSocialProvider)
+          .subirAvatar(
+            bytes: bytes,
+            extension: punto > 0
+                ? elegida.name.substring(punto + 1).toLowerCase()
+                : 'jpg',
+          );
+      if (mounted) setState(() => _avatar = url);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se ha podido subir la foto.');
+    } finally {
+      if (mounted) setState(() => _subiendoAvatar = false);
+    }
   }
 
   Future<void> _elegirFecha() async {
@@ -124,6 +159,49 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                     ? 'Escribe al menos 2 caracteres'
                     : null,
               ),
+
+              const SizedBox(height: EspaciadoPrevia.m),
+              Center(
+                child: Stack(
+                  children: [
+                    AvatarPerfil(
+                      url: _avatar,
+                      inicial: _nombre.text.isEmpty ? '?' : _nombre.text,
+                      lado: 104,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Material(
+                        color: ColoresPrevia.primario,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _subiendoAvatar ? null : _cambiarFoto,
+                          child: Padding(
+                            padding: const EdgeInsets.all(EspaciadoPrevia.s),
+                            child: _subiendoAvatar
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: ColoresPrevia.sobrePrimario,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 18,
+                                    color: ColoresPrevia.sobrePrimario,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: EspaciadoPrevia.l),
 
               TextFormField(
                 controller: _bio,
