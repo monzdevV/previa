@@ -14,6 +14,7 @@ import '../features/map/pantalla_inicio.dart';
 import '../features/social/pantalla_buscar.dart';
 import '../features/social/pantalla_locales.dart';
 import '../features/social/pantalla_mis_noches.dart';
+import '../features/social/pantalla_perfil_publico.dart';
 import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
@@ -42,6 +43,7 @@ abstract final class Rutas {
   static const misNoches = '/mis-noches';
   static const privacidad = '/privacidad';
   static const condiciones = '/condiciones';
+  static const perfilDe = '/perfil';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -148,6 +150,11 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const PantallaCondiciones(),
       ),
       GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
+      GoRoute(
+        path: '${Rutas.perfilDe}/:id',
+        builder: (_, estado) =>
+            PantallaPerfilPublico(perfilId: estado.pathParameters['id']!),
+      ),
       GoRoute(path: Rutas.locales, builder: (_, _) => const PantallaLocales()),
       GoRoute(
         path: Rutas.misNoches,

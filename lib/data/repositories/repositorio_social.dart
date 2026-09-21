@@ -311,6 +311,48 @@ class RepositorioSocial {
         '${base.day.toString().padLeft(2, '0')}';
   }
 
+  /// Ficha publica de alguien, con sus contadores y si le sigues.
+  Future<PerfilPublico> perfilPublico(String perfilId) async {
+    final fila = await _cliente
+        .from('profiles')
+        .select(
+          'id, username, display_name, avatar_url, bio, city, instagram, '
+          'reputation, ratings_count, is_demo',
+        )
+        .eq('id', perfilId)
+        .single();
+
+    // Tres consultas cortas en paralelo salen mas baratas que una vista con
+    // subconsultas, y cada una usa su propio indice.
+    final seguidores = _cliente
+        .from('follows')
+        .count()
+        .eq('followee_id', perfilId);
+    final siguiendo = _cliente
+        .from('follows')
+        .count()
+        .eq('follower_id', perfilId);
+    final loSigo = _cliente
+        .from('follows')
+        .select('followee_id')
+        .eq('follower_id', _yo)
+        .eq('followee_id', perfilId)
+        .maybeSingle();
+
+    return PerfilPublico(
+      perfil: PerfilResumen.desdeJson({
+        ...Map<String, dynamic>.from(fila),
+        'le_sigo': await loSigo != null,
+      }),
+      bio: fila['bio'] as String?,
+      ciudad: fila['city'] as String?,
+      instagram: fila['instagram'] as String?,
+      esDemo: fila['is_demo'] as bool? ?? false,
+      seguidores: await seguidores,
+      siguiendo: await siguiendo,
+    );
+  }
+
   /// Publicaciones de una persona, para su perfil.
   Future<List<Publicacion>> publicacionesDe(String perfilId) async {
     final filas = await _cliente

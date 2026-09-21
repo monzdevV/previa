@@ -104,6 +104,15 @@ class PerfilResumen {
 
   String get inicial => nombre.isNotEmpty ? nombre[0].toUpperCase() : '?';
 
+  PerfilResumen copiarCon({bool? leSigo}) => PerfilResumen(
+    id: id,
+    usuario: usuario,
+    nombre: nombre,
+    avatar: avatar,
+    reputacion: reputacion,
+    leSigo: leSigo ?? this.leSigo,
+  );
+
   factory PerfilResumen.desdeJson(Map<String, dynamic> json) => PerfilResumen(
     id: json['id'] as String,
     usuario: json['username'] as String?,
@@ -112,4 +121,30 @@ class PerfilResumen {
     reputacion: (json['reputation'] as num?)?.toDouble(),
     leSigo: json['le_sigo'] as bool? ?? false,
   );
+}
+
+/// La ficha completa de alguien: su resumen mas lo que solo se enseña al
+/// visitar su perfil.
+class PerfilPublico {
+  const PerfilPublico({
+    required this.perfil,
+    this.bio,
+    this.ciudad,
+    this.instagram,
+    this.esDemo = false,
+    this.seguidores = 0,
+    this.siguiendo = 0,
+  });
+
+  final PerfilResumen perfil;
+  final String? bio;
+  final String? ciudad;
+  final String? instagram;
+
+  /// Perfil sembrado para la demostracion. Se avisa en pantalla para que
+  /// nadie confunda un ejemplo con una persona real.
+  final bool esDemo;
+
+  final int seguidores;
+  final int siguiendo;
 }

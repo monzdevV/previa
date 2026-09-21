@@ -235,7 +235,15 @@ class _PublicacionState extends ConsumerState<_Publicacion> {
           ),
           child: Row(
             children: [
-              AvatarPerfil(url: _p.autorAvatar, inicial: _p.autorNombre, lado: 36),
+              InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => context.push('${Rutas.perfilDe}/${_p.autorId}'),
+                child: AvatarPerfil(
+                  url: _p.autorAvatar,
+                  inicial: _p.autorNombre,
+                  lado: 36,
+                ),
+              ),
               const SizedBox(width: EspaciadoPrevia.s + EspaciadoPrevia.xs),
               Expanded(
                 child: Column(
