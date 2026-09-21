@@ -13,6 +13,8 @@ class Perfil {
     this.bio,
     this.reputacion,
     this.numeroValoraciones = 0,
+    this.instagram,
+    this.ciudad,
   });
 
   final String id;
@@ -23,6 +25,11 @@ class Perfil {
   final String? bio;
   final double? reputacion;
   final int numeroValoraciones;
+
+  /// Usuario de Instagram, sin arroba. Es opcional y publico.
+  final String? instagram;
+
+  final String? ciudad;
 
   /// Iniciales para el avatar cuando no hay foto.
   String get iniciales {
@@ -43,6 +50,8 @@ class Perfil {
     bio: json['bio'] as String?,
     reputacion: (json['reputation'] as num?)?.toDouble(),
     numeroValoraciones: json['ratings_count'] as int? ?? 0,
+    instagram: json['instagram'] as String?,
+    ciudad: json['city'] as String?,
   );
 
   Map<String, dynamic> aJson() => {
@@ -50,6 +59,8 @@ class Perfil {
     'display_name': nombre,
     'avatar_url': avatarUrl,
     'bio': bio,
+    'instagram': instagram,
+    'city': ciudad,
   };
 
   Perfil copiarCon({
@@ -57,6 +68,8 @@ class Perfil {
     String? nombre,
     String? avatarUrl,
     String? bio,
+    String? instagram,
+    String? ciudad,
   }) => Perfil(
     id: id,
     username: username ?? this.username,
@@ -66,5 +79,7 @@ class Perfil {
     bio: bio ?? this.bio,
     reputacion: reputacion,
     numeroValoraciones: numeroValoraciones,
+    instagram: instagram ?? this.instagram,
+    ciudad: ciudad ?? this.ciudad,
   );
 }

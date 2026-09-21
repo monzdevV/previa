@@ -108,7 +108,7 @@ class RepositorioAuth {
         .from('profiles')
         .select(
           'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count',
+          'reputation, ratings_count, instagram, city',
         )
         .eq('id', id)
         .maybeSingle();
@@ -121,7 +121,7 @@ class RepositorioAuth {
         .from('profiles')
         .select(
           'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count',
+          'reputation, ratings_count, instagram, city',
         )
         .eq('id', id)
         .single();
@@ -146,6 +146,8 @@ class RepositorioAuth {
     String? bio,
     String? avatarUrl,
     DateTime? fechaNacimiento,
+    String? instagram,
+    String? ciudad,
   }) async {
     final id = usuarioActual?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
@@ -160,6 +162,14 @@ class RepositorioAuth {
       'avatar_url': ?avatarUrl,
       if (fechaNacimiento != null)
         'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
+      // Se guarda vacio como nulo: una cadena en blanco en la base de datos
+      // obliga a comprobar dos cosas cada vez que se lee.
+      if (instagram != null)
+        'instagram': instagram.trim().replaceAll('@', '').isEmpty
+            ? null
+            : instagram.trim().replaceAll('@', ''),
+      if (ciudad != null)
+        'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
     };
     if (cambios.isEmpty) return;
 

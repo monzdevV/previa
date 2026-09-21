@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
 
@@ -100,6 +102,23 @@ class PantallaAjustes extends StatelessWidget {
                   'presencial. Usa la cabeza: queda con gente con reputación, '
                   'avisa a alguien de dónde vas y vete si algo no te gusta.',
             ],
+          ),
+
+          const SizedBox(height: EspaciadoPrevia.s),
+          const Divider(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Política de privacidad'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Rutas.privacidad),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Condiciones de uso'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Rutas.condiciones),
           ),
 
           const SizedBox(height: EspaciadoPrevia.l),

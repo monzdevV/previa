@@ -20,6 +20,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _formulario = GlobalKey<FormState>();
   final _nombre = TextEditingController();
   final _bio = TextEditingController();
+  final _instagram = TextEditingController();
+  final _ciudad = TextEditingController();
 
   DateTime? _fechaNacimiento;
   String? _avatar;
@@ -45,6 +47,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     setState(() {
       _nombre.text = perfil?.nombre ?? '';
       _bio.text = perfil?.bio ?? '';
+      _instagram.text = perfil?.instagram ?? '';
+      _ciudad.text = perfil?.ciudad ?? '';
       _avatar = perfil?.avatarUrl;
       _fechaNacimiento = fecha;
       _cargandoDatos = false;
@@ -55,6 +59,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   void dispose() {
     _nombre.dispose();
     _bio.dispose();
+    _instagram.dispose();
+    _ciudad.dispose();
     super.dispose();
   }
 
@@ -116,6 +122,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
             nombre: _nombre.text,
             bio: _bio.text,
             fechaNacimiento: _fechaNacimiento,
+            instagram: _instagram.text,
+            ciudad: _ciudad.text,
           );
       ref.invalidate(miPerfilProvider);
 
@@ -212,6 +220,28 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                   labelText: 'Sobre ti',
                   hintText: 'Dos líneas para que sepan quién eres.',
                   alignLabelWithHint: true,
+                ),
+              ),
+
+              TextFormField(
+                controller: _ciudad,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Ciudad',
+                  hintText: 'Zaragoza',
+                  prefixIcon: Icon(Icons.location_city_outlined),
+                ),
+              ),
+
+              const SizedBox(height: EspaciadoPrevia.m),
+              TextFormField(
+                controller: _instagram,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram',
+                  prefixText: '@',
+                  prefixIcon: Icon(Icons.alternate_email_rounded),
+                  helperText: 'Opcional. Lo verá quien visite tu perfil.',
                 ),
               ),
 
