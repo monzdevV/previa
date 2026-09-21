@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:previa/app/tema.dart';
 import 'package:previa/data/models/previa.dart';
@@ -11,6 +12,18 @@ import 'package:previa/data/models/previa.dart';
 /// Los goldens solo valen si la tipografia es la de produccion. La app usa la
 /// cara del sistema, que el entorno de pruebas no carga, asi que hay que
 /// registrarla a mano junto con los iconos de Material.
+
+/// La cache de imagenes pide una carpeta temporal al sistema, y en una
+/// prueba ese canal no existe. Sin esto, cualquier pantalla con imagenes de
+/// red revienta antes de pintarse.
+void simularCarpetasDelSistema() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      .setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/path_provider'),
+        (_) async => Directory.systemTemp.createTempSync('previa').path,
+      );
+}
 
 Future<void> cargarTipografias() async {
   // El ejecutable de las pruebas cuelga de bin/cache, pero a distinta

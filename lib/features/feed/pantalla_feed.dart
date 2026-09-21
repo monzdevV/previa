@@ -129,9 +129,12 @@ class _Marca extends StatelessWidget {
         ),
       ),
       const SizedBox(width: EspaciadoPrevia.s),
-      const Text(
+      Text(
         'Previa',
-        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     ],
   );

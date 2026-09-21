@@ -8,8 +8,11 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:previa/data/models/previa.dart';
 import 'package:previa/data/repositories/repositorio_auth.dart';
+import 'package:previa/data/models/publicacion.dart';
 import 'package:previa/data/repositories/repositorio_previas.dart';
+import 'package:previa/data/repositories/repositorio_social.dart';
 import 'package:previa/data/services/servicio_ubicacion.dart';
+import 'package:previa/features/feed/pantalla_feed.dart';
 import 'package:previa/features/map/pantalla_inicio.dart';
 import 'package:previa/features/map/pantalla_mapa.dart';
 import 'package:previa/features/map/proveedores_mapa.dart';
@@ -59,6 +62,48 @@ class _RepoDeMuestra extends RepositorioPrevias {
   Future<List<Map<String, dynamic>>> miembrosDe(String previaId) async => [];
 }
 
+/// Publicaciones de muestra para retratar el feed.
+///
+/// Las imagenes no cargan en una prueba porque no hay red, asi que el golden
+/// sirve para juzgar la estructura del renglon y no la foto.
+class _RepoSocialDeMuestra extends RepositorioSocial {
+  _RepoSocialDeMuestra() : super(_clienteInerte());
+
+  @override
+  Future<List<Publicacion>> feed({
+    String? zona,
+    int limite = 30,
+    int desplazamiento = 0,
+  }) async => [
+    Publicacion(
+      id: '1',
+      autorId: 'a',
+      autorNombre: 'Marta Ruiz',
+      autorUsuario: 'martaruiz',
+      mediaUrl: 'https://ejemplo.test/1.jpg',
+      esVideo: false,
+      texto: 'La previa de ayer se fue de las manos.',
+      zona: 'Zaragoza',
+      likes: 24,
+      leDiLike: true,
+      leSigo: true,
+      creadaEn: DateTime(2026, 6, 12, 23, 30),
+    ),
+    Publicacion(
+      id: '2',
+      autorId: 'b',
+      autorNombre: 'Diego Sanz',
+      autorUsuario: 'dsanz',
+      mediaUrl: 'https://ejemplo.test/2.mp4',
+      esVideo: true,
+      texto: 'Nos vemos en el Kembo.',
+      zona: 'Zaragoza',
+      likes: 3,
+      creadaEn: DateTime(2026, 6, 12, 21, 0),
+    ),
+  ];
+}
+
 class _UbicacionFija extends ServicioUbicacion {
   @override
   Future<LatLng> posicionActual() async => const LatLng(40.4258, -3.7038);
@@ -77,6 +122,7 @@ Widget _app(
     repositorioPreviasProvider.overrideWithValue(_RepoDeMuestra()),
     servicioUbicacionProvider.overrideWithValue(_UbicacionFija()),
     proveedorTeselasProvider.overrideWithValue(_TeselaDePrueba()),
+    repositorioSocialProvider.overrideWithValue(_RepoSocialDeMuestra()),
   ],
   child: MaterialApp(
     theme: temaDePrueba(plataforma: plataforma),
@@ -117,6 +163,7 @@ class _TeselaDePrueba extends TileProvider {
 
 void main() {
   setUpAll(() async {
+    simularCarpetasDelSistema();
     await cargarTipografias();
     await initializeDateFormatting('es_ES');
   });
@@ -187,6 +234,24 @@ void main() {
     await expectLater(
       find.byType(PantallaInicio),
       matchesGoldenFile('goldens/inicio_letra_grande.png'),
+    );
+  });
+
+  testWidgets('el feed pinta las publicaciones con su autor y sus likes', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _app(const PantallaFeed(), margen: margenAndroid),
+    );
+    await _asentar(tester);
+
+    await expectLater(
+      find.byType(PantallaFeed),
+      matchesGoldenFile('goldens/feed.png'),
     );
   });
 

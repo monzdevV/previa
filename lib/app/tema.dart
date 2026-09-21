@@ -97,13 +97,14 @@ ThemeData construirTemaPrevia({String? caraDelSistema}) {
     splashFactory: InkSparkle.splashFactory,
     fontFamily: caraDelSistema,
 
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: ColoresPrevia.fondo,
       foregroundColor: ColoresPrevia.texto,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
+        fontFamily: caraDelSistema,
         color: ColoresPrevia.texto,
         fontSize: 20,
         fontWeight: FontWeight.w700,
@@ -233,12 +234,14 @@ ThemeData construirTemaPrevia({String? caraDelSistema}) {
     chipTheme: ChipThemeData(
       backgroundColor: ColoresPrevia.superficieAlta,
       selectedColor: ColoresPrevia.primario,
-      secondaryLabelStyle: const TextStyle(
+      secondaryLabelStyle: TextStyle(
+        fontFamily: caraDelSistema,
         color: ColoresPrevia.sobrePrimario,
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
+        fontFamily: caraDelSistema,
         color: ColoresPrevia.texto,
         fontSize: 13,
         fontWeight: FontWeight.w600,

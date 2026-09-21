@@ -9,6 +9,7 @@ import 'apoyo_visual.dart';
 
 void main() {
   setUpAll(() async {
+    simularCarpetasDelSistema();
     await cargarTipografias();
     await initializeDateFormatting('es_ES');
   });
