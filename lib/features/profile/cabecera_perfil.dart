@@ -10,6 +10,7 @@ import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import '../social/pantalla_resumen_noche.dart' show InsigniaDeRacha;
 
 /// Lo que has publicado tu. Vive aqui y no en la pantalla porque tambien lo
 /// necesita la cabecera para el contador.
@@ -96,7 +97,12 @@ class CabeceraPerfil extends ConsumerWidget {
         ),
 
         const SizedBox(height: EspaciadoPrevia.m),
-        Text(p.nombre, style: textos.titleLarge),
+        Row(
+          children: [
+            Expanded(child: Text(p.nombre, style: textos.titleLarge)),
+            const InsigniaDeRacha(),
+          ],
+        ),
         Text('@${p.username}', style: textos.bodyMedium),
 
         if (p.bio != null && p.bio!.isNotEmpty) ...[

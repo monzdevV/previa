@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/local.dart';
+import '../models/noche.dart';
 import '../models/publicacion.dart';
 import 'repositorio_auth.dart';
 
@@ -309,6 +310,30 @@ class RepositorioSocial {
     return '${base.year.toString().padLeft(4, '0')}-'
         '${base.month.toString().padLeft(2, '0')}-'
         '${base.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Tu racha de findes.
+  Future<Racha> miRacha() async {
+    final filas = await _cliente.rpc('mi_racha');
+    final lista = filas as List;
+    if (lista.isEmpty) return const Racha();
+    return Racha.desdeJson(lista.first as Map<String, dynamic>);
+  }
+
+  /// El resumen de una noche, para la tarjeta del final.
+  Future<ResumenDeNoche> resumenDeNoche(DateTime noche) async {
+    final fecha = _comoNoche(noche);
+    final filas = await _cliente.rpc(
+      'resumen_de_noche',
+      params: {'noche': fecha},
+    );
+    final lista = filas as List;
+    final dia = DateTime.parse(fecha);
+    if (lista.isEmpty) return ResumenDeNoche(noche: dia);
+    return ResumenDeNoche.desdeJson(
+      lista.first as Map<String, dynamic>,
+      dia,
+    );
   }
 
   // --- La sala de un local durante la noche ---

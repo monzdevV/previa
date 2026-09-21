@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_social.dart';
+import 'pantalla_resumen_noche.dart';
 
 final _misNochesProvider = FutureProvider<Map<DateTime, List<String>>>(
   (ref) => ref.watch(repositorioSocialProvider).misNoches(),
@@ -139,7 +140,7 @@ class _Mes extends StatelessWidget {
             final dia = DateTime(mes.year, mes.month, numero);
             final sitios = noches[dia];
 
-            return _Dia(numero: numero, sitios: sitios);
+            return _Dia(numero: numero, sitios: sitios, fecha: dia);
           },
         ),
       ],
@@ -148,10 +149,15 @@ class _Mes extends StatelessWidget {
 }
 
 class _Dia extends StatelessWidget {
-  const _Dia({required this.numero, required this.sitios});
+  const _Dia({
+    required this.numero,
+    required this.sitios,
+    required this.fecha,
+  });
 
   final int numero;
   final List<String>? sitios;
+  final DateTime fecha;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +183,17 @@ class _Dia extends StatelessWidget {
 
     return Tooltip(
       message: sitios!.join(', '),
-      child: celda,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(
+          EspaciadoPrevia.s + EspaciadoPrevia.xs,
+        ),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PantallaResumenNoche(noche: fecha),
+          ),
+        ),
+        child: celda,
+      ),
     );
   }
 }
