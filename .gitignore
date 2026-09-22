@@ -55,3 +55,6 @@ desktop.ini
 *.pyc
 *.swp
 *.tmp
+
+# Capturas que genera un golden al fallar. Son de diagnostico, no fuente.
+test/failures/
