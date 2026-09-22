@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/modo_de_tema.dart';
+import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
 
@@ -102,16 +106,33 @@ class PantallaAjustes extends StatelessWidget {
             ],
           ),
 
+          const SizedBox(height: EspaciadoPrevia.s),
+          const Divider(),
+          const _ElectorDeTema(),
+          const Divider(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.shield_outlined),
+            title: const Text('Política de privacidad'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Rutas.privacidad),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Condiciones de uso'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Rutas.condiciones),
+          ),
+
           const SizedBox(height: EspaciadoPrevia.l),
           Center(
             child: Text(
               'Previa · versión 1.0.0\n'
               'Trabajo de Fin de Grado · 2º DAM',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 12,
-                    color: ColoresPrevia.textoTenue,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontSize: 12, color: context.colores.textoTenue),
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),
@@ -143,7 +164,7 @@ class _Apartado extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icono, size: 20, color: ColoresPrevia.primarioSuave),
+              Icon(icono, size: 20, color: context.colores.primarioSuave),
               const SizedBox(width: EspaciadoPrevia.s),
               Expanded(child: Text(titulo, style: textos.titleLarge)),
             ],
@@ -154,6 +175,41 @@ class _Apartado extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: EspaciadoPrevia.s),
               child: Text(p, style: textos.bodyMedium?.copyWith(height: 1.5)),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Claro, oscuro o el del sistema.
+class _ElectorDeTema extends ConsumerWidget {
+  const _ElectorDeTema();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modo = ref.watch(modoDeTemaProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: EspaciadoPrevia.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Aspecto', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: EspaciadoPrevia.s),
+          SegmentedButton<ThemeMode>(
+            segments: [
+              for (final m in ThemeMode.values)
+                ButtonSegment(
+                  value: m,
+                  label: Text(m.enEspanol),
+                  icon: Icon(m.icono, size: 18),
+                ),
+            ],
+            selected: {modo},
+            showSelectedIcon: false,
+            onSelectionChanged: (s) =>
+                ref.read(modoDeTemaProvider.notifier).fijar(s.first),
+          ),
         ],
       ),
     );

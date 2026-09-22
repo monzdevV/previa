@@ -70,10 +70,19 @@ class RepositorioAuth {
     }
   }
 
-  Future<void> entrar({required String correo, required String contrasena}) async {
+  Future<void> entrar({
+    required String correo,
+    required String contrasena,
+  }) async {
     try {
+      // La pantalla permite escribir el usuario de la cuenta de demostración.
+      // Supabase autentica por email, por eso se resuelve solo este alias local.
+      final identificador = correo.trim().toLowerCase();
+      final email = identificador == 'admin'
+          ? 'admin@previa.app'
+          : identificador;
       await _cliente.auth.signInWithPassword(
-        email: correo.trim(),
+        email: email,
         password: contrasena,
       );
     } on AuthException catch (e) {
@@ -97,8 +106,10 @@ class RepositorioAuth {
 
     final fila = await _cliente
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, onboarded, '
-            'reputation, ratings_count')
+        .select(
+          'id, username, display_name, avatar_url, bio, onboarded, '
+          'reputation, ratings_count, instagram, city, is_moderator',
+        )
         .eq('id', id)
         .maybeSingle();
 
@@ -108,8 +119,10 @@ class RepositorioAuth {
   Future<Perfil> perfilDe(String id) async {
     final fila = await _cliente
         .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, onboarded, '
-            'reputation, ratings_count')
+        .select(
+          'id, username, display_name, avatar_url, bio, onboarded, '
+          'reputation, ratings_count, instagram, city, is_moderator',
+        )
         .eq('id', id)
         .single();
     return Perfil.desdeJson(fila);
@@ -133,6 +146,8 @@ class RepositorioAuth {
     String? bio,
     String? avatarUrl,
     DateTime? fechaNacimiento,
+    String? instagram,
+    String? ciudad,
   }) async {
     final id = usuarioActual?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
@@ -147,6 +162,14 @@ class RepositorioAuth {
       'avatar_url': ?avatarUrl,
       if (fechaNacimiento != null)
         'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
+      // Se guarda vacio como nulo: una cadena en blanco en la base de datos
+      // obliga a comprobar dos cosas cada vez que se lee.
+      if (instagram != null)
+        'instagram': instagram.trim().replaceAll('@', '').isEmpty
+            ? null
+            : instagram.trim().replaceAll('@', ''),
+      if (ciudad != null)
+        'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
     };
     if (cambios.isEmpty) return;
 
@@ -168,7 +191,11 @@ class RepositorioAuth {
   static bool esMayorDeEdad(DateTime fechaNacimiento) {
     final hoy = DateTime.now();
     var edad = hoy.year - fechaNacimiento.year;
-    final cumpleEsteAno = DateTime(hoy.year, fechaNacimiento.month, fechaNacimiento.day);
+    final cumpleEsteAno = DateTime(
+      hoy.year,
+      fechaNacimiento.month,
+      fechaNacimiento.day,
+    );
     if (hoy.isBefore(cumpleEsteAno)) edad--;
     return edad >= 18;
   }
@@ -178,7 +205,8 @@ class RepositorioAuth {
     if (m.contains('invalid login')) {
       return 'Correo o contraseña incorrectos.';
     }
-    if (m.contains('already registered') || m.contains('already been registered')) {
+    if (m.contains('already registered') ||
+        m.contains('already been registered')) {
       return 'Ese correo ya tiene cuenta. Prueba a iniciar sesión.';
     }
     if (m.contains('password') && m.contains('least')) {

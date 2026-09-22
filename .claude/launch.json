@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "previa-web",
-      "runtimeExecutable": "C:\\Users\\celia\\dev\\flutter\\bin\\flutter.bat",
+      "runtimeExecutable": "flutter",
       "runtimeArgs": [
         "run",
         "-d",

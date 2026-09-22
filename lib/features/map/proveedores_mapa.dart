@@ -1,3 +1,4 @@
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -5,6 +6,15 @@ import '../../core/entorno.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
+
+/// De donde salen las teselas del mapa base.
+///
+/// Se inyecta en lugar de construirse en la pantalla para que las pruebas
+/// puedan retratar el mapa sin red: sin esto, cada golden del mapa depende
+/// de que responda un servidor de teselas.
+final proveedorTeselasProvider = Provider<TileProvider>(
+  (ref) => NetworkTileProvider(),
+);
 
 /// Donde esta mirando el usuario. Empieza en su posicion real y cambia si
 /// arrastra el mapa, porque buscar en otra zona es un caso de uso legitimo:
@@ -16,8 +26,9 @@ class CentroBusqueda extends Notifier<LatLng?> {
   void fijar(LatLng punto) => state = punto;
 }
 
-final centroBusquedaProvider =
-    NotifierProvider<CentroBusqueda, LatLng?>(CentroBusqueda.new);
+final centroBusquedaProvider = NotifierProvider<CentroBusqueda, LatLng?>(
+  CentroBusqueda.new,
+);
 
 /// Posicion real del dispositivo. Se pide una vez al abrir el mapa.
 final posicionDispositivoProvider = FutureProvider<LatLng>((ref) async {
@@ -45,13 +56,12 @@ class Filtros {
     int? horas,
     int? plazasMinimas,
     Set<String>? ambiente,
-  }) =>
-      Filtros(
-        radioMetros: radioMetros ?? this.radioMetros,
-        horas: horas ?? this.horas,
-        plazasMinimas: plazasMinimas ?? this.plazasMinimas,
-        ambiente: ambiente ?? this.ambiente,
-      );
+  }) => Filtros(
+    radioMetros: radioMetros ?? this.radioMetros,
+    horas: horas ?? this.horas,
+    plazasMinimas: plazasMinimas ?? this.plazasMinimas,
+    ambiente: ambiente ?? this.ambiente,
+  );
 
   bool get sonLosPorDefecto =>
       radioMetros == Entorno.radioBusquedaPorDefecto &&
@@ -76,7 +86,8 @@ class FiltrosNotifier extends Notifier<Filtros> {
 
   void fijarRadio(int metros) => state = state.copiarCon(radioMetros: metros);
   void fijarHoras(int horas) => state = state.copiarCon(horas: horas);
-  void fijarPlazas(int plazas) => state = state.copiarCon(plazasMinimas: plazas);
+  void fijarPlazas(int plazas) =>
+      state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
 
   void alternarAmbiente(String etiqueta) {
@@ -86,8 +97,9 @@ class FiltrosNotifier extends Notifier<Filtros> {
   }
 }
 
-final filtrosProvider =
-    NotifierProvider<FiltrosNotifier, Filtros>(FiltrosNotifier.new);
+final filtrosProvider = NotifierProvider<FiltrosNotifier, Filtros>(
+  FiltrosNotifier.new,
+);
 
 /// Las previas que se pintan en el mapa.
 ///
@@ -99,7 +111,9 @@ final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
       elegido ?? await ref.watch(posicionDispositivoProvider.future);
   final filtros = ref.watch(filtrosProvider);
 
-  final encontradas = await ref.watch(repositorioPreviasProvider).buscarCerca(
+  final encontradas = await ref
+      .watch(repositorioPreviasProvider)
+      .buscarCerca(
         FiltrosBusqueda(
           centro: centro,
           radioMetros: filtros.radioMetros,

@@ -27,15 +27,15 @@ class ErrorUbicacion implements Exception {
   final FalloUbicacion causa;
 
   String get mensaje => switch (causa) {
-        FalloUbicacion.servicioApagado =>
-          'Tienes la ubicación desactivada en el teléfono.',
-        FalloUbicacion.permisoDenegado =>
-          'Necesitamos tu ubicación para enseñarte previas cerca.',
-        FalloUbicacion.permisoDenegadoParaSiempre =>
-          'Has bloqueado la ubicación. Actívala en los ajustes del teléfono.',
-        FalloUbicacion.sinRespuesta =>
-          'No hemos podido situarte. Inténtalo de nuevo.',
-      };
+    FalloUbicacion.servicioApagado =>
+      'Tienes la ubicación desactivada en el teléfono.',
+    FalloUbicacion.permisoDenegado =>
+      'Necesitamos tu ubicación para enseñarte previas cerca.',
+    FalloUbicacion.permisoDenegadoParaSiempre =>
+      'Has bloqueado la ubicación. Actívala en los ajustes del teléfono.',
+    FalloUbicacion.sinRespuesta =>
+      'No hemos podido situarte. Inténtalo de nuevo.',
+  };
 
   @override
   String toString() => mensaje;

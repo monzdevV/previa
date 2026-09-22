@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../../data/repositories/repositorio_social.dart';
+import 'proveedores_perfil.dart';
+import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 class PantallaEditarPerfil extends ConsumerStatefulWidget {
   const PantallaEditarPerfil({super.key});
@@ -17,8 +21,12 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _formulario = GlobalKey<FormState>();
   final _nombre = TextEditingController();
   final _bio = TextEditingController();
+  final _instagram = TextEditingController();
+  final _ciudad = TextEditingController();
 
   DateTime? _fechaNacimiento;
+  String? _avatar;
+  bool _subiendoAvatar = false;
   bool _cargandoDatos = true;
   bool _guardando = false;
   String? _error;
@@ -40,6 +48,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     setState(() {
       _nombre.text = perfil?.nombre ?? '';
       _bio.text = perfil?.bio ?? '';
+      _instagram.text = perfil?.instagram ?? '';
+      _ciudad.text = perfil?.ciudad ?? '';
+      _avatar = perfil?.avatarUrl;
       _fechaNacimiento = fecha;
       _cargandoDatos = false;
     });
@@ -49,7 +60,41 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   void dispose() {
     _nombre.dispose();
     _bio.dispose();
+    _instagram.dispose();
+    _ciudad.dispose();
     super.dispose();
+  }
+
+  Future<void> _cambiarFoto() async {
+    final elegida = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      // Un avatar no necesita mas: se ve a 44 px en la mayoria de sitios.
+      maxWidth: 800,
+      imageQuality: 85,
+    );
+    if (elegida == null) return;
+
+    setState(() => _subiendoAvatar = true);
+    try {
+      final bytes = await elegida.readAsBytes();
+      final punto = elegida.name.lastIndexOf('.');
+      final url = await ref
+          .read(repositorioSocialProvider)
+          .subirAvatar(
+            bytes: bytes,
+            extension: punto > 0
+                ? elegida.name.substring(punto + 1).toLowerCase()
+                : 'jpg',
+          );
+      // Sin esto, se sube la foto y la cabecera del perfil sigue enseñando
+      // la anterior hasta que se reinicia la aplicacion.
+      refrescarPerfil(ref);
+      if (mounted) setState(() => _avatar = url);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'No se ha podido subir la foto.');
+    } finally {
+      if (mounted) setState(() => _subiendoAvatar = false);
+    }
   }
 
   Future<void> _elegirFecha() async {
@@ -69,24 +114,38 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   Future<void> _guardar() async {
     if (!_formulario.currentState!.validate()) return;
 
+    // Sin fecha de nacimiento el servidor no da el perfil por completo, y sin
+    // perfil completo no se pueden abrir previas. Si se deja guardar sin
+    // ella, la cuenta queda bloqueada sin que nada lo explique.
+    if (_fechaNacimiento == null) {
+      setState(
+        () => _error = 'Pon tu fecha de nacimiento: sin ella no podrás abrir '
+            'previas.',
+      );
+      return;
+    }
+
     setState(() {
       _guardando = true;
       _error = null;
     });
 
     try {
-      await ref.read(repositorioAuthProvider).actualizarPerfil(
+      await ref
+          .read(repositorioAuthProvider)
+          .actualizarPerfil(
             nombre: _nombre.text,
             bio: _bio.text,
             fechaNacimiento: _fechaNacimiento,
+            instagram: _instagram.text,
+            ciudad: _ciudad.text,
           );
-      ref.invalidate(miPerfilProvider);
+      refrescarPerfil(ref);
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Perfil actualizado.')));
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
     } finally {
@@ -97,9 +156,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   @override
   Widget build(BuildContext context) {
     if (_cargandoDatos) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final textos = Theme.of(context).textTheme;
@@ -126,6 +183,49 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                     : null,
               ),
 
+              const SizedBox(height: EspaciadoPrevia.m),
+              Center(
+                child: Stack(
+                  children: [
+                    AvatarPerfil(
+                      url: _avatar,
+                      inicial: _nombre.text.isEmpty ? '?' : _nombre.text,
+                      lado: 104,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Material(
+                        color: context.colores.primario,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _subiendoAvatar ? null : _cambiarFoto,
+                          child: Padding(
+                            padding: const EdgeInsets.all(EspaciadoPrevia.s),
+                            child: _subiendoAvatar
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: context.colores.sobrePrimario,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 18,
+                                    color: context.colores.sobrePrimario,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: EspaciadoPrevia.l),
+
               TextFormField(
                 controller: _bio,
                 maxLines: 3,
@@ -135,6 +235,28 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                   labelText: 'Sobre ti',
                   hintText: 'Dos líneas para que sepan quién eres.',
                   alignLabelWithHint: true,
+                ),
+              ),
+
+              TextFormField(
+                controller: _ciudad,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(
+                  labelText: 'Ciudad',
+                  hintText: 'Zaragoza',
+                  prefixIcon: Icon(Icons.location_city_outlined),
+                ),
+              ),
+
+              const SizedBox(height: EspaciadoPrevia.m),
+              TextFormField(
+                controller: _instagram,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  labelText: 'Instagram',
+                  prefixText: '@',
+                  prefixIcon: Icon(Icons.alternate_email_rounded),
+                  helperText: 'Opcional. Lo verá quien visite tu perfil.',
                 ),
               ),
 
@@ -153,8 +275,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                         : formatoFecha.format(_fechaNacimiento!),
                     style: TextStyle(
                       color: _fechaNacimiento == null
-                          ? ColoresPrevia.textoTenue
-                          : ColoresPrevia.texto,
+                          ? context.colores.textoTenue
+                          : context.colores.texto,
                       fontSize: 16,
                     ),
                   ),
@@ -165,7 +287,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                 'Nadie más puede verla. Solo se publica tu edad.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
 
@@ -174,14 +296,16 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
-                  child: Text(_error!,
-                      style: const TextStyle(color: ColoresPrevia.error)),
+                  child: Text(
+                    _error!,
+                    style: TextStyle(color: context.colores.error),
+                  ),
                 ),
               ],
 

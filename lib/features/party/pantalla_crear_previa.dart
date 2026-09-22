@@ -11,12 +11,14 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../map/proveedores_mapa.dart';
+import '../profile/proveedores_perfil.dart';
 
 class PantallaCrearPrevia extends ConsumerStatefulWidget {
   const PantallaCrearPrevia({super.key});
 
   @override
-  ConsumerState<PantallaCrearPrevia> createState() => _PantallaCrearPreviaState();
+  ConsumerState<PantallaCrearPrevia> createState() =>
+      _PantallaCrearPreviaState();
 }
 
 class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
@@ -31,6 +33,10 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
   int _plazas = 3;
   final Set<String> _ambiente = {};
   bool _guardando = false;
+
+  /// Una quedada en una plaza o en un parque no tiene nada que esconder, asi
+  /// que su direccion deja de difuminarse y no hace falta pedir plaza.
+  bool _enSitioPublico = false;
   String? _error;
 
   static DateTime _proximaHoraRedonda() {
@@ -80,7 +86,13 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
     if (hora == null) return;
 
     setState(() {
-      _empiezaEn = DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
+      _empiezaEn = DateTime(
+        dia.year,
+        dia.month,
+        dia.day,
+        hora.hour,
+        hora.minute,
+      );
     });
   }
 
@@ -102,7 +114,9 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
     });
 
     try {
-      await ref.read(repositorioPreviasProvider).crear(
+      await ref
+          .read(repositorioPreviasProvider)
+          .crear(
             titulo: _titulo.text,
             descripcion: _descripcion.text,
             zona: _zona.text,
@@ -110,16 +124,20 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
             empiezaEn: _empiezaEn,
             plazas: _plazas,
             ambiente: _ambiente.toList(),
+            enSitioPublico: _enSitioPublico,
           );
 
       // Que el mapa y "mis previas" se enteren.
       ref.invalidate(previasCercaProvider);
       ref.invalidate(misPreviasProvider);
+      refrescarPerfil(ref);
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Previa publicada. A ver quién se apunta.')),
+        const SnackBar(
+          content: Text('Previa publicada. A ver quién se apunta.'),
+        ),
       );
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
@@ -132,7 +150,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final formatoCuando = DateFormat("EEEE d 'a las' HH:mm", 'es_ES');
-    final centroMapa = _ubicacion ??
+    final centroMapa =
+        _ubicacion ??
         ref.watch(posicionDispositivoProvider).valueOrNull ??
         ServicioUbicacion.centroPorDefecto;
 
@@ -165,7 +184,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                 maxLength: 500,
                 decoration: const InputDecoration(
                   labelText: 'Cuenta algo',
-                  hintText: 'Somos 4, tenemos altavoz y sitio de sobra. '
+                  hintText:
+                      'Somos 4, tenemos altavoz y sitio de sobra. '
                       'Traed lo vuestro.',
                   alignLabelWithHint: true,
                 ),
@@ -201,8 +221,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                     ),
                     child: Text(
                       formatoCuando.format(_empiezaEn),
-                      style: const TextStyle(
-                        color: ColoresPrevia.texto,
+                      style: TextStyle(
+                        color: context.colores.texto,
                         fontSize: 16,
                       ),
                     ),
@@ -213,7 +233,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
               // Plazas
               _Bloque(
                 titulo: '¿Cuánta gente cabe?',
-                subtitulo: 'Plazas libres que ofreces, sin contaros a vosotros.',
+                subtitulo:
+                    'Plazas libres que ofreces, sin contaros a vosotros.',
                 child: Row(
                   children: [
                     IconButton.filledTonal(
@@ -227,7 +248,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         child: Text(
                           '$_plazas',
                           style: textos.displaySmall?.copyWith(
-                            color: ColoresPrevia.acento,
+                            color: context.colores.acento,
                           ),
                         ),
                       ),
@@ -239,6 +260,31 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       icon: const Icon(Icons.add),
                     ),
                   ],
+                ),
+              ),
+
+              _Bloque(
+                titulo: '¿Dónde es?',
+                subtitulo: _enSitioPublico
+                    ? 'Al ser público, cualquiera ve el sitio exacto y '
+                          'puede presentarse sin pedir plaza.'
+                    : 'En una casa la dirección se guarda: solo la ven los '
+                          'que aceptes.',
+                child: SwitchListTile.adaptive(
+                  value: _enSitioPublico,
+                  onChanged: (v) => setState(() => _enSitioPublico = v),
+                  contentPadding: EdgeInsets.zero,
+                  activeThumbColor: context.colores.primario,
+                  title: Text(
+                    _enSitioPublico ? 'Sitio público' : 'En una casa',
+                    style: textos.titleMedium,
+                  ),
+                  secondary: Icon(
+                    _enSitioPublico
+                        ? Icons.park_rounded
+                        : Icons.home_rounded,
+                    color: context.colores.texto,
+                  ),
                 ),
               ),
 
@@ -254,7 +300,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       FilterChip(
                         label: Text(etiqueta),
                         selected: _ambiente.contains(etiqueta),
-                        selectedColor: ColoresPrevia.primario,
+                        selectedColor: context.colores.primario,
                         checkmarkColor: Colors.white,
                         onSelected: (marcada) => setState(() {
                           if (marcada) {
@@ -271,7 +317,8 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
               // Ubicacion
               _Bloque(
                 titulo: '¿Dónde es?',
-                subtitulo: 'Marca el sitio exacto. Nadie lo verá hasta que '
+                subtitulo:
+                    'Marca el sitio exacto. Nadie lo verá hasta que '
                     'aceptes a alguien: en el mapa público aparecerás dentro '
                     'de una zona de unos ${Entorno.metrosDeDifuminado} metros.',
                 child: ClipRRect(
@@ -305,12 +352,14 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         ),
                         // La chincheta se queda fija en el centro y es el mapa
                         // el que se mueve: mas facil de afinar con el pulgar.
-                        const IgnorePointer(
+                        IgnorePointer(
                           child: Icon(
                             Icons.place,
                             size: 42,
-                            color: ColoresPrevia.acento,
-                            shadows: [Shadow(blurRadius: 8, color: Colors.black)],
+                            color: context.colores.acento,
+                            shadows: [
+                              Shadow(blurRadius: 8, color: Colors.black),
+                            ],
                           ),
                         ),
                       ],
@@ -324,15 +373,15 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
+                    style: TextStyle(color: context.colores.error),
                   ),
                 ),
               ],

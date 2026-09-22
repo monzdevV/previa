@@ -13,28 +13,30 @@ Future<bool?> mostrarHojaSolicitarPlaza(
 }) {
   return showModalBottomSheet<bool>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(EspaciadoPrevia.radioGrande),
       ),
     ),
-    builder: (_) => _HojaSolicitarPlaza(
-      previaId: previaId,
-      plazasLibres: plazasLibres,
-    ),
+    builder: (_) =>
+        _HojaSolicitarPlaza(previaId: previaId, plazasLibres: plazasLibres),
   );
 }
 
 class _HojaSolicitarPlaza extends ConsumerStatefulWidget {
-  const _HojaSolicitarPlaza({required this.previaId, required this.plazasLibres});
+  const _HojaSolicitarPlaza({
+    required this.previaId,
+    required this.plazasLibres,
+  });
 
   final String previaId;
   final int plazasLibres;
 
   @override
-  ConsumerState<_HojaSolicitarPlaza> createState() => _HojaSolicitarPlazaState();
+  ConsumerState<_HojaSolicitarPlaza> createState() =>
+      _HojaSolicitarPlazaState();
 }
 
 class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
@@ -56,16 +58,17 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
     });
 
     try {
-      await ref.read(repositorioPreviasProvider).solicitarPlaza(
+      await ref
+          .read(repositorioPreviasProvider)
+          .solicitarPlaza(
             previaId: widget.previaId,
             tamanoGrupo: _grupo,
             mensaje: _mensaje.text,
           );
       if (!mounted) return;
       Navigator.of(context).pop(true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Solicitud enviada.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Solicitud enviada.')));
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
     } finally {
@@ -107,7 +110,7 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                     ChoiceChip(
                       label: Text('$n'),
                       selected: _grupo == n,
-                      selectedColor: ColoresPrevia.primario,
+                      selectedColor: context.colores.primario,
                       onSelected: (_) => setState(() => _grupo = n),
                     ),
                 ],
@@ -121,7 +124,8 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   labelText: 'Preséntate (opcional)',
-                  hintText: 'Somos dos, venimos de cenar por la zona. '
+                  hintText:
+                      'Somos dos, venimos de cenar por la zona. '
                       'Llevamos bebida.',
                   alignLabelWithHint: true,
                 ),
@@ -132,7 +136,7 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 'de que te acepten.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
 
@@ -141,15 +145,15 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 Container(
                   padding: const EdgeInsets.all(EspaciadoPrevia.m),
                   decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
+                    color: context.colores.error.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                     border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
+                      color: context.colores.error.withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
+                    style: TextStyle(color: context.colores.error),
                   ),
                 ),
               ],
@@ -166,9 +170,9 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                           color: Colors.white,
                         ),
                       )
-                    : Text(_grupo == 1
-                        ? 'Pedir mi plaza'
-                        : 'Pedir $_grupo plazas'),
+                    : Text(
+                        _grupo == 1 ? 'Pedir mi plaza' : 'Pedir $_grupo plazas',
+                      ),
               ),
             ],
           ),

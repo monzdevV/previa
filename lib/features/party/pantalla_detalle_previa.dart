@@ -41,12 +41,20 @@ class PantallaDetallePrevia extends ConsumerWidget {
         title: const Text('Previa'),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            color: ColoresPrevia.superficieAlta,
-            onSelected: (opcion) => _menu(context, ref, opcion, detalle.valueOrNull),
+            icon: Icon(
+              Theme.of(context).platform == TargetPlatform.iOS
+                  ? Icons.more_horiz
+                  : Icons.more_vert,
+            ),
+            color: context.colores.superficieAlta,
+            onSelected: (opcion) =>
+                _menu(context, ref, opcion, detalle.valueOrNull),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'reportar', child: Text('Reportar')),
-              PopupMenuItem(value: 'bloquear', child: Text('Bloquear al anfitrión')),
+              PopupMenuItem(
+                value: 'bloquear',
+                child: Text('Bloquear al anfitrión'),
+              ),
             ],
           ),
         ],
@@ -81,7 +89,8 @@ class PantallaDetallePrevia extends ConsumerWidget {
       final confirmado = await _confirmar(
         context,
         titulo: '¿Bloquear a ${previa.anfitrionNombre}?',
-        detalle: 'Dejaréis de veros por completo: sus previas desaparecerán '
+        detalle:
+            'Dejaréis de veros por completo: sus previas desaparecerán '
             'de tu mapa y no podrá escribirte.',
         accion: 'Bloquear',
       );
@@ -101,7 +110,11 @@ class PantallaDetallePrevia extends ConsumerWidget {
     final motivo = await _elegirMotivo(context);
     if (motivo == null) return;
 
-    await repo.reportar(motivo: motivo, previaId: previa.id, perfilId: previa.anfitrionId);
+    await repo.reportar(
+      motivo: motivo,
+      previaId: previa.id,
+      perfilId: previa.anfitrionId,
+    );
     mensajero.showSnackBar(
       const SnackBar(content: Text('Reporte enviado. Gracias por avisar.')),
     );
@@ -116,20 +129,27 @@ class _Contenido extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textos = Theme.of(context).textTheme;
-    final soyMiembro = ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
+    final soyMiembro =
+        ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
     final miSolicitud = ref.watch(_miSolicitudProvider(previa.id)).valueOrNull;
     final yoSoyElAnfitrion =
-        ref.watch(repositorioAuthProvider).usuarioActual?.id == previa.anfitrionId;
+        ref.watch(repositorioAuthProvider).usuarioActual?.id ==
+        previa.anfitrionId;
 
-    final cuando = DateFormat("EEEE d 'de' MMMM 'a las' HH:mm", 'es_ES')
-        .format(previa.empiezaEn);
+    final cuando = DateFormat(
+      "EEEE d 'de' MMMM 'a las' HH:mm",
+      'es_ES',
+    ).format(previa.empiezaEn);
 
     return ListView(
       padding: const EdgeInsets.all(EspaciadoPrevia.l),
       children: [
         Text(previa.titulo, style: textos.headlineMedium),
         const SizedBox(height: EspaciadoPrevia.s),
-        Text(cuando, style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave)),
+        Text(
+          cuando,
+          style: textos.bodyLarge?.copyWith(color: context.colores.textoSuave),
+        ),
 
         const SizedBox(height: EspaciadoPrevia.l),
 
@@ -141,7 +161,9 @@ class _Contenido extends ConsumerWidget {
                 valor: previa.plazasLibres == 0
                     ? 'Completa'
                     : '${previa.plazasLibres}',
-                etiqueta: previa.plazasLibres == 1 ? 'plaza libre' : 'plazas libres',
+                etiqueta: previa.plazasLibres == 1
+                    ? 'plaza libre'
+                    : 'plazas libres',
                 destacado: previa.quedanPlazas,
               ),
             ),
@@ -180,17 +202,21 @@ class _Contenido extends ConsumerWidget {
         const SizedBox(height: EspaciadoPrevia.m),
         Row(
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: ColoresPrevia.superficieAlta,
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: context.colores.superficieAlta,
+                border: Border.fromBorderSide(
+                  BorderSide(color: context.colores.borde),
+                ),
+              ),
               child: Text(
                 previa.anfitrionNombre.isNotEmpty
                     ? previa.anfitrionNombre[0].toUpperCase()
                     : '?',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: ColoresPrevia.texto,
-                ),
+                style: textos.titleMedium,
               ),
             ),
             const SizedBox(width: EspaciadoPrevia.m),
@@ -200,16 +226,12 @@ class _Contenido extends ConsumerWidget {
                 children: [
                   Text(previa.anfitrionNombre, style: textos.titleLarge),
                   if (previa.anfitrionReputacion != null)
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            size: 15, color: ColoresPrevia.aviso),
-                        const SizedBox(width: 2),
-                        Text(
-                          previa.anfitrionReputacion!.toStringAsFixed(1),
-                          style: textos.bodyMedium,
-                        ),
-                      ],
+                    // Sin estrella y sin ambar: la tinta viva esta reservada a
+                    // las plazas libres, y "sobre cinco" lo dice el texto.
+                    Text(
+                      '${previa.anfitrionReputacion!.toStringAsFixed(1).replaceAll('.', ',')}/5'
+                      '  ·  VALORACIÓN',
+                      style: textos.labelMedium,
                     )
                   else
                     Text('Sin valoraciones todavía', style: textos.bodyMedium),
@@ -261,17 +283,20 @@ class _MapaZona extends ConsumerWidget {
               options: MapOptions(
                 initialCenter: previa.ubicacion,
                 initialZoom: soyMiembro ? 16 : 14,
+                backgroundColor: context.colores.fondo,
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.none,
                 ),
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/'
+                  urlTemplate:
+                      'https://{s}.basemaps.cartocdn.com/dark_all/'
                       '{z}/{x}/{y}{r}.png',
                   subdomains: const ['a', 'b', 'c'],
                   retinaMode: RetinaMode.isHighDensity(context),
                   userAgentPackageName: 'com.previa.previa',
+                  tileProvider: ref.watch(proveedorTeselasProvider),
                 ),
                 CircleLayer(
                   circles: [
@@ -279,8 +304,8 @@ class _MapaZona extends ConsumerWidget {
                       point: previa.ubicacion,
                       radius: Entorno.metrosDeDifuminado.toDouble(),
                       useRadiusInMeter: true,
-                      color: ColoresPrevia.primario.withValues(alpha: 0.22),
-                      borderColor: ColoresPrevia.primarioSuave,
+                      color: context.colores.primario.withValues(alpha: 0.22),
+                      borderColor: context.colores.primarioSuave,
                       borderStrokeWidth: 2,
                     ),
                   ],
@@ -295,23 +320,83 @@ class _MapaZona extends ConsumerWidget {
         if (soyMiembro)
           _BotonDireccionExacta(previaId: previa.id)
         else
+          _DireccionRetenida(previa: previa),
+      ],
+    );
+  }
+}
+
+/// La direccion exacta, presente pero retenida.
+///
+/// Se dibuja tachada en lugar de omitirse porque no es lo mismo que un dato
+/// no exista a que exista y todavia no te corresponda: ver el renglon
+/// censurado es lo que explica la regla de privacidad sin un parrafo legal.
+///
+/// Las barras son un patron fijo y no derivan de la direccion real, que el
+/// cliente nunca llega a recibir: el servidor solo la entrega a asistentes
+/// aceptados, asi que aqui no hay nada que filtrar ni siquiera su longitud.
+class _DireccionRetenida extends StatelessWidget {
+  const _DireccionRetenida({required this.previa});
+
+  final Previa previa;
+
+  static const _barras = [96.0, 54.0, 128.0, 38.0, 72.0];
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(EspaciadoPrevia.m),
+      decoration: BoxDecoration(
+        color: context.colores.superficie,
+        border: Border.fromBorderSide(BorderSide(color: context.colores.borde)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lock_outline, size: 15, color: ColoresPrevia.textoTenue),
-              const SizedBox(width: EspaciadoPrevia.xs),
-              Expanded(
-                child: Text(
-                  'La dirección exacta se ve solo si el anfitrión te acepta.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                        color: ColoresPrevia.textoTenue,
-                      ),
+              Text('DIRECCIÓN EXACTA', style: textos.labelMedium),
+              const Spacer(),
+              Text(
+                'RETENIDA',
+                style: textos.labelMedium?.copyWith(
+                  color: context.colores.textoTenue,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
           ),
-      ],
+          const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
+          Wrap(
+            spacing: EspaciadoPrevia.s,
+            runSpacing: EspaciadoPrevia.xs + 2,
+            children: [
+              for (final ancho in _barras)
+                Container(
+                  width: ancho,
+                  height: 13,
+                  color: context.colores.superficieActiva,
+                ),
+            ],
+          ),
+          const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
+          // Lo que si se puede decir: la celda. Es la misma que dibuja la
+          // reticula de arriba, asi que orienta sin revelar el portal.
+          Text(
+            'CELDA ${previa.referenciaCuadricula}  ·  '
+            '${previa.zona.toUpperCase()}',
+            style: textos.labelMedium?.copyWith(color: context.colores.texto),
+          ),
+          const SizedBox(height: EspaciadoPrevia.m),
+          Text(
+            'Se revela en cuanto el anfitrión acepte tu plaza.',
+            style: textos.bodyMedium?.copyWith(fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -332,8 +417,9 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
   Future<void> _pedir() async {
     setState(() => _cargando = true);
     try {
-      final punto =
-          await ref.read(repositorioPreviasProvider).ubicacionExacta(widget.previaId);
+      final punto = await ref
+          .read(repositorioPreviasProvider)
+          .ubicacionExacta(widget.previaId);
       if (mounted) setState(() => _punto = punto);
     } on ErrorPrevia catch (e) {
       if (mounted) {
@@ -351,20 +437,22 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
       return Container(
         padding: const EdgeInsets.all(EspaciadoPrevia.m),
         decoration: BoxDecoration(
-          color: ColoresPrevia.acento.withValues(alpha: 0.1),
+          color: context.colores.acento.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-          border: Border.all(color: ColoresPrevia.acento.withValues(alpha: 0.4)),
+          border: Border.all(
+            color: context.colores.acento.withValues(alpha: 0.4),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.where_to_vote, color: ColoresPrevia.acento, size: 20),
+            Icon(Icons.visibility, color: context.colores.acento, size: 20),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
                 '${_punto!.latitude.toStringAsFixed(5)}, '
                 '${_punto!.longitude.toStringAsFixed(5)}',
-                style: const TextStyle(
-                  color: ColoresPrevia.texto,
+                style: TextStyle(
+                  color: context.colores.texto,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -376,8 +464,8 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
 
     return OutlinedButton.icon(
       onPressed: _cargando ? null : _pedir,
-      icon: const Icon(Icons.where_to_vote_outlined, size: 18),
-      label: Text(_cargando ? 'Pidiendo…' : 'Ver la dirección exacta'),
+      icon: const Icon(Icons.visibility_outlined, size: 18),
+      label: Text(_cargando ? 'PIDIENDO…' : 'VER LA DIRECCIÓN EXACTA'),
     );
   }
 }
@@ -398,11 +486,13 @@ class _Accion extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rutaChat = '${Rutas.previa}/${previa.id}/chat'
+    final rutaChat =
+        '${Rutas.previa}/${previa.id}/chat'
         '?titulo=${Uri.encodeQueryComponent(previa.titulo)}';
 
     if (yoSoyElAnfitrion) {
-      final pendientes = ref
+      final pendientes =
+          ref
               .watch(solicitudesDeProvider(previa.id))
               .valueOrNull
               ?.where((s) => s.estaPendiente)
@@ -419,7 +509,7 @@ class _Accion extends ConsumerWidget {
               pendientes == 0
                   ? 'Ver solicitudes'
                   : '$pendientes ${pendientes == 1 ? "solicitud" : "solicitudes"} '
-                      'por responder',
+                        'por responder',
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.s),
@@ -438,11 +528,11 @@ class _Accion extends ConsumerWidget {
       return Column(
         children: [
           _Nota(
-            icono: yaPaso ? Icons.nightlife : Icons.check_circle,
+            icono: yaPaso ? Icons.schedule : Icons.check_circle,
             texto: yaPaso
                 ? 'Esta previa ya pasó. ¿Qué tal la gente?'
                 : 'Estás dentro. Nos vemos allí.',
-            color: yaPaso ? ColoresPrevia.textoSuave : ColoresPrevia.acento,
+            color: yaPaso ? context.colores.textoSuave : context.colores.acento,
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           if (yaPaso)
@@ -473,10 +563,10 @@ class _Accion extends ConsumerWidget {
     }
 
     if (miSolicitud?.estaPendiente ?? false) {
-      return const _Nota(
+      return _Nota(
         icono: Icons.hourglass_top,
         texto: 'Solicitud enviada. A ver qué dice el anfitrión.',
-        color: ColoresPrevia.aviso,
+        color: context.colores.aviso,
       );
     }
 
@@ -505,8 +595,8 @@ class _Accion extends ConsumerWidget {
           ref.invalidate(_miSolicitudProvider(previa.id));
         }
       },
-      icon: const Icon(Icons.waving_hand_outlined, size: 18),
-      label: const Text('Solicitar plaza'),
+      icon: const Icon(Icons.inbox_outlined, size: 18),
+      label: const Text('SOLICITAR PLAZA'),
     );
   }
 }
@@ -515,30 +605,35 @@ class _Nota extends StatelessWidget {
   const _Nota({
     required this.icono,
     required this.texto,
-    this.color = ColoresPrevia.textoSuave,
+    this.color,
   });
 
   final IconData icono;
   final String texto;
-  final Color color;
+
+  /// Nulo significa el gris secundario del tema, que no se puede nombrar
+  /// aqui porque un valor por defecto tiene que ser constante.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final tinta = color ?? context.colores.textoSuave;
+
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: tinta.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: tinta.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [
-          Icon(icono, color: color, size: 20),
+          Icon(icono, color: tinta, size: 20),
           const SizedBox(width: EspaciadoPrevia.s),
           Expanded(
             child: Text(
               texto,
-              style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              style: TextStyle(color: tinta, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -562,19 +657,19 @@ class _Dato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = destacado ? ColoresPrevia.acento : ColoresPrevia.texto;
+    final color = destacado ? context.colores.acento : context.colores.texto;
 
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.superficie,
+        color: context.colores.superficie,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.borde),
+        border: Border.all(color: context.colores.borde),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icono, size: 18, color: ColoresPrevia.textoSuave),
+          Icon(icono, size: 18, color: context.colores.textoSuave),
           const SizedBox(height: EspaciadoPrevia.s),
           Text(
             valor,
@@ -588,7 +683,10 @@ class _Dato extends StatelessWidget {
           ),
           Text(
             etiqueta,
-            style: const TextStyle(color: ColoresPrevia.textoSuave, fontSize: 12),
+            style: TextStyle(
+              color: context.colores.textoSuave,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -605,7 +703,7 @@ Future<bool?> _confirmar(
   return showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
-      backgroundColor: ColoresPrevia.superficieAlta,
+      backgroundColor: context.colores.superficieAlta,
       title: Text(titulo),
       content: Text(detalle),
       actions: [
@@ -616,7 +714,7 @@ Future<bool?> _confirmar(
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
           style: FilledButton.styleFrom(
-            backgroundColor: ColoresPrevia.error,
+            backgroundColor: context.colores.error,
             minimumSize: const Size(0, 44),
           ),
           child: Text(accion),
@@ -638,7 +736,7 @@ Future<String?> _elegirMotivo(BuildContext context) {
 
   return showModalBottomSheet<String>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(EspaciadoPrevia.radioGrande),
@@ -649,7 +747,10 @@ Future<String?> _elegirMotivo(BuildContext context) {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: EspaciadoPrevia.l),
-          Text('¿Qué ha pasado?', style: Theme.of(contexto).textTheme.titleLarge),
+          Text(
+            '¿Qué ha pasado?',
+            style: Theme.of(contexto).textTheme.titleLarge,
+          ),
           const SizedBox(height: EspaciadoPrevia.m),
           for (final entrada in motivos.entries)
             ListTile(

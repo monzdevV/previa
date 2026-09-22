@@ -4,16 +4,16 @@ import 'package:previa/data/models/previa.dart';
 import 'package:previa/features/map/proveedores_mapa.dart';
 
 Previa _previaCon({List<String> ambiente = const []}) => Previa(
-      id: 'p1',
-      titulo: 'Previa de prueba',
-      zona: 'Centro',
-      ubicacion: const LatLng(37.38, -6.0),
-      empiezaEn: DateTime.now().add(const Duration(hours: 3)),
-      plazasLibres: 3,
-      anfitrionId: 'a1',
-      anfitrionNombre: 'Ana',
-      ambiente: ambiente,
-    );
+  id: 'p1',
+  titulo: 'Previa de prueba',
+  zona: 'Centro',
+  ubicacion: const LatLng(37.38, -6.0),
+  empiezaEn: DateTime.now().add(const Duration(hours: 3)),
+  plazasLibres: 3,
+  anfitrionId: 'a1',
+  anfitrionNombre: 'Ana',
+  ambiente: ambiente,
+);
 
 void main() {
   group('Filtros.encaja', () {

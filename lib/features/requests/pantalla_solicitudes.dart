@@ -53,11 +53,16 @@ class PantallaSolicitudes extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.inbox_outlined,
-                        size: 40, color: ColoresPrevia.textoTenue),
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 40,
+                      color: context.colores.textoTenue,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Nadie ha pedido plaza todavía',
-                        style: textos.titleLarge),
+                    Text(
+                      'Nadie ha pedido plaza todavía',
+                      style: textos.titleLarge,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.xs),
                     Text(
                       'Dale tiempo. Y si tarda, prueba a añadir una '
@@ -72,7 +77,8 @@ class PantallaSolicitudes extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(solicitudesDeProvider(previaId)),
+            onRefresh: () async =>
+                ref.invalidate(solicitudesDeProvider(previaId)),
             child: ListView(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               children: [
@@ -87,7 +93,10 @@ class PantallaSolicitudes extends ConsumerWidget {
                   for (final s in pendientes)
                     Padding(
                       padding: const EdgeInsets.only(bottom: EspaciadoPrevia.s),
-                      child: _TarjetaSolicitud(solicitud: s, previaId: previaId),
+                      child: _TarjetaSolicitud(
+                        solicitud: s,
+                        previaId: previaId,
+                      ),
                     ),
                 ],
                 if (resueltas.isNotEmpty) ...[
@@ -149,7 +158,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
           content: Text(
             aceptar
                 ? '${widget.solicitud.nombreSolicitante} está dentro. '
-                    'Ya podéis hablar por el chat.'
+                      'Ya podéis hablar por el chat.'
                 : 'Solicitud rechazada.',
           ),
         ),
@@ -177,12 +186,12 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
+                  backgroundColor: context.colores.superficieAlta,
                   child: Text(
                     s.inicialSolicitante,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
+                      color: context.colores.texto,
                     ),
                   ),
                 ),
@@ -195,8 +204,11 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                       Row(
                         children: [
                           if (s.reputacionSolicitante != null) ...[
-                            const Icon(Icons.star_rounded,
-                                size: 14, color: ColoresPrevia.aviso),
+                            Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: context.colores.aviso,
+                            ),
                             const SizedBox(width: 2),
                             Text(
                               s.reputacionSolicitante!.toStringAsFixed(1),
@@ -204,8 +216,10 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                             ),
                             const SizedBox(width: EspaciadoPrevia.s),
                           ],
-                          Text(cuando,
-                              style: textos.bodyMedium?.copyWith(fontSize: 12)),
+                          Text(
+                            cuando,
+                            style: textos.bodyMedium?.copyWith(fontSize: 12),
+                          ),
                         ],
                       ),
                     ],
@@ -222,18 +236,24 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                 vertical: EspaciadoPrevia.xs + 2,
               ),
               decoration: BoxDecoration(
-                color: ColoresPrevia.acento.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+                color: context.colores.acento.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(
+                  EspaciadoPrevia.radioGrande,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.group, size: 14, color: ColoresPrevia.acento),
+                  Icon(
+                    Icons.group,
+                    size: 14,
+                    color: context.colores.acento,
+                  ),
                   const SizedBox(width: EspaciadoPrevia.xs),
                   Text(
                     s.resumenGrupo,
-                    style: const TextStyle(
-                      color: ColoresPrevia.acento,
+                    style: TextStyle(
+                      color: context.colores.acento,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -244,8 +264,10 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
 
             if (s.mensaje != null && s.mensaje!.isNotEmpty) ...[
               const SizedBox(height: EspaciadoPrevia.m),
-              Text('"${s.mensaje!}"',
-                  style: textos.bodyLarge?.copyWith(fontStyle: FontStyle.italic)),
+              Text(
+                '"${s.mensaje!}"',
+                style: textos.bodyLarge?.copyWith(fontStyle: FontStyle.italic),
+              ),
             ],
 
             if (!widget.soloLectura && s.estaPendiente) ...[
@@ -254,8 +276,9 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed:
-                          _procesando ? null : () => _responder(aceptar: false),
+                      onPressed: _procesando
+                          ? null
+                          : () => _responder(aceptar: false),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 46),
                       ),
@@ -266,8 +289,9 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                   Expanded(
                     flex: 2,
                     child: FilledButton(
-                      onPressed:
-                          _procesando ? null : () => _responder(aceptar: true),
+                      onPressed: _procesando
+                          ? null
+                          : () => _responder(aceptar: true),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(0, 46),
                       ),
@@ -280,9 +304,11 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                                 color: Colors.white,
                               ),
                             )
-                          : Text(s.tamanoGrupo == 1
-                              ? 'Aceptar'
-                              : 'Aceptar a ${s.tamanoGrupo}'),
+                          : Text(
+                              s.tamanoGrupo == 1
+                                  ? 'Aceptar'
+                                  : 'Aceptar a ${s.tamanoGrupo}',
+                            ),
                     ),
                   ),
                 ],
@@ -292,7 +318,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                 'Si aceptas, verá la dirección exacta.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 11,
-                  color: ColoresPrevia.textoTenue,
+                  color: context.colores.textoTenue,
                 ),
               ),
             ],
@@ -310,14 +336,17 @@ class _Insignia extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (texto, color) = switch (solicitud.estado) {
-      EstadoSolicitud.pendiente => ('Pendiente', ColoresPrevia.aviso),
-      EstadoSolicitud.aceptada => ('Aceptada', ColoresPrevia.acento),
-      EstadoSolicitud.rechazada => ('Rechazada', ColoresPrevia.textoTenue),
-      EstadoSolicitud.cancelada => ('Cancelada', ColoresPrevia.textoTenue),
+      EstadoSolicitud.pendiente => ('Pendiente', context.colores.aviso),
+      EstadoSolicitud.aceptada => ('Aceptada', context.colores.acento),
+      EstadoSolicitud.rechazada => ('Rechazada', context.colores.textoTenue),
+      EstadoSolicitud.cancelada => ('Cancelada', context.colores.textoTenue),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.s, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: EspaciadoPrevia.s,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
@@ -325,7 +354,11 @@ class _Insignia extends StatelessWidget {
       ),
       child: Text(
         texto,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

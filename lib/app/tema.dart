@@ -1,38 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Identidad visual de Previa.
+import 'colores.dart';
+
+export 'colores.dart';
+
+/// Sistema visual de Previa.
 ///
-/// La aplicacion se usa de noche, casi siempre en la calle o en un piso con
-/// poca luz, y a menudo con la pantalla al minimo de brillo. Por eso el tema
-/// base es oscuro y no hay variante clara: no es una omision, es una decision.
-abstract final class ColoresPrevia {
-  /// Fondo principal. Casi negro, pero con un punto de azul para que no
-  /// resulte plano.
-  static const fondo = Color(0xFF0B0B12);
-
-  /// Superficies elevadas: tarjetas, hojas inferiores, dialogos.
-  static const superficie = Color(0xFF16161F);
-  static const superficieAlta = Color(0xFF1F1F2B);
-
-  /// Color de marca. Violeta electrico, el de los focos de una sala.
-  static const primario = Color(0xFF7C4DFF);
-  static const primarioSuave = Color(0xFF9E7BFF);
-
-  /// Acento para lo que esta vivo: plazas libres, mensajes sin leer.
-  static const acento = Color(0xFF00E5A0);
-
-  /// Avisos y errores.
-  static const aviso = Color(0xFFFFB340);
-  static const error = Color(0xFFFF5470);
-
-  /// Texto.
-  static const texto = Color(0xFFF2F2F7);
-  static const textoSuave = Color(0xFFA0A0B2);
-  static const textoTenue = Color(0xFF6C6C80);
-
-  static const borde = Color(0xFF2A2A38);
-}
-
+/// El liston son las apps que la gente ya usa cada noche: Instagram, TikTok,
+/// BeReal y Discord. De ahi salen las tres reglas que mandan sobre el resto:
+/// la imagen ocupa el marco, las caras estan siempre presentes, y todo se
+/// maneja con el pulgar. Nada de esto busca ser original: busca estar al
+/// nivel de lo que el usuario ya tiene instalado.
 abstract final class EspaciadoPrevia {
   static const xs = 4.0;
   static const s = 8.0;
@@ -41,154 +19,266 @@ abstract final class EspaciadoPrevia {
   static const xl = 32.0;
   static const xxl = 48.0;
 
+  /// Esquinas generosas: es lo que separa una tarjeta de una app social de
+  /// una celda de hoja de calculo.
   static const radio = 16.0;
   static const radioGrande = 24.0;
+
+  /// Para pastillas y avatares, que son redondos.
+  static const pastilla = 999.0;
 }
 
-ThemeData construirTemaPrevia() {
-  final esquema = ColorScheme.fromSeed(
-    seedColor: ColoresPrevia.primario,
-    brightness: Brightness.dark,
-  ).copyWith(
-    surface: ColoresPrevia.fondo,
-    primary: ColoresPrevia.primario,
-    secondary: ColoresPrevia.acento,
-    error: ColoresPrevia.error,
-    onSurface: ColoresPrevia.texto,
+/// El tema, construido desde una paleta.
+///
+/// [caraDelSistema] solo lo usan las pruebas: la app deja que la plataforma
+/// elija su propia cara, pero el entorno de goldens no carga ninguna y hay
+/// que nombrarla para que el retrato sea fiel.
+ThemeData construirTemaPrevia({
+  Brightness brillo = Brightness.dark,
+  String? caraDelSistema,
+}) {
+  final c = brillo == Brightness.dark
+      ? ColoresPrevia.oscuro
+      : ColoresPrevia.claro;
+
+  final esquema = ColorScheme(
+    brightness: brillo,
+    primary: c.primario,
+    onPrimary: c.sobrePrimario,
+    secondary: c.secundario,
+    onSecondary: c.sobrePrimario,
+    tertiary: c.disponible,
+    surface: c.superficie,
+    onSurface: c.texto,
+    error: c.error,
+    onError: Colors.white,
+    outline: c.borde,
   );
 
-  const fuente = 'Roboto';
+  final contorno = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
+    borderSide: BorderSide(color: c.borde),
+  );
 
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: brillo,
     colorScheme: esquema,
-    scaffoldBackgroundColor: ColoresPrevia.fondo,
-    fontFamily: fuente,
+    scaffoldBackgroundColor: c.fondo,
+    splashFactory: InkSparkle.splashFactory,
+    fontFamily: caraDelSistema,
+    extensions: [c],
 
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
+    appBarTheme: AppBarTheme(
+      backgroundColor: c.fondo,
+      foregroundColor: c.texto,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
-        color: ColoresPrevia.texto,
+        fontFamily: caraDelSistema,
+        color: c.texto,
         fontSize: 20,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
+        letterSpacing: -0.2,
       ),
     ),
 
-    textTheme: const TextTheme(
+    // La cara del sistema en todo. Las referencias no estrenan tipografia de
+    // display: su caracter viene de la imagen y del color, no de la letra.
+    textTheme: TextTheme(
       displaySmall: TextStyle(
-        fontSize: 32,
+        fontSize: 34,
+        height: 1.12,
         fontWeight: FontWeight.w800,
-        letterSpacing: -1,
-        color: ColoresPrevia.texto,
+        letterSpacing: -0.8,
+        color: c.texto,
       ),
       headlineMedium: TextStyle(
         fontSize: 26,
+        height: 1.18,
         fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        color: ColoresPrevia.texto,
+        letterSpacing: -0.5,
+        color: c.texto,
       ),
       titleLarge: TextStyle(
         fontSize: 18,
+        height: 1.25,
         fontWeight: FontWeight.w700,
-        color: ColoresPrevia.texto,
+        letterSpacing: -0.2,
+        color: c.texto,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: ColoresPrevia.texto, height: 1.4),
-      bodyMedium: TextStyle(fontSize: 14, color: ColoresPrevia.textoSuave, height: 1.4),
-      labelLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      titleMedium: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+        color: c.texto,
+      ),
+      bodyLarge: TextStyle(
+        fontSize: 15,
+        height: 1.45,
+        fontWeight: FontWeight.w400,
+        color: c.texto,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        height: 1.45,
+        fontWeight: FontWeight.w400,
+        color: c.textoSuave,
+      ),
+      labelLarge: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      labelMedium: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: c.textoSuave,
+      ),
     ),
 
     cardTheme: CardThemeData(
-      color: ColoresPrevia.superficie,
+      color: c.superficie,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        side: const BorderSide(color: ColoresPrevia.borde),
       ),
       margin: EdgeInsets.zero,
     ),
 
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: ColoresPrevia.primario,
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(54),
+        backgroundColor: c.primario,
+        foregroundColor: c.sobrePrimario,
+        disabledBackgroundColor: c.superficieActiva,
+        disabledForegroundColor: c.textoTenue,
+        minimumSize: const Size.fromHeight(50),
+        padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.l),
+        // Sin textStyle propio: heredan labelLarge del textTheme, que es
+        // quien lleva la cara del sistema. Fijarlo aqui la perdia.
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
         ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
     ),
-
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: ColoresPrevia.texto,
-        minimumSize: const Size.fromHeight(54),
-        side: const BorderSide(color: ColoresPrevia.borde),
+        foregroundColor: c.texto,
+        minimumSize: const Size.fromHeight(50),
+        side: BorderSide(color: c.borde),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
         ),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
-
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: ColoresPrevia.primarioSuave),
+      style: TextButton.styleFrom(foregroundColor: c.primarioTexto),
     ),
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: ColoresPrevia.superficie,
+      fillColor: c.superficie,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: EspaciadoPrevia.m,
         vertical: EspaciadoPrevia.m,
       ),
-      hintStyle: const TextStyle(color: ColoresPrevia.textoTenue),
-      labelStyle: const TextStyle(color: ColoresPrevia.textoSuave),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.borde),
+      hintStyle: TextStyle(color: c.textoTenue),
+      labelStyle: TextStyle(color: c.textoSuave),
+      prefixIconColor: c.textoTenue,
+      suffixIconColor: c.textoTenue,
+      border: contorno,
+      enabledBorder: contorno.copyWith(
+        borderSide: const BorderSide(color: Colors.transparent),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.borde),
+      focusedBorder: contorno.copyWith(
+        borderSide: BorderSide(color: c.primarioTexto, width: 2),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.primario, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.error),
+      errorBorder: contorno.copyWith(borderSide: BorderSide(color: c.error)),
+      focusedErrorBorder: contorno.copyWith(
+        borderSide: BorderSide(color: c.error, width: 2),
       ),
     ),
 
     chipTheme: ChipThemeData(
-      backgroundColor: ColoresPrevia.superficieAlta,
-      labelStyle: const TextStyle(
-        color: ColoresPrevia.texto,
+      backgroundColor: c.superficieAlta,
+      selectedColor: c.primario,
+      secondaryLabelStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.sobrePrimario,
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      side: const BorderSide(color: ColoresPrevia.borde),
+      labelStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.texto,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+      side: BorderSide.none,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
       ),
     ),
 
-    snackBarTheme: SnackBarThemeData(
-      backgroundColor: ColoresPrevia.superficieAlta,
-      contentTextStyle: const TextStyle(color: ColoresPrevia.texto),
-      behavior: SnackBarBehavior.floating,
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: c.fondo,
+      indicatorColor: Colors.transparent,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 27,
+          color: states.contains(WidgetState.selected) ? c.texto : c.textoTenue,
+        ),
+      ),
+    ),
+
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: c.superficie,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: c.superficie,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(EspaciadoPrevia.radioGrande),
+        ),
+      ),
+    ),
+
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.primario,
+      foregroundColor: c.sobrePrimario,
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       ),
     ),
 
-    dividerTheme: const DividerThemeData(color: ColoresPrevia.borde, thickness: 1),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: c.superficieAlta,
+      contentTextStyle: TextStyle(color: c.texto),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
+      ),
+    ),
+
+    dividerTheme: DividerThemeData(color: c.borde, thickness: 1, space: 1),
   );
+}
+
+/// Estado de ocupacion de una previa.
+enum Ocupacion {
+  abierta,
+  llenandose,
+  completa;
+
+  static Ocupacion desde(int libres) {
+    if (libres <= 0) return Ocupacion.completa;
+    if (libres <= 2) return Ocupacion.llenandose;
+    return Ocupacion.abierta;
+  }
+
+  bool get viva => this != Ocupacion.completa;
+
+  Color color(ColoresPrevia c) => switch (this) {
+    Ocupacion.abierta => c.disponible,
+    Ocupacion.llenandose => c.aviso,
+    Ocupacion.completa => c.textoTenue,
+  };
 }

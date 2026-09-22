@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.4
+  sdk: ^3.13.0
 
 dependencies:
   flutter:
@@ -41,6 +41,13 @@ dependencies:
 
   # Imagenes de perfil con cache.
   cached_network_image: ^3.4.1
+  image_picker: ^1.2.3
+  video_player: ^2.14.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
+  url_launcher: ^6.3.2
+  share_plus: ^13.3.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -55,3 +62,4 @@ flutter:
     - .env
     - assets/images/
     - assets/icons/
+

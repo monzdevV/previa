@@ -9,11 +9,20 @@ import '../data/repositories/repositorio_auth.dart';
 import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
+import '../features/feed/pantalla_publicar.dart';
 import '../features/map/pantalla_inicio.dart';
+import '../features/social/pantalla_buscar.dart';
+import '../features/social/pantalla_locales.dart';
+import '../features/social/pantalla_mis_noches.dart';
+import '../features/social/pantalla_avisos.dart';
+import '../features/social/pantalla_mensajes.dart';
+import '../features/social/pantalla_perfil_publico.dart';
 import '../features/chat/pantalla_chat.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
 import '../features/profile/pantalla_ajustes.dart';
+import '../features/profile/pantalla_moderacion.dart';
+import '../features/profile/pantallas_legales.dart';
 import '../features/profile/pantalla_editar_perfil.dart';
 import '../features/ratings/pantalla_por_valorar.dart';
 import '../features/ratings/pantalla_valorar.dart';
@@ -31,6 +40,17 @@ abstract final class Rutas {
   static const editarPerfil = '/editar-perfil';
   static const porValorar = '/por-valorar';
   static const ajustes = '/ajustes';
+  static const buscar = '/buscar';
+  static const publicar = '/publicar';
+  static const locales = '/locales';
+  static const misNoches = '/mis-noches';
+  static const privacidad = '/privacidad';
+  static const condiciones = '/condiciones';
+  static const moderacion = '/moderacion';
+  static const perfilDe = '/perfil';
+  static const mensajes = '/mensajes';
+  static const avisos = '/avisos';
+  static const conversacion = '/conversacion';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -64,7 +84,8 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
     redirect: (context, estado) {
       final haySesion = cliente.auth.currentUser != null;
       final ruta = estado.matchedLocation;
-      final enZonaPublica = ruta == Rutas.bienvenida ||
+      final enZonaPublica =
+          ruta == Rutas.bienvenida ||
           ruta == Rutas.entrar ||
           ruta == Rutas.registro;
 
@@ -78,18 +99,12 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         path: Rutas.bienvenida,
         builder: (_, _) => const PantallaBienvenida(),
       ),
-      GoRoute(
-        path: Rutas.entrar,
-        builder: (_, _) => const PantallaEntrar(),
-      ),
+      GoRoute(path: Rutas.entrar, builder: (_, _) => const PantallaEntrar()),
       GoRoute(
         path: Rutas.registro,
         builder: (_, _) => const PantallaRegistro(),
       ),
-      GoRoute(
-        path: Rutas.inicio,
-        builder: (_, _) => const PantallaInicio(),
-      ),
+      GoRoute(path: Rutas.inicio, builder: (_, _) => const PantallaInicio()),
       GoRoute(
         path: Rutas.crearPrevia,
         builder: (_, _) => const PantallaCrearPrevia(),
@@ -104,15 +119,13 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '${Rutas.previa}/:id',
-        builder: (_, estado) => PantallaDetallePrevia(
-          previaId: estado.pathParameters['id']!,
-        ),
+        builder: (_, estado) =>
+            PantallaDetallePrevia(previaId: estado.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'solicitudes',
-            builder: (_, estado) => PantallaSolicitudes(
-              previaId: estado.pathParameters['id']!,
-            ),
+            builder: (_, estado) =>
+                PantallaSolicitudes(previaId: estado.pathParameters['id']!),
           ),
           GoRoute(
             path: 'chat',
@@ -134,9 +147,40 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         path: Rutas.porValorar,
         builder: (_, _) => const PantallaPorValorar(),
       ),
+      GoRoute(path: Rutas.ajustes, builder: (_, _) => const PantallaAjustes()),
       GoRoute(
-        path: Rutas.ajustes,
-        builder: (_, _) => const PantallaAjustes(),
+        path: Rutas.moderacion,
+        builder: (_, _) => const PantallaModeracion(),
+      ),
+      GoRoute(
+        path: Rutas.privacidad,
+        builder: (_, _) => const PantallaPrivacidad(),
+      ),
+      GoRoute(
+        path: Rutas.condiciones,
+        builder: (_, _) => const PantallaCondiciones(),
+      ),
+      GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
+      GoRoute(path: Rutas.mensajes, builder: (_, _) => const PantallaMensajes()),
+      GoRoute(path: Rutas.avisos, builder: (_, _) => const PantallaAvisos()),
+      GoRoute(
+        path: '${Rutas.conversacion}/:id',
+        builder: (_, estado) =>
+            PantallaConversacion(otroId: estado.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '${Rutas.perfilDe}/:id',
+        builder: (_, estado) =>
+            PantallaPerfilPublico(perfilId: estado.pathParameters['id']!),
+      ),
+      GoRoute(path: Rutas.locales, builder: (_, _) => const PantallaLocales()),
+      GoRoute(
+        path: Rutas.misNoches,
+        builder: (_, _) => const PantallaMisNoches(),
+      ),
+      GoRoute(
+        path: Rutas.publicar,
+        builder: (_, _) => const PantallaPublicar(),
       ),
     ],
   );

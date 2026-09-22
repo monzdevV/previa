@@ -39,13 +39,16 @@ class RepositorioPrevias {
   /// Busqueda geografica. Toda la filtracion ocurre en el servidor, que
   /// devuelve unicamente ubicaciones difuminadas.
   Future<List<Previa>> buscarCerca(FiltrosBusqueda filtros) async {
-    final filas = await _cliente.rpc('previas_cerca', params: {
-      'p_lat': filtros.centro.latitude,
-      'p_lng': filtros.centro.longitude,
-      'p_radio_m': filtros.radioMetros,
-      'p_horas': filtros.horas,
-      'p_plazas_min': filtros.plazasMinimas,
-    });
+    final filas = await _cliente.rpc(
+      'previas_cerca',
+      params: {
+        'p_lat': filtros.centro.latitude,
+        'p_lng': filtros.centro.longitude,
+        'p_radio_m': filtros.radioMetros,
+        'p_horas': filtros.horas,
+        'p_plazas_min': filtros.plazasMinimas,
+      },
+    );
 
     return (filas as List)
         .map((f) => Previa.desdeBusqueda(Map<String, dynamic>.from(f as Map)))
@@ -89,11 +92,13 @@ class RepositorioPrevias {
     List<String> ambiente = const [],
     int edadMinima = 18,
     int? edadMaxima,
+    bool enSitioPublico = false,
   }) async {
     final id = _cliente.auth.currentUser?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
 
-    final punto = 'SRID=4326;POINT(${ubicacionExacta.longitude} '
+    final punto =
+        'SRID=4326;POINT(${ubicacionExacta.longitude} '
         '${ubicacionExacta.latitude})';
 
     try {
@@ -111,6 +116,7 @@ class RepositorioPrevias {
             'spots_total': plazas,
             'min_age': edadMinima,
             'max_age': edadMaxima,
+            'is_public': enSitioPublico,
           })
           .select('id')
           .single();
@@ -121,16 +127,20 @@ class RepositorioPrevias {
   }
 
   Future<void> cancelar(String previaId) async {
-    await _cliente.from('parties').update({'status': 'cancelled'}).eq('id', previaId);
+    await _cliente
+        .from('parties')
+        .update({'status': 'cancelled'})
+        .eq('id', previaId);
   }
 
   /// Direccion exacta. Falla a proposito si no eres asistente aceptado:
   /// la comprobacion la hace el servidor, no esta aplicacion.
   Future<LatLng> ubicacionExacta(String previaId) async {
     try {
-      final filas = await _cliente.rpc('ubicacion_exacta', params: {
-        'p_party': previaId,
-      });
+      final filas = await _cliente.rpc(
+        'ubicacion_exacta',
+        params: {'p_party': previaId},
+      );
       final lista = filas as List;
       if (lista.isEmpty) throw const ErrorPrevia('No se encontró la previa.');
       final f = Map<String, dynamic>.from(lista.first as Map);
@@ -200,8 +210,10 @@ class RepositorioPrevias {
   Future<List<Solicitud>> solicitudesDe(String previaId) async {
     final filas = await _cliente
         .from('join_requests')
-        .select('*, profiles!join_requests_requester_id_fkey '
-            '( display_name, avatar_url, reputation )')
+        .select(
+          '*, profiles!join_requests_requester_id_fkey '
+          '( display_name, avatar_url, reputation )',
+        )
         .eq('party_id', previaId)
         .order('created_at');
 
@@ -227,7 +239,10 @@ class RepositorioPrevias {
 
   /// Aceptar o rechazar. El recuento de plazas y el alta como miembro los
   /// hace un disparador, no esta aplicacion.
-  Future<void> responderSolicitud(String solicitudId, {required bool aceptar}) async {
+  Future<void> responderSolicitud(
+    String solicitudId, {
+    required bool aceptar,
+  }) async {
     try {
       await _cliente
           .from('join_requests')
@@ -250,9 +265,11 @@ class RepositorioPrevias {
   Future<List<Map<String, dynamic>>> miembrosDe(String previaId) async {
     final filas = await _cliente
         .from('party_members')
-        .select('profile_id, role, group_size, '
-            'profiles!party_members_profile_id_fkey '
-            '( display_name, avatar_url, reputation )')
+        .select(
+          'profile_id, role, group_size, '
+          'profiles!party_members_profile_id_fkey '
+          '( display_name, avatar_url, reputation )',
+        )
         .eq('party_id', previaId);
 
     return (filas as List)
@@ -288,9 +305,10 @@ class RepositorioPrevias {
   Future<void> bloquear(String perfilId) async {
     final id = _cliente.auth.currentUser?.id;
     if (id == null) return;
-    await _cliente
-        .from('blocks')
-        .insert({'blocker_id': id, 'blocked_id': perfilId});
+    await _cliente.from('blocks').insert({
+      'blocker_id': id,
+      'blocked_id': perfilId,
+    });
   }
 
   Future<void> desbloquear(String perfilId) async {
@@ -409,7 +427,15 @@ class RepositorioPrevias {
       return 'Ya no quedan plazas suficientes para ese grupo.';
     }
     if (m.contains('row-level security') || m.contains('violates row-level')) {
-      return 'No puedes hacer eso. Revisa que tu perfil esté completo.';
+      // El servidor solo deja abrir previas con el perfil completo, y
+      // completo significa tener fecha de nacimiento. Decirlo asi ahorra
+      // que alguien se quede bloqueado sin saber que le falta.
+      return 'Para abrir una previa necesitas tu fecha de nacimiento en el '
+          'perfil. Ve a Editar perfil y ponla.';
+    }
+    if (m.contains('permission denied')) {
+      return 'Tu versión de la aplicación pide un dato que el servidor '
+          'todavía no acepta. Avisa de este error.';
     }
     if (m.contains('plazas_coherentes')) {
       return 'El número de plazas no es válido.';

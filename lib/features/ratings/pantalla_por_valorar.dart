@@ -28,8 +28,10 @@ class PantallaPorValorar extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se ha podido cargar tu historial.',
-                style: textos.bodyMedium),
+            child: Text(
+              'No se ha podido cargar tu historial.',
+              style: textos.bodyMedium,
+            ),
           ),
         ),
         data: (lista) {
@@ -40,11 +42,17 @@ class PantallaPorValorar extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.history,
-                        size: 40, color: ColoresPrevia.textoTenue),
+                    Icon(
+                      Icons.history,
+                      size: 40,
+                      color: context.colores.textoTenue,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Todavía no has ido a ninguna previa',
-                        style: textos.titleLarge, textAlign: TextAlign.center),
+                    Text(
+                      'Todavía no has ido a ninguna previa',
+                      style: textos.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.xs),
                     Text(
                       'Cuando vayas a una y termine, podrás valorar a la gente '
@@ -63,11 +71,14 @@ class PantallaPorValorar extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
-              separatorBuilder: (_, _) => const SizedBox(height: EspaciadoPrevia.s),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: EspaciadoPrevia.s),
               itemBuilder: (_, i) {
                 final p = lista[i];
-                final cuando =
-                    DateFormat("d 'de' MMMM", 'es_ES').format(p.empiezaEn);
+                final cuando = DateFormat(
+                  "d 'de' MMMM",
+                  'es_ES',
+                ).format(p.empiezaEn);
 
                 return Card(
                   child: ListTile(
@@ -76,8 +87,10 @@ class PantallaPorValorar extends ConsumerWidget {
                       vertical: EspaciadoPrevia.s,
                     ),
                     title: Text(p.titulo, style: textos.titleLarge),
-                    subtitle: Text('$cuando · ${p.zona}',
-                        style: textos.bodyMedium),
+                    subtitle: Text(
+                      '$cuando · ${p.zona}',
+                      style: textos.bodyMedium,
+                    ),
                     trailing: const Icon(Icons.star_outline_rounded),
                     onTap: () => context.push(
                       '${Rutas.previa}/${p.id}/valorar'

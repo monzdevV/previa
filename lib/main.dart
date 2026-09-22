@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app/modo_de_tema.dart';
 import 'app/rutas.dart';
 import 'app/tema.dart';
 import 'core/entorno.dart';
@@ -34,7 +35,9 @@ class AplicacionPrevia extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Previa',
       debugShowCheckedModeBanner: false,
-      theme: construirTemaPrevia(),
+      theme: construirTemaPrevia(brillo: Brightness.light),
+      darkTheme: construirTemaPrevia(brillo: Brightness.dark),
+      themeMode: ref.watch(modoDeTemaProvider),
 
       // La aplicacion es en español; no hay version en otros idiomas.
       locale: const Locale('es', 'ES'),

@@ -10,14 +10,17 @@ import '../../data/repositories/repositorio_previas.dart';
 /// Mensajes en vivo. Supabase Realtime empuja cada insercion por WebSocket,
 /// asi que no hay que refrescar ni sondear.
 final mensajesProvider = StreamProvider.family<List<Mensaje>, String>(
-  (ref, previaId) =>
-      ref.watch(repositorioPreviasProvider).mensajesDe(previaId),
+  (ref, previaId) => ref.watch(repositorioPreviasProvider).mensajesDe(previaId),
 );
 
 /// Quien va, para poder poner nombre a cada mensaje.
-final miembrosProvider =
-    FutureProvider.family<Map<String, String>, String>((ref, previaId) async {
-  final filas = await ref.watch(repositorioPreviasProvider).miembrosDe(previaId);
+final miembrosProvider = FutureProvider.family<Map<String, String>, String>((
+  ref,
+  previaId,
+) async {
+  final filas = await ref
+      .watch(repositorioPreviasProvider)
+      .miembrosDe(previaId);
   return {
     for (final f in filas)
       f['profile_id'] as String:
@@ -65,7 +68,9 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
       if (mounted) {
         _texto.text = texto;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se ha podido enviar. Inténtalo otra vez.')),
+          const SnackBar(
+            content: Text('No se ha podido enviar. Inténtalo otra vez.'),
+          ),
         );
       }
     } finally {
@@ -89,7 +94,8 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
   @override
   Widget build(BuildContext context) {
     final mensajes = ref.watch(mensajesProvider(widget.previaId));
-    final nombres = ref.watch(miembrosProvider(widget.previaId)).valueOrNull ?? {};
+    final nombres =
+        ref.watch(miembrosProvider(widget.previaId)).valueOrNull ?? {};
     final yo = ref.watch(repositorioAuthProvider).usuarioActual?.id;
 
     ref.listen(mensajesProvider(widget.previaId), (_, _) => _alFinal());
@@ -104,10 +110,10 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
               nombres.isEmpty
                   ? 'Cargando…'
                   : '${nombres.length} ${nombres.length == 1 ? "persona" : "personas"}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: ColoresPrevia.textoSuave,
+                color: context.colores.textoSuave,
               ),
             ),
           ],
@@ -153,9 +159,9 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
             top: false,
             child: Container(
               padding: const EdgeInsets.all(EspaciadoPrevia.s + 2),
-              decoration: const BoxDecoration(
-                color: ColoresPrevia.superficie,
-                border: Border(top: BorderSide(color: ColoresPrevia.borde)),
+              decoration: BoxDecoration(
+                color: context.colores.superficie,
+                border: Border(top: BorderSide(color: context.colores.borde)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -182,7 +188,7 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                   IconButton.filled(
                     onPressed: _enviando ? null : _enviar,
                     style: IconButton.styleFrom(
-                      backgroundColor: ColoresPrevia.primario,
+                      backgroundColor: context.colores.primario,
                       minimumSize: const Size(48, 48),
                     ),
                     icon: const Icon(Icons.send_rounded, size: 20),
@@ -220,8 +226,9 @@ class _Burbuja extends StatelessWidget {
         top: muestraNombre ? EspaciadoPrevia.s : 0,
       ),
       child: Column(
-        crossAxisAlignment:
-            esMio ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: esMio
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           if (muestraNombre && !esMio)
             Padding(
@@ -231,10 +238,10 @@ class _Burbuja extends StatelessWidget {
               ),
               child: Text(
                 nombre,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: ColoresPrevia.textoSuave,
+                  color: context.colores.textoSuave,
                 ),
               ),
             ),
@@ -247,7 +254,9 @@ class _Burbuja extends StatelessWidget {
               vertical: EspaciadoPrevia.s + 2,
             ),
             decoration: BoxDecoration(
-              color: esMio ? ColoresPrevia.primario : ColoresPrevia.superficieAlta,
+              color: esMio
+                  ? context.colores.primario
+                  : context.colores.superficieAlta,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(EspaciadoPrevia.radio),
                 topRight: const Radius.circular(EspaciadoPrevia.radio),
@@ -261,7 +270,7 @@ class _Burbuja extends StatelessWidget {
                 Text(
                   mensaje.texto,
                   style: TextStyle(
-                    color: esMio ? Colors.white : ColoresPrevia.texto,
+                    color: esMio ? Colors.white : context.colores.texto,
                     fontSize: 15,
                     height: 1.35,
                   ),
@@ -273,7 +282,7 @@ class _Burbuja extends StatelessWidget {
                     fontSize: 10,
                     color: esMio
                         ? Colors.white.withValues(alpha: 0.7)
-                        : ColoresPrevia.textoTenue,
+                        : context.colores.textoTenue,
                   ),
                 ),
               ],
@@ -296,11 +305,16 @@ class _ChatVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.forum_outlined,
-                size: 40, color: ColoresPrevia.textoTenue),
+            Icon(
+              Icons.forum_outlined,
+              size: 40,
+              color: context.colores.textoTenue,
+            ),
             const SizedBox(height: EspaciadoPrevia.m),
-            Text('Todavía no ha escrito nadie',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Todavía no ha escrito nadie',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: EspaciadoPrevia.xs),
             Text(
               'Rompe el hielo: di quién eres y a qué hora llegáis.',

@@ -11,11 +11,17 @@ void main() {
     final hoy = DateTime.now();
 
     test('acepta a quien tiene claramente mas de 18', () {
-      expect(RepositorioAuth.esMayorDeEdad(DateTime(hoy.year - 25, 6, 15)), isTrue);
+      expect(
+        RepositorioAuth.esMayorDeEdad(DateTime(hoy.year - 25, 6, 15)),
+        isTrue,
+      );
     });
 
     test('rechaza a quien tiene claramente menos de 18', () {
-      expect(RepositorioAuth.esMayorDeEdad(DateTime(hoy.year - 15, 6, 15)), isFalse);
+      expect(
+        RepositorioAuth.esMayorDeEdad(DateTime(hoy.year - 15, 6, 15)),
+        isFalse,
+      );
     });
 
     test('acepta a quien cumple 18 justo hoy', () {

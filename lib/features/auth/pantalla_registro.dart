@@ -43,7 +43,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
       context: context,
       // Se abre directamente en el año en que se cumplen los 18: el gesto
       // por defecto no debe facilitar mentir sobre la edad.
-      initialDate: _fechaNacimiento ?? DateTime(hoy.year - 18, hoy.month, hoy.day),
+      initialDate:
+          _fechaNacimiento ?? DateTime(hoy.year - 18, hoy.month, hoy.day),
       firstDate: DateTime(hoy.year - 100),
       lastDate: hoy,
       locale: const Locale('es', 'ES'),
@@ -64,7 +65,9 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
       return;
     }
     if (!_aceptaCondiciones) {
-      setState(() => _error = 'Tienes que aceptar las condiciones para continuar.');
+      setState(
+        () => _error = 'Tienes que aceptar las condiciones para continuar.',
+      );
       return;
     }
 
@@ -74,7 +77,9 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     });
 
     try {
-      await ref.read(repositorioAuthProvider).registrar(
+      await ref
+          .read(repositorioAuthProvider)
+          .registrar(
             correo: _correo.text,
             contrasena: _contrasena.text,
             username: _username.text,
@@ -159,8 +164,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                           : formatoFecha.format(_fechaNacimiento!),
                       style: TextStyle(
                         color: _fechaNacimiento == null
-                            ? ColoresPrevia.textoTenue
-                            : ColoresPrevia.texto,
+                            ? context.colores.textoTenue
+                            : context.colores.texto,
                         fontSize: 16,
                       ),
                     ),
@@ -173,7 +178,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                     'Solo guardamos tu edad. Nadie ve tu fecha de nacimiento.',
                     style: textos.bodyMedium?.copyWith(
                       fontSize: 12,
-                      color: ColoresPrevia.textoTenue,
+                      color: context.colores.textoTenue,
                     ),
                   ),
                 ),
@@ -218,10 +223,11 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 // Consentimiento explicito, casilla sin premarcar (RGPD).
                 CheckboxListTile(
                   value: _aceptaCondiciones,
-                  onChanged: (v) => setState(() => _aceptaCondiciones = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => _aceptaCondiciones = v ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
-                  activeColor: ColoresPrevia.primario,
+                  activeColor: context.colores.primario,
                   title: Text(
                     'Soy mayor de 18 años y acepto las condiciones de uso y la '
                     'política de privacidad.',
@@ -234,22 +240,27 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                   Container(
                     padding: const EdgeInsets.all(EspaciadoPrevia.m),
                     decoration: BoxDecoration(
-                      color: ColoresPrevia.error.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+                      color: context.colores.error.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(
+                        EspaciadoPrevia.radio,
+                      ),
                       border: Border.all(
-                        color: ColoresPrevia.error.withValues(alpha: 0.4),
+                        color: context.colores.error.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: ColoresPrevia.error, size: 20),
+                        Icon(
+                          Icons.error_outline,
+                          color: context.colores.error,
+                          size: 20,
+                        ),
                         const SizedBox(width: EspaciadoPrevia.s),
                         Expanded(
                           child: Text(
                             _error!,
-                            style: const TextStyle(
-                              color: ColoresPrevia.error,
+                            style: TextStyle(
+                              color: context.colores.error,
                               fontSize: 14,
                             ),
                           ),

@@ -6,6 +6,9 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
+import 'cabecera_perfil.dart';
+import 'pestanas_perfil.dart';
+import 'proveedores_perfil.dart';
 import '../party/tarjeta_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
@@ -30,7 +33,7 @@ class PantallaPerfil extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () async {
-          ref.invalidate(miPerfilProvider);
+          refrescarPerfil(ref);
           ref.invalidate(misPreviasProvider);
         },
         child: ListView(
@@ -38,48 +41,15 @@ class PantallaPerfil extends ConsumerWidget {
           children: [
             perfil.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('No se ha podido cargar tu perfil.',
-                  style: textos.bodyMedium),
-              data: (p) => Row(
-                children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: ColoresPrevia.primario,
-                    child: Text(
-                      p?.iniciales ?? '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: EspaciadoPrevia.m),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p?.nombre ?? '', style: textos.titleLarge),
-                        Text('@${p?.username ?? ''}', style: textos.bodyMedium),
-                        if (p != null && p.tieneReputacion)
-                          Row(
-                            children: [
-                              const Icon(Icons.star_rounded,
-                                  size: 15, color: ColoresPrevia.aviso),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${p.reputacion!.toStringAsFixed(1)} '
-                                '· ${p.numeroValoraciones} valoraciones',
-                                style: textos.bodyMedium,
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+              error: (e, _) => Text(
+                'No se ha podido cargar tu perfil.',
+                style: textos.bodyMedium,
               ),
+              data: (p) => CabeceraPerfil(perfil: p),
             ),
+
+            const SizedBox(height: EspaciadoPrevia.m),
+            const PestanasPerfil(),
 
             const SizedBox(height: EspaciadoPrevia.xl),
             Row(
@@ -100,21 +70,27 @@ class PantallaPerfil extends ConsumerWidget {
                 padding: EdgeInsets.all(EspaciadoPrevia.l),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (e, _) => Text('No se han podido cargar tus previas.',
-                  style: textos.bodyMedium),
+              error: (e, _) => Text(
+                'No se han podido cargar tus previas.',
+                style: textos.bodyMedium,
+              ),
               data: (lista) => lista.isEmpty
                   ? Container(
                       padding: const EdgeInsets.all(EspaciadoPrevia.l),
                       decoration: BoxDecoration(
-                        color: ColoresPrevia.superficie,
-                        borderRadius:
-                            BorderRadius.circular(EspaciadoPrevia.radio),
-                        border: Border.all(color: ColoresPrevia.borde),
+                        color: context.colores.superficie,
+                        borderRadius: BorderRadius.circular(
+                          EspaciadoPrevia.radio,
+                        ),
+                        border: Border.all(color: context.colores.borde),
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.nightlife_outlined,
-                              size: 32, color: ColoresPrevia.textoTenue),
+                          Icon(
+                            Icons.grid_off,
+                            size: 32,
+                            color: context.colores.textoTenue,
+                          ),
                           const SizedBox(height: EspaciadoPrevia.s),
                           Text(
                             'Todavía no has abierto ninguna previa.',
@@ -129,7 +105,8 @@ class PantallaPerfil extends ConsumerWidget {
                         for (final p in lista)
                           Padding(
                             padding: const EdgeInsets.only(
-                                bottom: EspaciadoPrevia.s),
+                              bottom: EspaciadoPrevia.s,
+                            ),
                             child: TarjetaPrevia(
                               previa: p,
                               compacta: true,
@@ -144,7 +121,23 @@ class PantallaPerfil extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.l),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.waving_hand_outlined),
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: const Text('Mis noches'),
+              subtitle: const Text('El calendario de cuándo has salido'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.misNoches),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.people_alt_outlined),
+              title: const Text('Gente'),
+              subtitle: const Text('Busca, sigue y comparte tu código'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(Rutas.buscar),
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.inbox_outlined),
               title: const Text('Mis solicitudes'),
               subtitle: const Text('Las plazas que has pedido'),
               trailing: const Icon(Icons.chevron_right),
@@ -158,6 +151,18 @@ class PantallaPerfil extends ConsumerWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => context.push(Rutas.porValorar),
             ),
+            if (perfil.valueOrNull?.esModerador ?? false)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.gavel_rounded,
+                  color: context.colores.error,
+                ),
+                title: const Text('Moderación'),
+                subtitle: const Text('Lo que ha reportado la gente'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(Rutas.moderacion),
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.shield_outlined),
@@ -177,14 +182,21 @@ class PantallaPerfil extends ConsumerWidget {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.download_outlined),
               title: const Text('Descargar mis datos'),
-              subtitle: const Text('Todo lo que guardamos de ti, en un fichero'),
+              subtitle: const Text(
+                'Todo lo que guardamos de ti, en un fichero',
+              ),
               onTap: () => _exportar(context, ref),
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.delete_outline, color: ColoresPrevia.error),
-              title: const Text('Eliminar mi cuenta',
-                  style: TextStyle(color: ColoresPrevia.error)),
+              leading: Icon(
+                Icons.delete_outline,
+                color: context.colores.error,
+              ),
+              title: Text(
+                'Eliminar mi cuenta',
+                style: TextStyle(color: context.colores.error),
+              ),
               subtitle: const Text('Se borra todo y no hay vuelta atrás'),
               onTap: () => _eliminarCuenta(context, ref),
             ),
@@ -222,7 +234,7 @@ class PantallaPerfil extends ConsumerWidget {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: ColoresPrevia.superficieAlta,
+        backgroundColor: context.colores.superficieAlta,
         title: const Text('¿Eliminar tu cuenta?'),
         content: const Text(
           'Se borrarán tu perfil, tus previas, tus mensajes y tus '
@@ -236,7 +248,7 @@ class PantallaPerfil extends ConsumerWidget {
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
-              backgroundColor: ColoresPrevia.error,
+              backgroundColor: context.colores.error,
               minimumSize: const Size(0, 44),
             ),
             child: const Text('Eliminar'),

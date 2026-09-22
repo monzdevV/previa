@@ -7,11 +7,11 @@ import '../../data/repositories/repositorio_previas.dart';
 
 final companerosProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>(
-  (ref, previaId) => ref.watch(repositorioPreviasProvider).companerosDe(previaId),
-);
+      (ref, previaId) =>
+          ref.watch(repositorioPreviasProvider).companerosDe(previaId),
+    );
 
-final misValoracionesProvider =
-    FutureProvider.family<Map<String, int>, String>(
+final misValoracionesProvider = FutureProvider.family<Map<String, int>, String>(
   (ref, previaId) =>
       ref.watch(repositorioPreviasProvider).misValoracionesEn(previaId),
 );
@@ -30,7 +30,8 @@ class PantallaValorar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final companeros = ref.watch(companerosProvider(previaId));
-    final yaValoradas = ref.watch(misValoracionesProvider(previaId)).valueOrNull ?? {};
+    final yaValoradas =
+        ref.watch(misValoracionesProvider(previaId)).valueOrNull ?? {};
     final textos = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -40,8 +41,10 @@ class PantallaValorar extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se ha podido cargar quién fue.',
-                style: textos.bodyMedium),
+            child: Text(
+              'No se ha podido cargar quién fue.',
+              style: textos.bodyMedium,
+            ),
           ),
         ),
         data: (lista) {
@@ -75,7 +78,8 @@ class PantallaValorar extends ConsumerWidget {
                   child: _FichaValoracion(
                     previaId: previaId,
                     perfilId: c['profile_id'] as String,
-                    nombre: (c['profiles'] as Map?)?['display_name'] as String? ??
+                    nombre:
+                        (c['profiles'] as Map?)?['display_name'] as String? ??
                         'Alguien',
                     esAnfitrion: c['role'] == 'host',
                     puntuacionPrevia: yaValoradas[c['profile_id']],
@@ -135,7 +139,9 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
     final mensajero = ScaffoldMessenger.of(context);
 
     try {
-      await ref.read(repositorioPreviasProvider).valorar(
+      await ref
+          .read(repositorioPreviasProvider)
+          .valorar(
             previaId: widget.previaId,
             perfilId: widget.perfilId,
             puntuacion: puntuacion,
@@ -168,14 +174,14 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
+                  backgroundColor: context.colores.superficieAlta,
                   child: Text(
                     widget.nombre.isNotEmpty
                         ? widget.nombre[0].toUpperCase()
                         : '?',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
+                      color: context.colores.texto,
                     ),
                   ),
                 ),
@@ -191,8 +197,11 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                   ),
                 ),
                 if (_guardada)
-                  const Icon(Icons.check_circle,
-                      color: ColoresPrevia.acento, size: 20),
+                  Icon(
+                    Icons.check_circle,
+                    color: context.colores.acento,
+                    size: 20,
+                  ),
               ],
             ),
 
@@ -202,7 +211,10 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                 for (var i = 1; i <= 5; i++)
                   IconButton(
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                     onPressed: () => setState(() {
                       _puntuacion = i;
                       _guardada = false;
@@ -213,8 +225,8 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                           : Icons.star_outline_rounded,
                       size: 32,
                       color: (_puntuacion ?? 0) >= i
-                          ? ColoresPrevia.aviso
-                          : ColoresPrevia.textoTenue,
+                          ? context.colores.aviso
+                          : context.colores.textoTenue,
                     ),
                   ),
               ],

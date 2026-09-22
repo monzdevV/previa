@@ -38,10 +38,9 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
     });
 
     try {
-      await ref.read(repositorioAuthProvider).entrar(
-            correo: _correo.text,
-            contrasena: _contrasena.text,
-          );
+      await ref
+          .read(repositorioAuthProvider)
+          .entrar(correo: _correo.text, contrasena: _contrasena.text);
       if (mounted) context.go(Rutas.inicio);
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
@@ -57,80 +56,97 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
     return Scaffold(
       appBar: AppBar(leading: const BackButton()),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(EspaciadoPrevia.l),
-          child: Form(
-            key: _formulario,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Bienvenida de vuelta', style: textos.headlineMedium),
-                const SizedBox(height: EspaciadoPrevia.s),
-                Text(
-                  'Entra para ver qué se cuece cerca de ti.',
-                  style: textos.bodyMedium,
-                ),
-                const SizedBox(height: EspaciadoPrevia.xl),
-
-                TextFormField(
-                  controller: _correo,
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(
-                    labelText: 'Correo electrónico',
-                    prefixIcon: Icon(Icons.mail_outline),
-                  ),
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Escribe un correo válido'
-                      : null,
-                ),
-                const SizedBox(height: EspaciadoPrevia.m),
-
-                TextFormField(
-                  controller: _contrasena,
-                  obscureText: _oculta,
-                  autofillHints: const [AutofillHints.password],
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _oculta ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+        child: LayoutBuilder(
+          builder: (context, restricciones) => SingleChildScrollView(
+            padding: const EdgeInsets.all(EspaciadoPrevia.l),
+            child: ConstrainedBox(
+              // El panel de accion baja al alcance del pulgar en lugar de
+              // dejar medio movil vacio bajo el formulario.
+              constraints: BoxConstraints(
+                minHeight: restricciones.maxHeight - EspaciadoPrevia.l * 2,
+              ),
+              child: IntrinsicHeight(
+                child: Form(
+                  key: _formulario,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Vuelve a la noche.', style: textos.displaySmall),
+                      const SizedBox(height: EspaciadoPrevia.s),
+                      Text(
+                        'Tus planes, solicitudes y conversaciones siguen aquí.',
+                        style: textos.bodyMedium,
                       ),
-                      onPressed: () => setState(() => _oculta = !_oculta),
-                    ),
-                  ),
-                  validator: (v) =>
-                      (v == null || v.isEmpty) ? 'Escribe tu contraseña' : null,
-                  onFieldSubmitted: (_) => _entrar(),
-                ),
 
-                if (_error != null) ...[
-                  const SizedBox(height: EspaciadoPrevia.m),
-                  _AvisoError(_error!),
-                ],
+                      const Spacer(),
+                      const SizedBox(height: EspaciadoPrevia.xl),
 
-                const SizedBox(height: EspaciadoPrevia.l),
-                FilledButton(
-                  onPressed: _cargando ? null : _entrar,
-                  child: _cargando
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
+                      TextFormField(
+                        controller: _correo,
+                        keyboardType: TextInputType.emailAddress,
+                        autocorrect: false,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(
+                          labelText: 'Correo o usuario',
+                          prefixIcon: Icon(Icons.mail_outline),
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Escribe tu correo o usuario'
+                            : null,
+                      ),
+                      const SizedBox(height: EspaciadoPrevia.m),
+
+                      TextFormField(
+                        controller: _contrasena,
+                        obscureText: _oculta,
+                        autofillHints: const [AutofillHints.password],
+                        decoration: InputDecoration(
+                          labelText: 'Contraseña',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _oculta
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                            onPressed: () => setState(() => _oculta = !_oculta),
                           ),
-                        )
-                      : const Text('Entrar'),
-                ),
+                        ),
+                        validator: (v) => (v == null || v.isEmpty)
+                            ? 'Escribe tu contraseña'
+                            : null,
+                        onFieldSubmitted: (_) => _entrar(),
+                      ),
 
-                TextButton(
-                  onPressed: () => context.pushReplacement(Rutas.registro),
-                  child: const Text('No tengo cuenta todavía'),
+                      if (_error != null) ...[
+                        const SizedBox(height: EspaciadoPrevia.m),
+                        _AvisoError(_error!),
+                      ],
+
+                      const SizedBox(height: EspaciadoPrevia.l),
+                      FilledButton(
+                        onPressed: _cargando ? null : _entrar,
+                        child: _cargando
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: context.colores.fondoProfundo,
+                                ),
+                              )
+                            : const Text('ENTRAR'),
+                      ),
+
+                      TextButton(
+                        onPressed: () =>
+                            context.pushReplacement(Rutas.registro),
+                        child: const Text('No tengo cuenta todavía'),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -148,18 +164,17 @@ class _AvisoError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
-        color: ColoresPrevia.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.error.withValues(alpha: 0.4)),
+        color: context.colores.error.withValues(alpha: 0.12),
+        border: Border.all(color: context.colores.error.withValues(alpha: 0.5)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: ColoresPrevia.error, size: 20),
+          Icon(Icons.error_outline, color: context.colores.error, size: 20),
           const SizedBox(width: EspaciadoPrevia.s),
           Expanded(
             child: Text(
               mensaje,
-              style: const TextStyle(color: ColoresPrevia.error, fontSize: 14),
+              style: TextStyle(color: context.colores.error, fontSize: 14),
             ),
           ),
         ],

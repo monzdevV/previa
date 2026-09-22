@@ -28,8 +28,10 @@ class PantallaMisSolicitudes extends ConsumerWidget {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se han podido cargar tus solicitudes.',
-                style: textos.bodyMedium),
+            child: Text(
+              'No se han podido cargar tus solicitudes.',
+              style: textos.bodyMedium,
+            ),
           ),
         ),
         data: (lista) {
@@ -40,11 +42,17 @@ class PantallaMisSolicitudes extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.waving_hand_outlined,
-                        size: 40, color: ColoresPrevia.textoTenue),
+                    Icon(
+                      Icons.inbox_outlined,
+                      size: 40,
+                      color: context.colores.textoTenue,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Todavía no has pedido plaza',
-                        style: textos.titleLarge, textAlign: TextAlign.center),
+                    Text(
+                      'Todavía no has pedido plaza',
+                      style: textos.titleLarge,
+                      textAlign: TextAlign.center,
+                    ),
                     const SizedBox(height: EspaciadoPrevia.xs),
                     Text(
                       'Busca una previa en el mapa y pide sitio para tu grupo.',
@@ -62,7 +70,8 @@ class PantallaMisSolicitudes extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
-              separatorBuilder: (_, _) => const SizedBox(height: EspaciadoPrevia.s),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: EspaciadoPrevia.s),
               itemBuilder: (_, i) => _Tarjeta(solicitud: lista[i]),
             ),
           );
@@ -84,25 +93,25 @@ class _Tarjeta extends ConsumerWidget {
 
     final (etiqueta, color, explicacion) = switch (solicitud.estado) {
       EstadoSolicitud.pendiente => (
-          'Pendiente',
-          ColoresPrevia.aviso,
-          'Esperando a que el anfitrión responda.',
-        ),
+        'Pendiente',
+        context.colores.aviso,
+        'Esperando a que el anfitrión responda.',
+      ),
       EstadoSolicitud.aceptada => (
-          'Aceptada',
-          ColoresPrevia.acento,
-          'Estás dentro. Ya puedes ver la dirección y el chat.',
-        ),
+        'Aceptada',
+        context.colores.acento,
+        'Estás dentro. Ya puedes ver la dirección y el chat.',
+      ),
       EstadoSolicitud.rechazada => (
-          'Rechazada',
-          ColoresPrevia.textoTenue,
-          'Esta vez no ha podido ser.',
-        ),
+        'Rechazada',
+        context.colores.textoTenue,
+        'Esta vez no ha podido ser.',
+      ),
       EstadoSolicitud.cancelada => (
-          'Cancelada',
-          ColoresPrevia.textoTenue,
-          'La cancelaste tú.',
-        ),
+        'Cancelada',
+        context.colores.textoTenue,
+        'La cancelaste tú.',
+      ),
     };
 
     return Card(
@@ -118,10 +127,12 @@ class _Tarjeta extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(solicitud.tituloPrevia,
-                        style: textos.titleLarge,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      solicitud.tituloPrevia,
+                      style: textos.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
                   Container(
@@ -131,8 +142,9 @@ class _Tarjeta extends ConsumerWidget {
                     ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.12),
-                      borderRadius:
-                          BorderRadius.circular(EspaciadoPrevia.radioGrande),
+                      borderRadius: BorderRadius.circular(
+                        EspaciadoPrevia.radioGrande,
+                      ),
                       border: Border.all(color: color.withValues(alpha: 0.4)),
                     ),
                     child: Text(
@@ -152,7 +164,10 @@ class _Tarjeta extends ConsumerWidget {
                 spacing: EspaciadoPrevia.m,
                 children: [
                   if (solicitud.zonaPrevia != null)
-                    Text('📍 ${solicitud.zonaPrevia}', style: textos.bodyMedium),
+                    Text(
+                      '📍 ${solicitud.zonaPrevia}',
+                      style: textos.bodyMedium,
+                    ),
                   if (empieza != null)
                     Text(
                       '🕐 ${DateFormat("d MMM · HH:mm", "es_ES").format(empieza)}',
@@ -163,8 +178,10 @@ class _Tarjeta extends ConsumerWidget {
               ),
 
               const SizedBox(height: EspaciadoPrevia.s),
-              Text(explicacion,
-                  style: textos.bodyMedium?.copyWith(fontSize: 12, color: color)),
+              Text(
+                explicacion,
+                style: textos.bodyMedium?.copyWith(fontSize: 12, color: color),
+              ),
 
               if (solicitud.estaPendiente) ...[
                 const SizedBox(height: EspaciadoPrevia.s),
