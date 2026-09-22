@@ -1,52 +1,57 @@
-
-!.env.example
-# --- Previa ---
-# Android Studio will place build artifacts here
-# Claves y configuracion local (nunca al repositorio)
-# Flutter/Dart/Pub related
-# IntelliJ related
-# Miscellaneous
-# Obfuscation related
-# OneDrive
-# Symbolication related
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# Widget Preview related
-# is commented out by default.
-#.vscode/
-**/doc/api/
-**/ios/Flutter/.last_build_id
-*.class
-*.iml
-*.ipr
-*.iws
-*.log
-*.pyc
-*.swp
-*.tmp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.dart_tool/
+# Claves y configuracion local (nunca al repositorio).
+#
+# El orden importa: en git gana el ultimo patron que coincide, asi que la
+# excepcion de la plantilla tiene que ir DESPUES de los patrones que la
+# taparian. Ordenar este fichero alfabeticamente lo rompe.
 .env
 .env.*
+!.env.example
+lib/core/supabase_config.dart
+
+# Flutter, Dart y Pub
+.dart_tool/
 .flutter-plugins-dependencies
-.history
-.idea/
 .pub-cache/
 .pub/
-.svn/
-.swiftpm/
-.widget_preview/
-/android/app/debug
-/android/app/profile
-/android/app/release
+build/
 /build/
 /coverage/
 app.*.map.json
 app.*.symbols
-build/
-desktop.ini
-lib/core/supabase_config.dart
 migrate_working_dir/
+**/doc/api/
+
+# Android Studio deja aqui sus artefactos
+/android/app/debug
+/android/app/profile
+/android/app/release
+**/ios/Flutter/.last_build_id
+
+# Simbolizacion y ofuscacion
+*.class
+*.log
+
+# Editores
+.idea/
+*.iml
+*.ipr
+*.iws
+.atom/
+.history
+.swiftpm/
+# La carpeta .vscode lleva configuracion de lanzamiento que puede interesar
+# versionar, asi que se deja fuera de la lista a proposito.
+#.vscode/
+
+# Vista previa de widgets
+.widget_preview/
+
+# Sistema operativo
+.DS_Store
+desktop.ini
+.build/
+.buildlog/
+.svn/
+*.pyc
+*.swp
+*.tmp
