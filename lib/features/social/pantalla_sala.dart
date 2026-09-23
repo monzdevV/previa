@@ -16,6 +16,12 @@ final _mensajesProvider = FutureProvider.family<List<MensajeDeSala>, String>(
   (ref, localId) => ref.watch(repositorioSocialProvider).salaMensajes(localId),
 );
 
+/// Si has dicho que vas: la sala se deja mirar a cualquiera, pero el juego
+/// es solo para quien esta.
+final _voyProvider = FutureProvider.autoDispose.family<bool, String>(
+  (ref, localId) => ref.watch(repositorioSocialProvider).voyEstaNoche(localId),
+);
+
 final _fotosProvider = FutureProvider.family<List<Publicacion>, String>(
   (ref, localId) => ref.watch(repositorioSocialProvider).salaFotos(localId),
 );
@@ -75,9 +81,8 @@ class _PantallaSalaState extends ConsumerState<PantallaSala> {
               Text(widget.nombreLocal),
               Text(
                 esta,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: context.colores.textoTenue,
-                ),
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: context.colores.textoTenue),
               ),
             ],
           ),
@@ -99,9 +104,7 @@ class _PantallaSalaState extends ConsumerState<PantallaSala> {
                 _Fotos(localId: widget.localId),
               ],
             ),
-            // El sticker solo aparece si la sala te ha dejado entrar: el
-            // chat carga solo para quien ha dicho que va.
-            if (ref.watch(_mensajesProvider(widget.localId)).hasValue)
+            if (ref.watch(_voyProvider(widget.localId)).value ?? false)
               Positioned(
                 top: EspaciadoPrevia.m,
                 right: EspaciadoPrevia.m,
@@ -169,7 +172,9 @@ class _ChatState extends ConsumerState<_Chat> {
         Expanded(
           child: mensajes.when(
             loading: () => Center(
-              child: CircularProgressIndicator(color: context.colores.primarioTexto),
+              child: CircularProgressIndicator(
+                color: context.colores.primarioTexto,
+              ),
             ),
             error: (e, _) => const _Cerrada(),
             data: (lista) => lista.isEmpty
@@ -189,7 +194,9 @@ class _ChatState extends ConsumerState<_Chat> {
         SafeArea(
           top: false,
           child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.s + EspaciadoPrevia.xs),
+            padding: const EdgeInsets.all(
+              EspaciadoPrevia.s + EspaciadoPrevia.xs,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -305,22 +312,24 @@ class _Fotos extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       body: fotos.when(
         loading: () => Center(
-          child: CircularProgressIndicator(color: context.colores.primarioTexto),
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
         ),
         error: (e, _) => const _Cerrada(),
         data: (lista) => lista.isEmpty
             ? const _Mensaje(
-                texto: 'Todavía no hay fotos de esta noche.\n'
+                texto:
+                    'Todavía no hay fotos de esta noche.\n'
                     'Sube la primera.',
               )
             : GridView.builder(
                 padding: const EdgeInsets.all(3),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 3,
-                      crossAxisSpacing: 3,
-                    ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  mainAxisSpacing: 3,
+                  crossAxisSpacing: 3,
+                ),
                 itemCount: lista.length,
                 itemBuilder: (_, i) => CachedNetworkImage(
                   imageUrl: lista[i].mediaUrl,
@@ -365,9 +374,9 @@ Future<void> _subir(BuildContext context, WidgetRef ref, String localId) async {
     ref.invalidate(_fotosProvider(localId));
   } catch (e) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido subir.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No se ha podido subir.')));
     }
   }
 }

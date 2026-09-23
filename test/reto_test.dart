@@ -9,6 +9,9 @@ void main() {
         'texto': 'Busca a Hugo y haceos una foto.',
         'origen': 'ia',
         'creado_en': '2026-09-23T21:27:06.337121+00:00',
+        'local_id': 'l1',
+        'local_nombre': 'Sala',
+        'noche': '2026-09-23',
         'objetivo_id': 'p1',
         'objetivo_usuario': 'hugo',
         'objetivo_nombre': 'Hugo',
@@ -21,6 +24,8 @@ void main() {
       expect(reto.objetivoUsuario, 'hugo');
       expect(reto.objetivoAvatar, isNull);
       expect(reto.restantes, 7);
+      // La noche es una fecha sin hora: a medianoche, no desplazada.
+      expect(reto.noche, DateTime(2026, 9, 23));
     });
 
     test('un reto de plantilla no se presenta como de la IA', () {
@@ -28,6 +33,9 @@ void main() {
         'id': 'r1',
         'texto': 'x',
         'origen': 'plantilla',
+        'local_id': 'l1',
+        'local_nombre': 'Sala',
+        'noche': '2026-09-23',
         'objetivo_id': 'p1',
         'objetivo_usuario': 'u',
         'objetivo_nombre': 'U',

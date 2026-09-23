@@ -56,6 +56,7 @@ const ESTADOS: Record<string, number> = {
   YA_TIENES_RETO: 409,
   LIMITE_NOCHE: 429,
   NO_HAY_NADIE: 409,
+  NO_EXISTE_RETO: 404,
   PLANTILLA_INVALIDA: 500,
 };
 
@@ -97,4 +98,42 @@ export function leerPeticion(cuerpo: unknown): {
   // en "sin posicion" en silencio: se rechaza la peticion entera.
   if (!valida(lat, 90) || !valida(lng, 180)) return null;
   return { localId: local_id, lat, lng };
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Peticion de quitar la foto de un reto en el que sales. */
+export function leerQuitar(cuerpo: unknown): { retoId: string } | null {
+  if (typeof cuerpo !== "object" || cuerpo === null) return null;
+  const { accion, reto_id } = cuerpo as Record<string, unknown>;
+  if (accion !== "quitar") return null;
+  if (typeof reto_id !== "string" || !UUID.test(reto_id)) return null;
+  return { retoId: reto_id };
+}
+
+/**
+ * La ruta dentro del cubo a partir de la URL publica. Devuelve null si la
+ * URL no es del cubo de publicaciones: nunca se borra algo que no se sabe
+ * de donde viene.
+ */
+export function rutaEnElCubo(url: string): string | null {
+  const marca = "/storage/v1/object/public/publicaciones/";
+  const donde = url.indexOf(marca);
+  if (donde < 0) return null;
+  const ruta = decodeURIComponent(url.slice(donde + marca.length).split("?")[0]);
+  if (!ruta || ruta.includes("..")) return null;
+  return ruta;
+}
+
+/**
+ * El nombre del local va dentro del mensaje a la IA y cualquiera puede
+ * proponer un local. Se deja en una linea corta y sin comillas para que no
+ * pueda colarse como instrucciones.
+ */
+export function limpiarNombreDeLocal(nombre: string): string {
+  return nombre
+    .replace(/[\r\n"`<>{}]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
 }

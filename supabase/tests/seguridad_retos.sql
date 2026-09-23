@@ -5,7 +5,7 @@
 -- todo al terminar.
 --
 -- Como ejecutarla: pegar el contenido en el editor SQL de Supabase.
--- Resultado esperado: 20 filas, todas con resultado PASA.
+-- Resultado esperado: 23 filas, todas con resultado PASA.
 --
 -- Que demuestra cada prueba:
 --   35-37  una solicitud solo la acepta el anfitrion, y no se muda de previa
@@ -18,6 +18,9 @@
 --   49-50  se cumple con foto y el objetivo puede quitarla
 --   51-52  un bloqueo o no querer jugar te sacan del reparto
 --   53-54  rajarse cierra el reto y el cliente no escribe retos a mano
+--   55     una foto anterior al reto no sirve para cumplirlo
+--   56     bloquear cierra el reto abierto entre las dos personas
+--   57     la app no reescribe retos ni borra fotos ajenas por su cuenta
 
 create temp table resultados_retos (
   n int, prueba text, esperado text, obtenido text, ok boolean
@@ -248,7 +251,7 @@ begin
   execute 'set local role authenticated';
   perform set_config('request.jwt.claims',
     json_build_object('sub',v_gala,'role','authenticated')::text, true);
-  select objetivo_usuario into v_txt from public.mi_reto(v_local);
+  select objetivo_usuario into v_txt from public.mi_reto();
   execute 'reset role';
   insert into resultados_retos values
     (48,'El jugador ve su reto con la ficha del objetivo','hugo_test',
@@ -270,11 +273,9 @@ begin
      v_int = 1
      and (select status from public.challenges where id = v_reto) = 'hecho');
 
-  execute 'set local role authenticated';
-  perform set_config('request.jwt.claims',
-    json_build_object('sub',v_hugo,'role','authenticated')::text, true);
-  perform public.quitar_foto_de_reto(v_reto);
-  execute 'reset role';
+  -- Lo hace la funcion de borde con la clave de servicio, que tambien borra
+  -- el fichero; aqui se prueba la parte de la base de datos.
+  perform public.quitar_foto_de_reto_de(v_hugo, v_reto);
   select count(*)::int into v_int from public.posts where id = v_post;
   insert into resultados_retos values
     (50,'El objetivo puede quitar la foto','0', v_int::text, v_int = 0);
@@ -327,6 +328,47 @@ begin
     execute 'reset role';
     insert into resultados_retos values
       (54,'Un reto no se da por hecho a mano','denegado','denegado', true);
+  end;
+
+  -- 55: foto de antes del reto -----------------------------------------------
+  insert into public.posts (author_id, media_url, media_type, venue_id, night, created_at)
+  values (v_gala, v_media || 'vieja.jpg', 'photo', v_local, v_noche, now() - interval '1 hour')
+  returning id into v_post;
+  v_reto := public.crear_reto(v_gala, v_local, 'Busca a {persona} ahora', 'plantilla');
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_gala,'role','authenticated')::text, true);
+  begin
+    perform public.completar_reto(v_reto, v_post);
+    execute 'reset role';
+    insert into resultados_retos values
+      (55,'Una foto de antes no cumple el reto','FOTO_INVALIDA','cumplido', false);
+  exception when others then
+    execute 'reset role';
+    insert into resultados_retos values
+      (55,'Una foto de antes no cumple el reto','FOTO_INVALIDA', sqlerrm, sqlerrm = 'FOTO_INVALIDA');
+  end;
+
+  -- 56: bloquear cierra el reto ---------------------------------------------
+  insert into public.blocks (blocker_id, blocked_id) values (v_hugo, v_gala);
+  select status::text into v_txt from public.challenges where id = v_reto;
+  insert into resultados_retos values
+    (56,'Bloquear cierra el reto abierto','caducado', v_txt, v_txt = 'caducado');
+  delete from public.blocks where blocker_id = v_hugo;
+
+  -- 57: funciones solo de servicio --------------------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_gala,'role','authenticated')::text, true);
+  begin
+    perform public.reescribir_reto(v_reto, 'Otro {persona} foto');
+    execute 'reset role';
+    insert into resultados_retos values
+      (57,'La app no reescribe retos','denegado','reescrito', false);
+  exception when others then
+    execute 'reset role';
+    insert into resultados_retos values
+      (57,'La app no reescribe retos','denegado','denegado', true);
   end;
 
   -- Limpieza -----------------------------------------------------------------

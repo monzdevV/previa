@@ -17,14 +17,14 @@ import '../feed/pantalla_feed.dart' show AvatarPerfil;
 /// nombre y lo que lo hace reconocible como sticker.
 const nombreDelJuego = 'No hay 🥚';
 
-final _miRetoProvider = FutureProvider.autoDispose.family<Reto?, String>(
-  (ref, localId) => ref.watch(repositorioRetosProvider).miReto(localId),
+final _miRetoProvider = FutureProvider.autoDispose<Reto?>(
+  (ref) => ref.watch(repositorioRetosProvider).miReto(),
 );
 
 /// El sticker que da entrada al juego dentro de la sala de un local.
 ///
-/// Solo se pinta cuando la sala esta abierta para ti, es decir, cuando has
-/// dicho que vas: el juego va de gente que esta en el mismo sitio.
+/// Solo se pinta a quien ha dicho que va a este local esta noche: el juego
+/// va de gente que esta en el mismo sitio.
 class StickerNoHayHuevos extends StatelessWidget {
   const StickerNoHayHuevos({super.key, required this.localId});
 
@@ -113,44 +113,55 @@ class _HojaReto extends ConsumerStatefulWidget {
 class _HojaRetoState extends ConsumerState<_HojaReto> {
   _Fase _fase = _Fase.listo;
 
+  /// El ultimo fallo, pintado dentro de la hoja. Un SnackBar saldria en la
+  /// pantalla de debajo, tapado por la propia hoja.
+  String? _error;
+
   /// La foto ya subida de un reto que no se llego a marcar como hecho. Si
   /// se reintenta, se reaprovecha en vez de subir otra igual a la sala.
   ({String reto, String publicacion})? _pendiente;
 
   bool get _ocupado => _fase == _Fase.pidiendo || _fase == _Fase.subiendo;
 
-  void _avisar(String texto) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
+  void _fallo(String texto) {
+    if (mounted) setState(() => _error = texto);
   }
 
   Future<void> _pedir() async {
     if (_ocupado) return;
-    setState(() => _fase = _Fase.pidiendo);
+    // Se leen antes de esperar a nada: si la hoja se cierra a medias, `ref`
+    // deja de valer y la peticion se quedaria sin terminar.
+    final ubicacion = ref.read(servicioUbicacionProvider);
+    final retos = ref.read(repositorioRetosProvider);
+    setState(() {
+      _fase = _Fase.pidiendo;
+      _error = null;
+    });
 
     // La posicion ayuda a demostrar que estas dentro, pero si no llega se
     // pide igual: la base de datos decide si hace falta para este local.
     double? lat;
     double? lng;
     try {
-      final punto = await ref
-          .read(servicioUbicacionProvider)
-          .posicionActual()
-          .timeout(const Duration(seconds: 8));
+      final punto = await ubicacion.posicionActual().timeout(
+        const Duration(seconds: 8),
+      );
       lat = punto.latitude;
       lng = punto.longitude;
     } catch (_) {}
 
     try {
-      await ref
-          .read(repositorioRetosProvider)
-          .pedirReto(widget.localId, lat: lat, lng: lng);
+      await retos.pedirReto(widget.localId, lat: lat, lng: lng);
       HapticFeedback.heavyImpact();
-      ref.invalidate(_miRetoProvider(widget.localId));
+      if (mounted) ref.invalidate(_miRetoProvider);
     } on ErrorReto catch (e) {
-      _avisar(e.mensaje);
+      _fallo(e.mensaje);
+      // Si ya habia uno abierto, que aparezca en vez de seguir escondido.
+      if (e.motivo == MotivoSinReto.yaTienesReto && mounted) {
+        ref.invalidate(_miRetoProvider);
+      }
     } catch (_) {
-      _avisar(MotivoSinReto.desconocido.mensaje);
+      _fallo(MotivoSinReto.desconocido.mensaje);
     } finally {
       if (mounted && _fase == _Fase.pidiendo) {
         setState(() => _fase = _Fase.listo);
@@ -165,6 +176,7 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
       return _marcarHecho(reto, pendiente.publicacion);
     }
 
+    final social = ref.read(repositorioSocialProvider);
     final foto = await ImagePicker().pickImage(
       source: ImageSource.camera,
       maxWidth: 1600,
@@ -172,24 +184,28 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
     );
     if (foto == null || !mounted) return;
 
-    setState(() => _fase = _Fase.subiendo);
+    setState(() {
+      _fase = _Fase.subiendo;
+      _error = null;
+    });
     try {
       final bytes = await foto.readAsBytes();
       final punto = foto.name.lastIndexOf('.');
-      final publicacion = await ref
-          .read(repositorioSocialProvider)
-          .publicarEnSala(
-            localId: widget.localId,
-            bytes: bytes,
-            extension: punto > 0
-                ? foto.name.substring(punto + 1).toLowerCase()
-                : 'jpg',
-            esVideo: false,
-            texto: '$nombreDelJuego · ${reto.texto}',
-          );
+      // A la sala del reto y con su noche: puede no ser la sala desde la
+      // que lo miras, y a las seis el reloj ya diria otro dia.
+      final publicacion = await social.publicarEnSala(
+        localId: reto.localId,
+        noche: DateTime(reto.noche.year, reto.noche.month, reto.noche.day, 12),
+        bytes: bytes,
+        extension: punto > 0
+            ? foto.name.substring(punto + 1).toLowerCase()
+            : 'jpg',
+        esVideo: false,
+        texto: '$nombreDelJuego · ${reto.texto}',
+      );
       _pendiente = (reto: reto.id, publicacion: publicacion);
     } catch (_) {
-      _avisar('No se ha podido subir la foto. Prueba otra vez.');
+      _fallo('No se ha podido subir la foto. Prueba otra vez.');
       if (mounted) setState(() => _fase = _Fase.listo);
       return;
     }
@@ -197,15 +213,22 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
   }
 
   Future<void> _marcarHecho(Reto reto, String publicacion) async {
-    if (mounted) setState(() => _fase = _Fase.subiendo);
+    final retos = ref.read(repositorioRetosProvider);
+    if (mounted) {
+      setState(() {
+        _fase = _Fase.subiendo;
+        _error = null;
+      });
+    }
     try {
-      await ref.read(repositorioRetosProvider).completar(reto.id, publicacion);
+      await retos.completar(reto.id, publicacion);
       _pendiente = null;
       HapticFeedback.heavyImpact();
-      ref.invalidate(_miRetoProvider(widget.localId));
-      if (mounted) setState(() => _fase = _Fase.cumplido);
+      if (!mounted) return;
+      ref.invalidate(_miRetoProvider);
+      setState(() => _fase = _Fase.cumplido);
     } catch (_) {
-      _avisar(
+      _fallo(
         'La foto está subida pero no se ha podido dar el reto por '
         'hecho. Pulsa otra vez.',
       );
@@ -215,13 +238,14 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
 
   Future<void> _rajarse(Reto reto) async {
     if (_ocupado) return;
+    final retos = ref.read(repositorioRetosProvider);
     final seguro = await showDialog<bool>(
       context: context,
       builder: (contexto) => AlertDialog(
         title: const Text('¿No hay huevos?'),
         content: Text(
           'Te rajas de este reto y cuenta para el límite de la noche. '
-          'Te quedan ${reto.restantes - 1} después de este.',
+          '${reto.restantes == 0 ? 'Era el último.' : 'Te quedarán ${reto.restantes}.'}',
         ),
         actions: [
           TextButton(
@@ -238,16 +262,19 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
     if (seguro != true || !mounted) return;
 
     try {
-      await ref.read(repositorioRetosProvider).rajarse(reto.id);
-      ref.invalidate(_miRetoProvider(widget.localId));
+      await retos.rajarse(reto.id);
+      if (mounted) {
+        setState(() => _error = null);
+        ref.invalidate(_miRetoProvider);
+      }
     } catch (_) {
-      _avisar('No se ha podido cerrar el reto.');
+      _fallo('No se ha podido cerrar el reto.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final reto = ref.watch(_miRetoProvider(widget.localId));
+    final reto = ref.watch(_miRetoProvider);
 
     final contenido = switch (_fase) {
       _Fase.cumplido => _Cumplido(
@@ -260,7 +287,7 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
         error: (_, _) => _Invitacion(
           ocupado: false,
           aviso: 'No hemos podido cargar el juego.',
-          onJugar: () => ref.invalidate(_miRetoProvider(widget.localId)),
+          onJugar: () => ref.invalidate(_miRetoProvider),
           textoBoton: 'Reintentar',
         ),
         data: (r) => r == null
@@ -271,6 +298,7 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
               )
             : _FichaReto(
                 reto: r,
+                enOtroLocal: r.localId != widget.localId,
                 subiendo: _fase == _Fase.subiendo,
                 onCumplir: () => _cumplir(r),
                 onRajarse: () => _rajarse(r),
@@ -278,21 +306,54 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
       ),
     };
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        EspaciadoPrevia.l,
-        EspaciadoPrevia.s,
-        EspaciadoPrevia.l,
-        EspaciadoPrevia.l,
-      ),
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 280),
-        curve: Curves.easeOutCubic,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          child: KeyedSubtree(
-            key: ValueKey(contenido.runtimeType),
-            child: contenido,
+    final c = context.colores;
+    return PopScope(
+      // Mientras sube la foto no se cierra: cerrarla a medias dejaba la foto
+      // en la sala con el reto sin cumplir.
+      canPop: !_ocupado,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.s,
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.l,
+        ),
+        child: AnimatedSize(
+          duration: MovimientoPrevia.normal,
+          curve: MovimientoPrevia.curva,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                child: KeyedSubtree(
+                  key: ValueKey(contenido.runtimeType),
+                  child: contenido,
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: EspaciadoPrevia.m),
+                Container(
+                      padding: const EdgeInsets.all(EspaciadoPrevia.m),
+                      decoration: BoxDecoration(
+                        color: c.superficieAlta,
+                        borderRadius: BorderRadius.circular(
+                          EspaciadoPrevia.radio,
+                        ),
+                        border: Border.all(color: c.borde),
+                      ),
+                      child: Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    )
+                    .animate()
+                    .fadeIn(duration: MovimientoPrevia.rapido)
+                    .shake(hz: 4, offset: const Offset(4, 0), duration: 300.ms),
+              ],
+            ],
           ),
         ),
       ),
@@ -413,12 +474,16 @@ class _Invitacion extends StatelessWidget {
 class _FichaReto extends StatelessWidget {
   const _FichaReto({
     required this.reto,
+    required this.enOtroLocal,
     required this.subiendo,
     required this.onCumplir,
     required this.onRajarse,
   });
 
   final Reto reto;
+
+  /// El reto es de otro local al que tambien dijiste que ibas.
+  final bool enOtroLocal;
   final bool subiendo;
   final VoidCallback onCumplir;
   final VoidCallback onRajarse;
@@ -445,13 +510,21 @@ class _FichaReto extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              reto.restantes == 1
+              reto.restantes == 0
                   ? 'Último de la noche'
-                  : 'Te quedan ${reto.restantes}',
+                  : 'Quedan ${reto.restantes} más',
               style: textos.labelMedium?.copyWith(color: c.textoTenue),
             ),
           ],
         ),
+        if (enOtroLocal)
+          Padding(
+            padding: const EdgeInsets.only(top: EspaciadoPrevia.xs),
+            child: Text(
+              'En ${reto.localNombre}',
+              style: textos.bodyMedium?.copyWith(color: c.textoSuave),
+            ),
+          ),
         const SizedBox(height: EspaciadoPrevia.s),
         Text(reto.texto, style: textos.headlineMedium)
             .animate()

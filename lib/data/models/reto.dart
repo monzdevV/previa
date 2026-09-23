@@ -4,6 +4,9 @@ class Reto {
     required this.id,
     required this.texto,
     required this.deIa,
+    required this.localId,
+    required this.localNombre,
+    required this.noche,
     required this.objetivoId,
     required this.objetivoUsuario,
     required this.objetivoNombre,
@@ -18,19 +21,31 @@ class Reto {
   /// Si lo escribio la IA o salio de la lista de reserva.
   final bool deIa;
 
+  /// El local del reto, que puede no ser la sala desde la que lo miras: se
+  /// puede decir que vas a dos sitios la misma noche.
+  final String localId;
+  final String localNombre;
+
+  /// La noche del reto. La foto se sube con esta y no con la del reloj del
+  /// telefono, que a las seis de la manana ya diria otra.
+  final DateTime noche;
+
   final String objetivoId;
   final String objetivoUsuario;
   final String objetivoNombre;
   final String? objetivoAvatar;
   final String? objetivoBio;
 
-  /// Cuantos retos te quedan esta noche contando este.
+  /// Cuantos retos te quedaran esta noche despues de este.
   final int restantes;
 
   factory Reto.desdeJson(Map<String, dynamic> json) => Reto(
     id: json['id'] as String,
     texto: json['texto'] as String,
     deIa: json['origen'] == 'ia',
+    localId: json['local_id'] as String,
+    localNombre: json['local_nombre'] as String,
+    noche: DateTime.parse(json['noche'] as String),
     objetivoId: json['objetivo_id'] as String,
     objetivoUsuario: json['objetivo_usuario'] as String,
     objetivoNombre: json['objetivo_nombre'] as String,

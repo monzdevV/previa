@@ -59,8 +59,7 @@ class RepositorioSocial {
     String? zona,
     String? previaId,
   }) async {
-    final nombre =
-        '$_yo/${DateTime.now().millisecondsSinceEpoch}.$extension';
+    final nombre = '$_yo/${DateTime.now().millisecondsSinceEpoch}.$extension';
 
     await _cliente.storage
         .from('publicaciones')
@@ -235,10 +234,7 @@ class RepositorioSocial {
   Future<List<PerfilResumen>> quienVa(String localId, {DateTime? noche}) async {
     final filas = await _cliente.rpc(
       'quien_va',
-      params: {
-        'local': localId,
-        'noche': _comoNoche(noche ?? DateTime.now()),
-      },
+      params: {'local': localId, 'noche': _comoNoche(noche ?? DateTime.now())},
     );
     return (filas as List)
         .map((f) => PerfilResumen.desdeJson(f as Map<String, dynamic>))
@@ -264,6 +260,18 @@ class RepositorioSocial {
       'profile_id': _yo,
       'night': fecha,
     });
+  }
+
+  /// Si has dicho que vas a este local esta noche.
+  Future<bool> voyEstaNoche(String localId) async {
+    final fila = await _cliente
+        .from('venue_plans')
+        .select('venue_id')
+        .eq('venue_id', localId)
+        .eq('profile_id', _yo)
+        .eq('night', _comoNoche(DateTime.now()))
+        .maybeSingle();
+    return fila != null;
   }
 
   /// Proponer un sitio. El enlace de entradas no se acepta desde la app:
@@ -409,22 +417,19 @@ class RepositorioSocial {
     final lista = filas as List;
     final dia = DateTime.parse(fecha);
     if (lista.isEmpty) return ResumenDeNoche(noche: dia);
-    return ResumenDeNoche.desdeJson(
-      lista.first as Map<String, dynamic>,
-      dia,
-    );
+    return ResumenDeNoche.desdeJson(lista.first as Map<String, dynamic>, dia);
   }
 
   // --- La sala de un local durante la noche ---
 
   /// Los mensajes de la sala. Solo responde si has dicho que vas.
-  Future<List<MensajeDeSala>> salaMensajes(String localId, {DateTime? noche}) async {
+  Future<List<MensajeDeSala>> salaMensajes(
+    String localId, {
+    DateTime? noche,
+  }) async {
     final filas = await _cliente.rpc(
       'sala_mensajes',
-      params: {
-        'local': localId,
-        'noche': _comoNoche(noche ?? DateTime.now()),
-      },
+      params: {'local': localId, 'noche': _comoNoche(noche ?? DateTime.now())},
     );
     return (filas as List)
         .map((f) => MensajeDeSala.desdeJson(f as Map<String, dynamic>, _yo))
@@ -446,7 +451,11 @@ class RepositorioSocial {
         );
   }
 
-  Future<void> escribirEnSala(String localId, String texto, {DateTime? noche}) async {
+  Future<void> escribirEnSala(
+    String localId,
+    String texto, {
+    DateTime? noche,
+  }) async {
     final limpio = texto.trim();
     if (limpio.isEmpty) return;
     await _cliente.from('venue_messages').insert({
@@ -460,10 +469,7 @@ class RepositorioSocial {
   Future<List<Publicacion>> salaFotos(String localId, {DateTime? noche}) async {
     final filas = await _cliente.rpc(
       'sala_fotos',
-      params: {
-        'local': localId,
-        'noche': _comoNoche(noche ?? DateTime.now()),
-      },
+      params: {'local': localId, 'noche': _comoNoche(noche ?? DateTime.now())},
     );
     return (filas as List)
         .map((f) => Publicacion.desdeJson(f as Map<String, dynamic>))
