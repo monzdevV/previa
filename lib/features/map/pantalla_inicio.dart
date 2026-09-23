@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -36,40 +38,78 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
           const PantallaPerfil(),
         ],
       ),
-      // El filete superior separa la navegacion de la lamina igual que un
-      // filete separa dos bandas del indice. Los colores y la pestaña activa
-      // los pone el tema: aqui no se sobrescribe ninguno.
+      // La linea superior separa la barra del contenido, que casi siempre es
+      // una foto a sangre. Los colores los pone el tema.
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: context.colores.borde)),
         ),
         child: NavigationBar(
           selectedIndex: _pestana,
-          onDestinationSelected: (i) => setState(() => _pestana = i),
+          onDestinationSelected: (i) {
+            if (i != _pestana) HapticFeedback.selectionClick();
+            setState(() => _pestana = i);
+          },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
+              selectedIcon: _IconoActivo(Icons.home_rounded),
               label: 'Feed',
             ),
             NavigationDestination(
               icon: Icon(Icons.map_outlined),
-              selectedIcon: Icon(Icons.map_rounded),
+              selectedIcon: _IconoActivo(Icons.map_rounded),
               label: 'Mapa',
             ),
             NavigationDestination(
               icon: Icon(Icons.nightlife_outlined),
-              selectedIcon: Icon(Icons.nightlife),
+              selectedIcon: _IconoActivo(Icons.nightlife),
               label: 'Noche',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person_rounded),
+              selectedIcon: _IconoActivo(Icons.person_rounded),
               label: 'Perfil',
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// La pestaña activa: el icono relleno con un punto amarillo debajo.
+///
+/// Las etiquetas van ocultas, asi que el punto es lo que dice donde estas
+/// sin gastar el amarillo en todo el icono.
+class _IconoActivo extends StatelessWidget {
+  const _IconoActivo(this.icono);
+
+  final IconData icono;
+
+  @override
+  Widget build(BuildContext context) {
+    final contenido = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icono),
+        const SizedBox(height: 3),
+        Container(
+          width: 5,
+          height: 5,
+          decoration: BoxDecoration(
+            color: context.colores.primarioTexto,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ],
+    );
+
+    if (MovimientoPrevia.reducido(context)) return contenido;
+    return contenido.animate().scale(
+      begin: const Offset(.85, .85),
+      duration: MovimientoPrevia.normal,
+      curve: Curves.easeOutBack,
     );
   }
 }

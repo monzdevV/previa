@@ -43,6 +43,20 @@ class PantallaPrivacidad extends StatelessWidget {
         'Tu ubicación del dispositivo se usa en el momento para buscar '
             'previas cerca y no se almacena.',
       ]),
+      _Apartado('El juego No hay 🥚', [
+        'Si juegas, guardamos qué reto te tocó, con quién, en qué local y '
+            'noche, y si lo cumpliste. Sirve para no repetirte la misma '
+            'persona y para limitar los retos por noche.',
+        'Puedes salir en los retos de otras personas solo si has dicho que '
+            'vas al mismo local esa noche. Si no quieres, desactívalo en '
+            'Ajustes y dejarás de aparecer al momento.',
+        'Si alguien cumple un reto contigo, te avisamos y puedes quitar la '
+            'foto de la sala cuando quieras.',
+        'El texto de los retos lo redacta una inteligencia artificial de '
+            'Anthropic. Solo recibe el nombre del local: tu nombre se añade '
+            'después en nuestros servidores, así que ningún dato tuyo sale '
+            'hacia ella.',
+      ]),
       _Apartado('Base legal', [
         'Tratamos los datos de la cuenta porque son necesarios para '
             'prestarte el servicio que has pedido, es decir, para ejecutar '

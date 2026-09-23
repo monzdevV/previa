@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'colores.dart';
 
 export 'colores.dart';
+export 'movimiento.dart';
 
 /// Sistema visual de Previa.
 ///
@@ -249,12 +250,27 @@ ThemeData construirTemaPrevia({
       ),
     ),
 
+    // Flotante, con borde y separada del filo: el aviso de Sonner que usan
+    // los otros proyectos del autor, no la franja pegada abajo de Material.
     snackBarTheme: SnackBarThemeData(
       backgroundColor: c.superficieAlta,
-      contentTextStyle: TextStyle(color: c.texto),
+      contentTextStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.texto,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
       behavior: SnackBarBehavior.floating,
+      elevation: 0,
+      insetPadding: const EdgeInsets.fromLTRB(
+        EspaciadoPrevia.m,
+        0,
+        EspaciadoPrevia.m,
+        EspaciadoPrevia.m,
+      ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+        side: BorderSide(color: c.borde),
       ),
     ),
 

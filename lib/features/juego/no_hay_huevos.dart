@@ -205,8 +205,10 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
       ref.invalidate(_miRetoProvider(widget.localId));
       if (mounted) setState(() => _fase = _Fase.cumplido);
     } catch (_) {
-      _avisar('La foto está subida pero no se ha podido dar el reto por '
-          'hecho. Pulsa otra vez.');
+      _avisar(
+        'La foto está subida pero no se ha podido dar el reto por '
+        'hecho. Pulsa otra vez.',
+      );
       if (mounted) setState(() => _fase = _Fase.listo);
     }
   }
@@ -248,9 +250,11 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
     final reto = ref.watch(_miRetoProvider(widget.localId));
 
     final contenido = switch (_fase) {
-      _Fase.cumplido => _Cumplido(onOtro: () {
-        setState(() => _fase = _Fase.listo);
-      }),
+      _Fase.cumplido => _Cumplido(
+        onOtro: () {
+          setState(() => _fase = _Fase.listo);
+        },
+      ),
       _ => reto.when(
         loading: () => const _Cargando(texto: 'Mirando quién hay…'),
         error: (_, _) => _Invitacion(
@@ -286,7 +290,10 @@ class _HojaRetoState extends ConsumerState<_HojaReto> {
         curve: Curves.easeOutCubic,
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
-          child: KeyedSubtree(key: ValueKey(contenido.runtimeType), child: contenido),
+          child: KeyedSubtree(
+            key: ValueKey(contenido.runtimeType),
+            child: contenido,
+          ),
         ),
       ),
     );
@@ -354,11 +361,21 @@ class _Invitacion extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const _Asa(),
-        const Text('🥚', textAlign: TextAlign.center, style: TextStyle(fontSize: 56))
-            .animate()
-            .scale(begin: const Offset(.6, .6), curve: Curves.elasticOut, duration: 700.ms),
+        const Text(
+          '🥚',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 56),
+        ).animate().scale(
+          begin: const Offset(.6, .6),
+          curve: Curves.elasticOut,
+          duration: 700.ms,
+        ),
         const SizedBox(height: EspaciadoPrevia.s),
-        Text(nombreDelJuego, textAlign: TextAlign.center, style: textos.headlineMedium),
+        Text(
+          nombreDelJuego,
+          textAlign: TextAlign.center,
+          style: textos.headlineMedium,
+        ),
         const SizedBox(height: EspaciadoPrevia.s),
         Text(
           aviso ??
@@ -418,11 +435,14 @@ class _FichaReto extends StatelessWidget {
         const _Asa(),
         Row(
           children: [
-            Text('TU RETO', style: textos.labelMedium?.copyWith(
-              color: c.primarioTexto,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-            )),
+            Text(
+              'TU RETO',
+              style: textos.labelMedium?.copyWith(
+                color: c.primarioTexto,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+              ),
+            ),
             const Spacer(),
             Text(
               reto.restantes == 1
@@ -468,12 +488,17 @@ class _FichaReto extends StatelessWidget {
                 duration: 420.ms,
               ),
               const SizedBox(height: EspaciadoPrevia.m),
-              Text(reto.objetivoNombre, style: textos.titleLarge, textAlign: TextAlign.center),
+              Text(
+                reto.objetivoNombre,
+                style: textos.titleLarge,
+                textAlign: TextAlign.center,
+              ),
               Text(
                 '@${reto.objetivoUsuario}',
                 style: textos.bodyMedium?.copyWith(color: c.textoTenue),
               ),
-              if (reto.objetivoBio != null && reto.objetivoBio!.trim().isNotEmpty) ...[
+              if (reto.objetivoBio != null &&
+                  reto.objetivoBio!.trim().isNotEmpty) ...[
                 const SizedBox(height: EspaciadoPrevia.s),
                 Text(
                   reto.objetivoBio!,
@@ -531,13 +556,25 @@ class _Cumplido extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const _Asa(),
-        const Text('🐣', textAlign: TextAlign.center, style: TextStyle(fontSize: 72))
+        const Text(
+              '🐣',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 72),
+            )
             .animate()
-            .scale(begin: const Offset(.3, .3), curve: Curves.elasticOut, duration: 900.ms)
+            .scale(
+              begin: const Offset(.3, .3),
+              curve: Curves.elasticOut,
+              duration: 900.ms,
+            )
             .then()
             .shake(hz: 4, rotation: 0.1, duration: 500.ms),
         const SizedBox(height: EspaciadoPrevia.s),
-        Text('¡Sí hay huevos!', textAlign: TextAlign.center, style: textos.headlineMedium),
+        Text(
+          '¡Sí hay huevos!',
+          textAlign: TextAlign.center,
+          style: textos.headlineMedium,
+        ),
         const SizedBox(height: EspaciadoPrevia.s),
         Text(
           'La foto ya está en la sala. Le hemos avisado para que la vea.',
@@ -573,9 +610,8 @@ Future<void> abrirRetoConmigo(
   }
   if (!context.mounted) return;
   if (reto == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Esa foto ya no está.')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Esa foto ya no está.')));
     return;
   }
 
@@ -601,7 +637,10 @@ Future<void> abrirRetoConmigo(
                 ),
               ),
             const SizedBox(height: EspaciadoPrevia.m),
-            Text('Sales en un reto de $nombreDelJuego', style: textos.titleLarge),
+            Text(
+              'Sales en un reto de $nombreDelJuego',
+              style: textos.titleLarge,
+            ),
             const SizedBox(height: EspaciadoPrevia.xs),
             Text(reto!.texto, style: textos.bodyLarge),
             const SizedBox(height: EspaciadoPrevia.l),
@@ -619,9 +658,8 @@ Future<void> abrirRetoConmigo(
   try {
     await repo.quitarFoto(reto.id);
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Foto quitada.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Foto quitada.')));
     }
   } catch (_) {
     if (context.mounted) {
