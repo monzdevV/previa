@@ -84,12 +84,15 @@ Añadido para la parte social:
 | `challenges` | retos de No hay 🥚; solo los escriben funciones |
 
 Funciones: `feed_publicaciones`, `locales_de_la_noche`, `quien_va`,
-`mis_conversaciones`, y las del juego: `comprobar_reto` y `crear_reto` (solo
-`service_role`), `mi_reto`, `completar_reto`, `rajarse`, `quitar_foto_de_reto`.
+`mis_conversaciones`, y las del juego: `comprobar_reto`, `crear_reto`,
+`reescribir_reto` y `quitar_foto_de_reto_de` (solo `service_role`), y
+`mi_reto`, `completar_reto` y `rajarse` para la app.
 
 **Función de borde `no-hay-huevos`** (`supabase/functions/no-hay-huevos`):
-verifica la sesión, llama a `comprobar_reto`, pide el texto a Claude y llama
-a `crear_reto`. La IA solo recibe el nombre del local; el nombre de la
+verifica la sesión, llama a `comprobar_reto`, crea el reto con un texto de
+reserva y luego deja que Claude lo reescriba (así pedir en paralelo no
+multiplica llamadas a la IA). También atiende `{accion: 'quitar'}`: borra la
+foto de un reto y su fichero del cubo. La IA solo recibe el nombre del local; el nombre de la
 persona lo pone Postgres sustituyendo `{persona}`. Sin el secreto
 `ANTHROPIC_API_KEY` funciona igual con retos de reserva. Se prueba con
 `node --test supabase/functions/no-hay-huevos/reto.test.ts`.
@@ -154,7 +157,7 @@ amarillo.
   Supabase; la aplicación no puede escribirlo.
 - Las pruebas de seguridad son tres: `supabase/tests/seguridad.sql` (16, el
   núcleo), `seguridad_social.sql` (18, la capa social) y `seguridad_retos.sql`
-  (20, cierre de escrituras y el juego). Se pegan en el editor SQL y deben
+  (23, cierre de escrituras y el juego). Se pegan en el editor SQL y deben
   salir todas en PASA.
 - `posts`, `join_requests`, `direct_messages` y `venues` también conceden
   privilegios **columna a columna** desde septiembre de 2026, igual que
