@@ -8,9 +8,12 @@ import '../models/noche.dart';
 import '../models/publicacion.dart';
 import 'repositorio_auth.dart';
 
-final repositorioSocialProvider = Provider<RepositorioSocial>(
-  (ref) => RepositorioSocial(ref.watch(clienteSupabaseProvider)),
-);
+// Depende del usuario para que, al cambiar de cuenta, todo lo que cuelga de
+// aqui se recalcule y no se vean los datos de la sesion anterior.
+final repositorioSocialProvider = Provider<RepositorioSocial>((ref) {
+  ref.watch(uidActualProvider);
+  return RepositorioSocial(ref.watch(clienteSupabaseProvider));
+});
 
 /// Todo lo que hace que Previa sea una red social y no solo un mapa:
 /// publicaciones, likes, seguir gente y buscarla.
@@ -148,7 +151,10 @@ class RepositorioSocial {
 
   /// Busca gente por nombre o por usuario.
   Future<List<PerfilResumen>> buscarGente(String consulta) async {
-    final limpia = consulta.trim();
+    // La coma y los parentesis son la sintaxis del filtro `or` de PostgREST:
+    // si llegan tal cual, quien escribe puede romper la consulta o colar
+    // condiciones propias.
+    final limpia = consulta.replaceAll(RegExp(r'[,()]'), '').trim();
     if (limpia.length < 2) return const [];
 
     final filas = await _cliente

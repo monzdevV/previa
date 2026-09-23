@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -98,7 +99,10 @@ class PantallaLocales extends ConsumerWidget {
                         itemCount: lista.length,
                         separatorBuilder: (_, _) =>
                             const SizedBox(height: EspaciadoPrevia.s + 4),
-                        itemBuilder: (_, i) => _FichaLocal(local: lista[i]),
+                        itemBuilder: (_, i) => _FichaLocal(
+                          key: ValueKey(lista[i].id),
+                          local: lista[i],
+                        ),
                       ),
                     ),
             ),
@@ -172,7 +176,7 @@ Future<void> _proponerLocal(
 }
 
 class _FichaLocal extends ConsumerStatefulWidget {
-  const _FichaLocal({required this.local});
+  const _FichaLocal({super.key, required this.local});
 
   final Local local;
 
@@ -183,9 +187,24 @@ class _FichaLocal extends ConsumerStatefulWidget {
 class _FichaLocalState extends ConsumerState<_FichaLocal> {
   late Local _l = widget.local;
 
+  /// Mientras la peticion no vuelve se ignoran los toques: dos seguidos
+  /// descuadrarian el contador de gente, que se calcula en local.
+  bool _enCurso = false;
+
+  @override
+  void didUpdateWidget(covariant _FichaLocal anterior) {
+    super.didUpdateWidget(anterior);
+    // Al recargar la lista manda lo que dice el servidor, no la copia que se
+    // tomo la primera vez que se pinto la ficha.
+    if (!_enCurso && anterior.local != widget.local) _l = widget.local;
+  }
+
   Future<void> _alternarVoy() async {
+    if (_enCurso) return;
+    HapticFeedback.selectionClick();
     final antes = _l;
     setState(() {
+      _enCurso = true;
       _l = _l.copiarCon(
         voy: !antes.voy,
         van: antes.voy ? antes.van - 1 : antes.van + 1,
@@ -200,6 +219,8 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
       refrescarPerfil(ref);
     } catch (_) {
       if (mounted) setState(() => _l = antes);
+    } finally {
+      if (mounted) setState(() => _enCurso = false);
     }
   }
 
@@ -343,7 +364,7 @@ Future<void> _verQuienVa(BuildContext context, WidgetRef ref, Local local) {
                   child: Padding(
                     padding: EdgeInsets.all(EspaciadoPrevia.xl),
                     child: CircularProgressIndicator(
-                      color: context.colores.primario,
+                      color: context.colores.primarioTexto,
                     ),
                   ),
                 )

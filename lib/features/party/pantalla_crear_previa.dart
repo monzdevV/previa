@@ -301,7 +301,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         label: Text(etiqueta),
                         selected: _ambiente.contains(etiqueta),
                         selectedColor: context.colores.primario,
-                        checkmarkColor: Colors.white,
+                        checkmarkColor: context.colores.sobrePrimario,
                         onSelected: (marcada) => setState(() {
                           if (marcada) {
                             if (_ambiente.length < 5) _ambiente.add(etiqueta);
@@ -341,9 +341,15 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                           ),
                           children: [
                             TileLayer(
+                              // El plano sigue el modo de la aplicacion: uno
+                              // negro en el tema claro parece un agujero.
                               urlTemplate:
-                                  'https://{s}.basemaps.cartocdn.com/dark_all/'
-                                  '{z}/{x}/{y}{r}.png',
+                                  Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? 'https://{s}.basemaps.cartocdn.com/'
+                                        'light_all/{z}/{x}/{y}{r}.png'
+                                  : 'https://{s}.basemaps.cartocdn.com/'
+                                        'dark_all/{z}/{x}/{y}{r}.png',
                               subdomains: const ['a', 'b', 'c'],
                               retinaMode: RetinaMode.isHighDensity(context),
                               userAgentPackageName: 'com.previa.previa',
@@ -390,12 +396,12 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
               FilledButton(
                 onPressed: _guardando ? null : _publicar,
                 child: _guardando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Colors.white,
+                          color: context.colores.sobrePrimario,
                         ),
                       )
                     : const Text('Publicar previa'),

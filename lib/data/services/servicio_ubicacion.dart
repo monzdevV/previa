@@ -53,9 +53,11 @@ class ErrorUbicacion implements Exception {
 class ServicioUbicacion {
   const ServicioUbicacion();
 
-  /// Centro de reserva cuando no hay ubicacion: Puerta del Sol.
-  /// Asi el mapa siempre tiene algo que enseñar en vez de quedarse en blanco.
-  static const centroPorDefecto = LatLng(40.4168, -3.7038);
+  /// Centro de reserva cuando no hay ubicacion: la plaza del Pilar, en
+  /// Zaragoza, que es la ciudad de salida de la aplicacion y donde estan los
+  /// locales de demostracion. Asi el mapa siempre tiene algo que enseñar en
+  /// vez de quedarse en blanco.
+  static const centroPorDefecto = LatLng(41.6488, -0.8891);
 
   Future<LatLng> posicionActual() async {
     if (!await Geolocator.isLocationServiceEnabled()) {

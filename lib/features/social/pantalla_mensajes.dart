@@ -13,9 +13,13 @@ final conversacionesProvider = FutureProvider<List<Conversacion>>(
   (ref) => ref.watch(repositorioSocialProvider).misConversaciones(),
 );
 
-final _mensajesProvider = StreamProvider.family<List<MensajeDirecto>, String>(
-  (ref, otroId) => ref.watch(repositorioSocialProvider).flujoDeMensajes(otroId),
-);
+// Se cierra al salir de la conversacion: si no, cada chat abierto dejaria su
+// suscripcion de Realtime viva hasta cerrar la aplicacion.
+final _mensajesProvider = StreamProvider.autoDispose
+    .family<List<MensajeDirecto>, String>(
+      (ref, otroId) =>
+          ref.watch(repositorioSocialProvider).flujoDeMensajes(otroId),
+    );
 
 /// La bandeja de mensajes.
 class PantallaMensajes extends ConsumerWidget {
@@ -132,9 +136,14 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
   final _campo = TextEditingController();
   bool _enviando = false;
 
+  /// En `dispose` ya no se puede usar `ref`, asi que el contenedor se guarda
+  /// al entrar para poder refrescar la bandeja al salir.
+  late final ProviderContainer _contenedor;
+
   @override
   void initState() {
     super.initState();
+    _contenedor = ProviderScope.containerOf(context, listen: false);
     // Al abrir se marcan como leidos: si esperase a cerrar, el contador
     // seguiria en rojo mientras lees.
     ref.read(repositorioSocialProvider).marcarLeidos(widget.otroId);
@@ -143,6 +152,11 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
   @override
   void dispose() {
     _campo.dispose();
+    // La bandeja se refresca al volver para que el contador de no leidos y
+    // el ultimo mensaje reflejen lo que acaba de pasar aqui. Va en una
+    // microtarea porque invalidar mientras se desmonta el arbol esta vetado.
+    final contenedor = _contenedor;
+    Future.microtask(() => contenedor.invalidate(conversacionesProvider));
     super.dispose();
   }
 
@@ -177,10 +191,28 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
   @override
   Widget build(BuildContext context) {
     final mensajes = ref.watch(_mensajesProvider(widget.otroId));
+    // La bandeja ya trae nombre y cara de la otra persona; se aprovecha si
+    // esta cargada en vez de pedir su perfil solo para la cabecera.
+    final otro = ref
+        .watch(conversacionesProvider)
+        .valueOrNull
+        ?.where((c) => c.otroId == widget.otroId)
+        .firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Conversación'),
+        titleSpacing: 0,
+        title: otro == null
+            ? const Text('Conversación')
+            : Row(
+                children: [
+                  AvatarPerfil(url: otro.avatar, inicial: otro.nombre, lado: 34),
+                  const SizedBox(width: EspaciadoPrevia.s + EspaciadoPrevia.xs),
+                  Expanded(
+                    child: Text(otro.nombre, overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),

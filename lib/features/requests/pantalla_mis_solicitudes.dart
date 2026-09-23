@@ -24,7 +24,11 @@ class PantallaMisSolicitudes extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mis solicitudes')),
       body: solicitudes.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
@@ -66,13 +70,22 @@ class PantallaMisSolicitudes extends ConsumerWidget {
           }
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(misSolicitudesProvider),
+            color: context.colores.primarioTexto,
+            onRefresh: () async {
+              ref.invalidate(misSolicitudesProvider);
+              try {
+                await ref.read(misSolicitudesProvider.future);
+              } catch (_) {
+                // El fallo ya lo pinta el estado de error de la pantalla.
+              }
+            },
             child: ListView.separated(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
               separatorBuilder: (_, _) =>
                   const SizedBox(height: EspaciadoPrevia.s),
-              itemBuilder: (_, i) => _Tarjeta(solicitud: lista[i]),
+              itemBuilder: (_, i) =>
+                  _Tarjeta(key: ValueKey(lista[i].id), solicitud: lista[i]),
             ),
           );
         },
@@ -81,13 +94,67 @@ class PantallaMisSolicitudes extends ConsumerWidget {
   }
 }
 
-class _Tarjeta extends ConsumerWidget {
-  const _Tarjeta({required this.solicitud});
+class _Tarjeta extends ConsumerStatefulWidget {
+  const _Tarjeta({super.key, required this.solicitud});
 
   final Solicitud solicitud;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_Tarjeta> createState() => _TarjetaState();
+}
+
+class _TarjetaState extends ConsumerState<_Tarjeta> {
+  /// Evita lanzar la cancelacion dos veces si se toca otra vez mientras la
+  /// primera no ha vuelto.
+  bool _cancelando = false;
+
+  Solicitud get solicitud => widget.solicitud;
+
+  Future<void> _cancelar() async {
+    if (_cancelando) return;
+    // Cancelar no tiene vuelta atras: para volver hay que pedir plaza otra
+    // vez y el anfitrion puede haberla dado ya a otro.
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        backgroundColor: context.colores.superficieAlta,
+        title: const Text('¿Cancelar la solicitud?'),
+        content: const Text(
+          'Si cambias de idea tendrás que volver a pedir plaza.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(true),
+            style: TextButton.styleFrom(foregroundColor: context.colores.error),
+            child: const Text('Cancelar solicitud'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+
+    final mensajero = ScaffoldMessenger.of(context);
+    setState(() => _cancelando = true);
+    try {
+      await ref.read(repositorioPreviasProvider).cancelarSolicitud(solicitud.id);
+      ref.invalidate(misSolicitudesProvider);
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido cancelar. Inténtalo otra vez.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _cancelando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final empieza = solicitud.empiezaPrevia;
 
@@ -188,13 +255,10 @@ class _Tarjeta extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () async {
-                      await ref
-                          .read(repositorioPreviasProvider)
-                          .cancelarSolicitud(solicitud.id);
-                      ref.invalidate(misSolicitudesProvider);
-                    },
-                    child: const Text('Cancelar solicitud'),
+                    onPressed: _cancelando ? null : _cancelar,
+                    child: Text(
+                      _cancelando ? 'Cancelando…' : 'Cancelar solicitud',
+                    ),
                   ),
                 ),
               ],

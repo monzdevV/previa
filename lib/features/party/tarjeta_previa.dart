@@ -226,24 +226,39 @@ class _Avatar extends StatelessWidget {
     final inicial = previa.anfitrionNombre.isNotEmpty
         ? previa.anfitrionNombre[0].toUpperCase()
         : '?';
+    final letra = Text(
+      inicial,
+      style: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+    final foto = previa.anfitrionAvatar;
 
+    // No se reutiliza el avatar del feed porque este va sobre el velo oscuro
+    // de la portada: la inicial tiene que ir en blanco en los dos temas.
     return Container(
       width: 30,
       height: 30,
+      clipBehavior: Clip.antiAlias,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: context.colores.superficieActiva,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white24),
       ),
-      child: Text(
-        inicial,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
+      // La cara y no solo la inicial: saber quien abre la puerta es lo que
+      // decide si pides plaza.
+      child: foto != null && foto.isNotEmpty
+          ? CachedNetworkImage(
+              imageUrl: foto,
+              fit: BoxFit.cover,
+              width: 30,
+              height: 30,
+              errorWidget: (_, _, _) => letra,
+            )
+          : letra,
     );
   }
 }

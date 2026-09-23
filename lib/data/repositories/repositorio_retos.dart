@@ -4,9 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/reto.dart';
 import 'repositorio_auth.dart';
 
-final repositorioRetosProvider = Provider<RepositorioRetos>(
-  (ref) => RepositorioRetos(ref.watch(clienteSupabaseProvider)),
-);
+// Depende del usuario para que, al cambiar de cuenta, todo lo que cuelga de
+// aqui se recalcule y no se vean los datos de la sesion anterior.
+final repositorioRetosProvider = Provider<RepositorioRetos>((ref) {
+  ref.watch(uidActualProvider);
+  return RepositorioRetos(ref.watch(clienteSupabaseProvider));
+});
 
 /// El minijuego "No hay 🥚".
 ///

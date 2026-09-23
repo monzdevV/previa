@@ -13,27 +13,44 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
 import '../requests/pantalla_solicitudes.dart';
+import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import 'hoja_solicitar_plaza.dart';
 
-final _detalleProvider = FutureProvider.family<Previa, String>(
+// Se descartan al salir: cada previa abierta dejaria su copia en memoria, y
+// al volver a entrar se veria el estado de la primera visita (plazas, si ya
+// te aceptaron) en lugar del actual.
+final _detalleProvider = FutureProvider.autoDispose.family<Previa, String>(
   (ref, id) => ref.watch(repositorioPreviasProvider).detalle(id),
 );
 
-final _soyMiembroProvider = FutureProvider.family<bool, String>(
+final _soyMiembroProvider = FutureProvider.autoDispose.family<bool, String>(
   (ref, id) => ref.watch(repositorioPreviasProvider).soyMiembro(id),
 );
 
-final _miSolicitudProvider = FutureProvider.family<Solicitud?, String>(
-  (ref, id) => ref.watch(repositorioPreviasProvider).miSolicitudEn(id),
-);
+final _miSolicitudProvider = FutureProvider.autoDispose
+    .family<Solicitud?, String>(
+      (ref, id) => ref.watch(repositorioPreviasProvider).miSolicitudEn(id),
+    );
 
-class PantallaDetallePrevia extends ConsumerWidget {
+class PantallaDetallePrevia extends ConsumerStatefulWidget {
   const PantallaDetallePrevia({super.key, required this.previaId});
 
   final String previaId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PantallaDetallePrevia> createState() =>
+      _PantallaDetallePreviaState();
+}
+
+class _PantallaDetallePreviaState extends ConsumerState<PantallaDetallePrevia> {
+  /// Bloquear o reportar dos veces seguidas duplicaria el reporte o
+  /// intentaria cerrar la pantalla dos veces.
+  bool _ocupado = false;
+
+  String get previaId => widget.previaId;
+
+  @override
+  Widget build(BuildContext context) {
     final detalle = ref.watch(_detalleProvider(previaId));
 
     return Scaffold(
@@ -47,8 +64,8 @@ class PantallaDetallePrevia extends ConsumerWidget {
                   : Icons.more_vert,
             ),
             color: context.colores.superficieAlta,
-            onSelected: (opcion) =>
-                _menu(context, ref, opcion, detalle.valueOrNull),
+            enabled: !_ocupado,
+            onSelected: (opcion) => _menu(opcion, detalle.valueOrNull),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'reportar', child: Text('Reportar')),
               PopupMenuItem(
@@ -60,28 +77,53 @@ class PantallaDetallePrevia extends ConsumerWidget {
         ],
       ),
       body: detalle.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text(
-              'No se ha podido cargar la previa.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'No se ha podido cargar la previa.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: EspaciadoPrevia.m),
+                OutlinedButton(
+                  onPressed: () => ref.invalidate(_detalleProvider(previaId)),
+                  child: const Text('Reintentar'),
+                ),
+              ],
             ),
           ),
         ),
-        data: (previa) => _Contenido(previa: previa),
+        // Tirar hacia abajo es la forma de saber si ya te han aceptado sin
+        // salir y volver a entrar.
+        data: (previa) => RefreshIndicator(
+          color: context.colores.primarioTexto,
+          backgroundColor: context.colores.superficie,
+          onRefresh: () async {
+            ref.invalidate(_soyMiembroProvider(previaId));
+            ref.invalidate(_miSolicitudProvider(previaId));
+            ref.invalidate(_detalleProvider(previaId));
+            try {
+              await ref.read(_detalleProvider(previaId).future);
+            } catch (_) {
+              // El error lo pinta el propio estado de la pantalla.
+            }
+          },
+          child: _Contenido(previa: previa),
+        ),
       ),
     );
   }
 
-  Future<void> _menu(
-    BuildContext context,
-    WidgetRef ref,
-    String opcion,
-    Previa? previa,
-  ) async {
-    if (previa == null) return;
+  Future<void> _menu(String opcion, Previa? previa) async {
+    if (previa == null || _ocupado) return;
     final repo = ref.read(repositorioPreviasProvider);
     final mensajero = ScaffoldMessenger.of(context);
 
@@ -94,11 +136,22 @@ class PantallaDetallePrevia extends ConsumerWidget {
             'de tu mapa y no podrá escribirte.',
         accion: 'Bloquear',
       );
-      if (confirmado != true) return;
+      if (confirmado != true || !mounted) return;
 
-      await repo.bloquear(previa.anfitrionId);
+      setState(() => _ocupado = true);
+      try {
+        await repo.bloquear(previa.anfitrionId);
+      } catch (_) {
+        mensajero.showSnackBar(
+          const SnackBar(
+            content: Text('No se ha podido bloquear. Inténtalo otra vez.'),
+          ),
+        );
+        if (mounted) setState(() => _ocupado = false);
+        return;
+      }
       ref.invalidate(previasCercaProvider);
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop();
       mensajero.showSnackBar(
         const SnackBar(content: Text('Bloqueado. No volveréis a veros.')),
@@ -106,18 +159,30 @@ class PantallaDetallePrevia extends ConsumerWidget {
       return;
     }
 
-    if (!context.mounted) return;
     final motivo = await _elegirMotivo(context);
-    if (motivo == null) return;
+    if (motivo == null || !mounted) return;
 
-    await repo.reportar(
-      motivo: motivo,
-      previaId: previa.id,
-      perfilId: previa.anfitrionId,
-    );
-    mensajero.showSnackBar(
-      const SnackBar(content: Text('Reporte enviado. Gracias por avisar.')),
-    );
+    setState(() => _ocupado = true);
+    try {
+      await repo.reportar(
+        motivo: motivo,
+        previaId: previa.id,
+        perfilId: previa.anfitrionId,
+      );
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Reporte enviado. Gracias por avisar.')),
+      );
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se ha podido enviar el reporte. Inténtalo otra vez.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
   }
 }
 
@@ -142,6 +207,9 @@ class _Contenido extends ConsumerWidget {
     ).format(previa.empiezaEn);
 
     return ListView(
+      // Siempre desplazable para que el tiron de refrescar funcione aunque
+      // el contenido quepa entero en pantalla.
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(EspaciadoPrevia.l),
       children: [
         Text(previa.titulo, style: textos.headlineMedium),
@@ -200,45 +268,43 @@ class _Contenido extends ConsumerWidget {
 
         Text('Organiza', style: textos.titleLarge),
         const SizedBox(height: EspaciadoPrevia.m),
-        Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: context.colores.superficieAlta,
-                border: Border.fromBorderSide(
-                  BorderSide(color: context.colores.borde),
+        // Antes de pedir plaza en casa de alguien hay que verle la cara, y
+        // desde ahi poder abrir su perfil entero.
+        InkWell(
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+          onTap: () => context.push('${Rutas.perfilDe}/${previa.anfitrionId}'),
+          child: Row(
+            children: [
+              AvatarPerfil(
+                url: previa.anfitrionAvatar,
+                inicial: previa.anfitrionNombre,
+                lado: 44,
+              ),
+              const SizedBox(width: EspaciadoPrevia.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(previa.anfitrionNombre, style: textos.titleLarge),
+                    if (previa.anfitrionReputacion != null)
+                      // Sin estrella y sin ambar: la tinta viva esta reservada
+                      // a las plazas libres, y "sobre cinco" lo dice el texto.
+                      Text(
+                        'Valoración '
+                        '${previa.anfitrionReputacion!.toStringAsFixed(1).replaceAll('.', ',')}/5',
+                        style: textos.labelMedium,
+                      )
+                    else
+                      Text(
+                        'Sin valoraciones todavía',
+                        style: textos.bodyMedium,
+                      ),
+                  ],
                 ),
               ),
-              child: Text(
-                previa.anfitrionNombre.isNotEmpty
-                    ? previa.anfitrionNombre[0].toUpperCase()
-                    : '?',
-                style: textos.titleMedium,
-              ),
-            ),
-            const SizedBox(width: EspaciadoPrevia.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(previa.anfitrionNombre, style: textos.titleLarge),
-                  if (previa.anfitrionReputacion != null)
-                    // Sin estrella y sin ambar: la tinta viva esta reservada a
-                    // las plazas libres, y "sobre cinco" lo dice el texto.
-                    Text(
-                      '${previa.anfitrionReputacion!.toStringAsFixed(1).replaceAll('.', ',')}/5'
-                      '  ·  VALORACIÓN',
-                      style: textos.labelMedium,
-                    )
-                  else
-                    Text('Sin valoraciones todavía', style: textos.bodyMedium),
-                ],
-              ),
-            ),
-          ],
+              Icon(Icons.chevron_right, color: context.colores.textoTenue),
+            ],
+          ),
         ),
 
         const SizedBox(height: EspaciadoPrevia.l),
@@ -290,9 +356,14 @@ class _MapaZona extends ConsumerWidget {
               ),
               children: [
                 TileLayer(
+                  // El plano sigue el modo de la aplicacion: uno negro dentro
+                  // del tema claro parece un hueco en la pantalla.
                   urlTemplate:
-                      'https://{s}.basemaps.cartocdn.com/dark_all/'
-                      '{z}/{x}/{y}{r}.png',
+                      Theme.of(context).brightness == Brightness.light
+                      ? 'https://{s}.basemaps.cartocdn.com/light_all/'
+                            '{z}/{x}/{y}{r}.png'
+                      : 'https://{s}.basemaps.cartocdn.com/dark_all/'
+                            '{z}/{x}/{y}{r}.png',
                   subdomains: const ['a', 'b', 'c'],
                   retinaMode: RetinaMode.isHighDensity(context),
                   userAgentPackageName: 'com.previa.previa',
@@ -351,6 +422,7 @@ class _DireccionRetenida extends StatelessWidget {
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
       decoration: BoxDecoration(
         color: context.colores.superficie,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
         border: Border.fromBorderSide(BorderSide(color: context.colores.borde)),
       ),
       child: Column(
@@ -358,10 +430,10 @@ class _DireccionRetenida extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('DIRECCIÓN EXACTA', style: textos.labelMedium),
+              Text('Dirección exacta', style: textos.labelMedium),
               const Spacer(),
               Text(
-                'RETENIDA',
+                'Retenida',
                 style: textos.labelMedium?.copyWith(
                   color: context.colores.textoTenue,
                   fontWeight: FontWeight.w700,
@@ -378,7 +450,12 @@ class _DireccionRetenida extends StatelessWidget {
                 Container(
                   width: ancho,
                   height: 13,
-                  color: context.colores.superficieActiva,
+                  decoration: BoxDecoration(
+                    color: context.colores.superficieActiva,
+                    borderRadius: BorderRadius.circular(
+                      EspaciadoPrevia.pastilla,
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -386,8 +463,7 @@ class _DireccionRetenida extends StatelessWidget {
           // Lo que si se puede decir: la celda. Es la misma que dibuja la
           // reticula de arriba, asi que orienta sin revelar el portal.
           Text(
-            'CELDA ${previa.referenciaCuadricula}  ·  '
-            '${previa.zona.toUpperCase()}',
+            'Celda ${previa.referenciaCuadricula}  ·  ${previa.zona}',
             style: textos.labelMedium?.copyWith(color: context.colores.texto),
           ),
           const SizedBox(height: EspaciadoPrevia.m),
@@ -465,7 +541,7 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
     return OutlinedButton.icon(
       onPressed: _cargando ? null : _pedir,
       icon: const Icon(Icons.visibility_outlined, size: 18),
-      label: Text(_cargando ? 'PIDIENDO…' : 'VER LA DIRECCIÓN EXACTA'),
+      label: Text(_cargando ? 'Pidiendo…' : 'Ver la dirección exacta'),
     );
   }
 }
@@ -596,7 +672,7 @@ class _Accion extends ConsumerWidget {
         }
       },
       icon: const Icon(Icons.inbox_outlined, size: 18),
-      label: const Text('SOLICITAR PLAZA'),
+      label: const Text('Solicitar plaza'),
     );
   }
 }

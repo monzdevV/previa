@@ -6,9 +6,12 @@ import '../../core/entorno.dart';
 import '../models/previa.dart';
 import 'repositorio_auth.dart';
 
-final repositorioPreviasProvider = Provider<RepositorioPrevias>(
-  (ref) => RepositorioPrevias(ref.watch(clienteSupabaseProvider)),
-);
+// Depende del usuario para que, al cambiar de cuenta, todo lo que cuelga de
+// aqui se recalcule y no se vean los datos de la sesion anterior.
+final repositorioPreviasProvider = Provider<RepositorioPrevias>((ref) {
+  ref.watch(uidActualProvider);
+  return RepositorioPrevias(ref.watch(clienteSupabaseProvider));
+});
 
 /// Criterios de busqueda del mapa.
 class FiltrosBusqueda {

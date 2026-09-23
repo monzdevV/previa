@@ -37,7 +37,11 @@ class PantallaValorar extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(titulo ?? 'Valorar')),
       body: companeros.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
@@ -249,12 +253,12 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                 onPressed: _guardando ? null : _guardar,
                 style: FilledButton.styleFrom(minimumSize: const Size(0, 46)),
                 child: _guardando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Colors.white,
+                          color: context.colores.sobrePrimario,
                         ),
                       )
                     : const Text('Guardar valoración'),

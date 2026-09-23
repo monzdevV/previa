@@ -20,7 +20,7 @@ const _esquemaQr = 'previa://u/';
 
 final _miPerfilProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final cliente = ref.watch(clienteSupabaseProvider);
-  final id = cliente.auth.currentUser?.id;
+  final id = ref.watch(uidActualProvider);
   if (id == null) return null;
   return cliente
       .from('profiles')
@@ -75,6 +75,11 @@ class _BuscadorState extends ConsumerState<_Buscador> {
   Timer? _espera;
   List<PerfilResumen> _resultados = const [];
   bool _buscando = false;
+  bool _fallo = false;
+
+  /// La ultima consulta lanzada. Las respuestas no llegan en orden: si la de
+  /// "an" tarda mas que la de "ana", sin esto pisaria el resultado bueno.
+  String? _vigente;
 
   @override
   void dispose() {
@@ -91,18 +96,33 @@ class _BuscadorState extends ConsumerState<_Buscador> {
   }
 
   Future<void> _buscar(String valor) async {
+    _vigente = valor;
     if (valor.trim().length < 2) {
-      setState(() => _resultados = const []);
+      setState(() {
+        _resultados = const [];
+        _buscando = false;
+        _fallo = false;
+      });
       return;
     }
-    setState(() => _buscando = true);
+    setState(() {
+      _buscando = true;
+      _fallo = false;
+    });
     try {
       final gente = await ref
           .read(repositorioSocialProvider)
           .buscarGente(valor);
-      if (mounted) setState(() => _resultados = gente);
+      if (mounted && _vigente == valor) setState(() => _resultados = gente);
+    } catch (_) {
+      if (mounted && _vigente == valor) {
+        setState(() {
+          _resultados = const [];
+          _fallo = true;
+        });
+      }
     } finally {
-      if (mounted) setState(() => _buscando = false);
+      if (mounted && _vigente == valor) setState(() => _buscando = false);
     }
   }
 
@@ -147,13 +167,24 @@ class _BuscadorState extends ConsumerState<_Buscador> {
             ),
           ),
         Expanded(
-          child: _resultados.isEmpty
+          child: _fallo
               ? const _Vacio(
-                  texto: 'Busca a alguien por su nombre o su usuario.',
+                  texto: 'No se ha podido buscar. Comprueba tu conexión.',
                 )
-              : ListView.builder(
+              : _resultados.isNotEmpty
+              ? ListView.builder(
                   itemCount: _resultados.length,
-                  itemBuilder: (_, i) => _FilaPersona(perfil: _resultados[i]),
+                  itemBuilder: (_, i) => _FilaPersona(
+                    key: ValueKey(_resultados[i].id),
+                    perfil: _resultados[i],
+                  ),
+                )
+              // Sin distinguir esto, una busqueda sin coincidencias se
+              // confunde con que aun no se ha buscado nada.
+              : (_vigente?.trim().length ?? 0) >= 2 && !_buscando
+              ? const _Vacio(texto: 'Sin resultados.')
+              : const _Vacio(
+                  texto: 'Busca a alguien por su nombre o su usuario.',
                 ),
         ),
       ],
@@ -168,12 +199,21 @@ Future<void> _escanear(BuildContext context, WidgetRef ref) async {
   );
   if (usuario == null || !context.mounted) return;
 
-  final perfil = await ref
-      .read(repositorioSocialProvider)
-      .porUsuario(usuario);
+  final PerfilResumen? perfil;
+  try {
+    perfil = await ref.read(repositorioSocialProvider).porUsuario(usuario);
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido leer el código.')),
+      );
+    }
+    return;
+  }
 
   if (!context.mounted) return;
-  if (perfil == null) {
+  final encontrado = perfil;
+  if (encontrado == null) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Ese código no corresponde a nadie.')),
     );
@@ -184,13 +224,23 @@ Future<void> _escanear(BuildContext context, WidgetRef ref) async {
     context: context,
     builder: (_) => Padding(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
-      child: _FilaPersona(perfil: perfil),
+      child: _FilaPersona(perfil: encontrado),
     ),
   );
 }
 
-class _Escaner extends StatelessWidget {
+class _Escaner extends StatefulWidget {
   const _Escaner();
+
+  @override
+  State<_Escaner> createState() => _EscanerState();
+}
+
+class _EscanerState extends State<_Escaner> {
+  /// La camara sigue detectando el mismo codigo varias veces por segundo
+  /// mientras dura la animacion de salida; un segundo `pop` cerraria tambien
+  /// la pantalla de debajo.
+  bool _leido = false;
 
   @override
   Widget build(BuildContext context) {
@@ -198,9 +248,11 @@ class _Escaner extends StatelessWidget {
       appBar: AppBar(title: const Text('Escanear')),
       body: MobileScanner(
         onDetect: (captura) {
+          if (_leido) return;
           for (final codigo in captura.barcodes) {
             final valor = codigo.rawValue;
             if (valor != null && valor.startsWith(_esquemaQr)) {
+              _leido = true;
               Navigator.of(context).pop(valor.substring(_esquemaQr.length));
               return;
             }
@@ -230,7 +282,8 @@ class _Siguiendo extends ConsumerWidget {
             )
           : ListView.builder(
               itemCount: lista.length,
-              itemBuilder: (_, i) => _FilaPersona(perfil: lista[i]),
+              itemBuilder: (_, i) =>
+                  _FilaPersona(key: ValueKey(lista[i].id), perfil: lista[i]),
             ),
     );
   }
@@ -299,7 +352,7 @@ class _MiCodigo extends ConsumerWidget {
 }
 
 class _FilaPersona extends ConsumerStatefulWidget {
-  const _FilaPersona({required this.perfil});
+  const _FilaPersona({super.key, required this.perfil});
 
   final PerfilResumen perfil;
 
@@ -310,6 +363,18 @@ class _FilaPersona extends ConsumerStatefulWidget {
 class _FilaPersonaState extends ConsumerState<_FilaPersona> {
   late bool _siguiendo = widget.perfil.leSigo;
   bool _ocupado = false;
+
+  @override
+  void didUpdateWidget(covariant _FilaPersona anterior) {
+    super.didUpdateWidget(anterior);
+    // Una busqueda nueva o una recarga de la lista trae el dato del
+    // servidor; la copia local solo vale mientras no llegue otro.
+    if (!_ocupado &&
+        (anterior.perfil.id != widget.perfil.id ||
+            anterior.perfil.leSigo != widget.perfil.leSigo)) {
+      _siguiendo = widget.perfil.leSigo;
+    }
+  }
 
   Future<void> _alternar() async {
     final antes = _siguiendo;

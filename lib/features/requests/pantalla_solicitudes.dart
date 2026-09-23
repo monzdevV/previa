@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../map/proveedores_mapa.dart';
 
 final solicitudesDeProvider = FutureProvider.family<List<Solicitud>, String>(
@@ -32,7 +35,11 @@ class PantallaSolicitudes extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Solicitudes')),
       body: solicitudes.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
@@ -184,15 +191,14 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: context.colores.superficieAlta,
-                  child: Text(
-                    s.inicialSolicitante,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: context.colores.texto,
-                    ),
+                // Antes de aceptar a alguien en casa hay que verle la cara y
+                // poder abrir su perfil.
+                GestureDetector(
+                  onTap: () =>
+                      context.push('${Rutas.perfilDe}/${s.solicitanteId}'),
+                  child: AvatarPerfil(
+                    url: s.avatarSolicitante,
+                    inicial: s.nombreSolicitante,
                   ),
                 ),
                 const SizedBox(width: EspaciadoPrevia.m),
@@ -296,12 +302,12 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                         minimumSize: const Size(0, 46),
                       ),
                       child: _procesando
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
-                                color: Colors.white,
+                                color: context.colores.sobrePrimario,
                               ),
                             )
                           : Text(

@@ -11,11 +11,20 @@ import 'pestanas_perfil.dart';
 import 'proveedores_perfil.dart';
 import '../party/tarjeta_previa.dart';
 
-class PantallaPerfil extends ConsumerWidget {
+class PantallaPerfil extends ConsumerStatefulWidget {
   const PantallaPerfil({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PantallaPerfil> createState() => _PantallaPerfilState();
+}
+
+class _PantallaPerfilState extends ConsumerState<PantallaPerfil> {
+  /// Borrar la cuenta tarda y no se puede repetir: un segundo toque mientras
+  /// va el primero lanzaria otra peticion contra una cuenta a medio borrar.
+  bool _eliminando = false;
+
+  @override
+  Widget build(BuildContext context) {
     final perfil = ref.watch(miPerfilProvider);
     final misPrevias = ref.watch(misPreviasProvider);
     final textos = Theme.of(context).textTheme;
@@ -32,15 +41,29 @@ class PantallaPerfil extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
+        color: context.colores.primarioTexto,
+        // Se espera a que vuelvan los datos: si no, la ruleta se va al
+        // instante y parece que no ha hecho nada.
         onRefresh: () async {
           refrescarPerfil(ref);
-          ref.invalidate(misPreviasProvider);
+          try {
+            await Future.wait([
+              ref.refresh(miPerfilProvider.future),
+              ref.refresh(misPreviasProvider.future),
+            ]);
+          } catch (_) {
+            // El fallo ya lo pinta cada seccion con su propio mensaje.
+          }
         },
         child: ListView(
           padding: const EdgeInsets.all(EspaciadoPrevia.l),
           children: [
             perfil.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                  color: context.colores.primarioTexto,
+                ),
+              ),
               error: (e, _) => Text(
                 'No se ha podido cargar tu perfil.',
                 style: textos.bodyMedium,
@@ -66,9 +89,13 @@ class PantallaPerfil extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.s),
 
             misPrevias.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(EspaciadoPrevia.l),
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => Padding(
+                padding: const EdgeInsets.all(EspaciadoPrevia.l),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: context.colores.primarioTexto,
+                  ),
+                ),
               ),
               error: (e, _) => Text(
                 'No se han podido cargar tus previas.',
@@ -185,7 +212,7 @@ class PantallaPerfil extends ConsumerWidget {
               subtitle: const Text(
                 'Todo lo que guardamos de ti, en un fichero',
               ),
-              onTap: () => _exportar(context, ref),
+              onTap: _exportar,
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -198,7 +225,17 @@ class PantallaPerfil extends ConsumerWidget {
                 style: TextStyle(color: context.colores.error),
               ),
               subtitle: const Text('Se borra todo y no hay vuelta atrás'),
-              onTap: () => _eliminarCuenta(context, ref),
+              trailing: _eliminando
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: context.colores.error,
+                      ),
+                    )
+                  : null,
+              onTap: _eliminando ? null : _eliminarCuenta,
             ),
 
             const SizedBox(height: EspaciadoPrevia.l),
@@ -214,7 +251,7 @@ class PantallaPerfil extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportar(BuildContext context, WidgetRef ref) async {
+  Future<void> _exportar() async {
     final mensajero = ScaffoldMessenger.of(context);
     try {
       final datos = await ref.read(repositorioAuthProvider).exportarMisDatos();
@@ -230,7 +267,7 @@ class PantallaPerfil extends ConsumerWidget {
     }
   }
 
-  Future<void> _eliminarCuenta(BuildContext context, WidgetRef ref) async {
+  Future<void> _eliminarCuenta() async {
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -257,7 +294,19 @@ class PantallaPerfil extends ConsumerWidget {
       ),
     );
 
-    if (confirmado != true) return;
-    await ref.read(repositorioAuthProvider).eliminarMiCuenta();
+    if (confirmado != true || _eliminando || !mounted) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    setState(() => _eliminando = true);
+    try {
+      await ref.read(repositorioAuthProvider).eliminarMiCuenta();
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido eliminar la cuenta. Inténtalo otra vez.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _eliminando = false);
+    }
   }
 }

@@ -107,8 +107,19 @@ final filtrosProvider = NotifierProvider<FiltrosNotifier, Filtros>(
 /// Riverpod rehace la consulta solo.
 final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
   final elegido = ref.watch(centroBusquedaProvider);
-  final LatLng centro =
-      elegido ?? await ref.watch(posicionDispositivoProvider.future);
+  // Sin ubicacion se busca en la ciudad por defecto en vez de fallar: el
+  // aviso de ubicacion ya explica el problema, y un mapa vacio con un error
+  // encima no deja ni mirar que hay.
+  LatLng centro;
+  if (elegido != null) {
+    centro = elegido;
+  } else {
+    try {
+      centro = await ref.watch(posicionDispositivoProvider.future);
+    } catch (_) {
+      centro = ServicioUbicacion.centroPorDefecto;
+    }
+  }
   final filtros = ref.watch(filtrosProvider);
 
   final encontradas = await ref

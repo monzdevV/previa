@@ -274,12 +274,12 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 FilledButton(
                   onPressed: _cargando ? null : _registrar,
                   child: _cargando
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
-                            color: Colors.white,
+                            color: context.colores.sobrePrimario,
                           ),
                         )
                       : const Text('Crear cuenta'),

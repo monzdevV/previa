@@ -162,12 +162,12 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
               FilledButton(
                 onPressed: _enviando ? null : _enviar,
                 child: _enviando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Colors.white,
+                          color: context.colores.sobrePrimario,
                         ),
                       )
                     : Text(

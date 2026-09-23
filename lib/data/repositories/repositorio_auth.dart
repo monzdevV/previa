@@ -16,6 +16,18 @@ final estadoSesionProvider = StreamProvider<AuthState>(
   (ref) => ref.watch(clienteSupabaseProvider).auth.onAuthStateChange,
 );
 
+/// Identificador de quien tiene la sesion abierta, o null si no hay nadie.
+///
+/// Los repositorios dependen de esto y no de [estadoSesionProvider] porque
+/// la sesion emite tambien al renovar el token cada hora, y eso reconstruiria
+/// todas las pantallas sin motivo. Un `Provider` solo avisa si el valor
+/// cambia, asi que aqui solo salta al entrar, salir o cambiar de cuenta, que
+/// es justo cuando hay que tirar los datos de la cuenta anterior.
+final uidActualProvider = Provider<String?>((ref) {
+  ref.watch(estadoSesionProvider);
+  return ref.watch(clienteSupabaseProvider).auth.currentUser?.id;
+});
+
 /// Perfil de la persona que ha iniciado sesion, o null si no hay sesion.
 final miPerfilProvider = FutureProvider<Perfil?>((ref) async {
   ref.watch(estadoSesionProvider);

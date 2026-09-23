@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/tema.dart';
+import '../../data/models/perfil.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
 import 'proveedores_perfil.dart';
@@ -28,6 +29,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   String? _avatar;
   bool _subiendoAvatar = false;
   bool _cargandoDatos = true;
+  bool _falloAlCargar = false;
   bool _guardando = false;
   String? _error;
 
@@ -38,11 +40,32 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   }
 
   Future<void> _cargar() async {
+    // Solo al reintentar: la primera vez ya se parte del estado de carga.
+    if (_falloAlCargar) {
+      setState(() {
+        _cargandoDatos = true;
+        _falloAlCargar = false;
+      });
+    }
     final repo = ref.read(repositorioAuthProvider);
-    final perfil = await repo.miPerfil();
-    // La fecha de nacimiento no viene en el perfil: no es legible por SELECT.
-    // Hay que pedirla por su funcion, que solo responde al titular.
-    final fecha = await repo.miFechaNacimiento();
+    final Perfil? perfil;
+    final DateTime? fecha;
+    try {
+      perfil = await repo.miPerfil();
+      // La fecha de nacimiento no viene en el perfil: no es legible por
+      // SELECT. Hay que pedirla por su funcion, que solo responde al titular.
+      fecha = await repo.miFechaNacimiento();
+    } catch (_) {
+      // Sin esto un fallo de red deja la ruleta girando para siempre y el
+      // formulario vacio no se puede enseñar: guardaria el perfil en blanco.
+      if (mounted) {
+        setState(() {
+          _cargandoDatos = false;
+          _falloAlCargar = true;
+        });
+      }
+      return;
+    }
 
     if (!mounted) return;
     setState(() {
@@ -148,6 +171,10 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
           .showSnackBar(const SnackBar(content: Text('Perfil actualizado.')));
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'No se ha podido guardar. Inténtalo otra vez.');
+      }
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -156,7 +183,42 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   @override
   Widget build(BuildContext context) {
     if (_cargandoDatos) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      // Con barra desde el principio: sin ella no hay forma de volver atras
+      // si la carga se atasca.
+      return Scaffold(
+        appBar: AppBar(title: const Text('Editar perfil')),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
+        ),
+      );
+    }
+
+    if (_falloAlCargar) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Editar perfil')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(EspaciadoPrevia.xl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'No se ha podido cargar tu perfil.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: EspaciadoPrevia.m),
+                OutlinedButton(
+                  onPressed: _cargar,
+                  child: const Text('Reintentar'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     final textos = Theme.of(context).textTheme;
@@ -313,12 +375,12 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               FilledButton(
                 onPressed: _guardando ? null : _guardar,
                 child: _guardando
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 22,
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Colors.white,
+                          color: context.colores.sobrePrimario,
                         ),
                       )
                     : const Text('Guardar'),

@@ -7,7 +7,7 @@ import '../../app/tema.dart';
 import '../../data/models/noche.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import '../feed/pantalla_feed.dart' show AvatarPerfil, refrescarFeed;
 import '../social/pantalla_resumen_noche.dart';
 import 'proveedores_perfil.dart';
 
@@ -332,12 +332,18 @@ class _Celda extends ConsumerWidget {
   );
 }
 
+/// Publicaciones cuyo borrado esta en marcha. La pulsacion larga se puede
+/// repetir mientras la primera peticion no vuelve, y un segundo borrado de
+/// algo que ya no existe acaba en un error sin sentido para el usuario.
+final _borrando = <String>{};
+
 /// Borrar lo tuyo desde la cuadricula, manteniendo pulsado.
 Future<void> _confirmarBorrado(
   BuildContext context,
   WidgetRef ref,
   String id,
 ) async {
+  if (_borrando.contains(id)) return;
   final borrar = await showDialog<bool>(
     context: context,
     builder: (contexto) => AlertDialog(
@@ -358,9 +364,22 @@ Future<void> _confirmarBorrado(
     ),
   );
 
-  if (borrar != true) return;
-  await ref.read(repositorioSocialProvider).borrarPublicacion(id);
-  ref.invalidate(misPublicacionesProvider);
+  if (borrar != true || !context.mounted || !_borrando.add(id)) return;
+  final mensajero = ScaffoldMessenger.of(context);
+  try {
+    await ref.read(repositorioSocialProvider).borrarPublicacion(id);
+    ref.invalidate(misPublicacionesProvider);
+    // Si no, lo borrado sigue apareciendo en el feed hasta que se recarga.
+    refrescarFeed(ref);
+  } catch (_) {
+    mensajero.showSnackBar(
+      const SnackBar(
+        content: Text('No se ha podido borrar. Inténtalo otra vez.'),
+      ),
+    );
+  } finally {
+    _borrando.remove(id);
+  }
 }
 
 class _Cargando extends StatelessWidget {

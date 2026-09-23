@@ -69,7 +69,36 @@ class _FichaReporte extends ConsumerStatefulWidget {
 class _FichaReporteState extends ConsumerState<_FichaReporte> {
   bool _ocupado = false;
 
+  /// Retirar borra la publicacion de otra persona y no se deshace: un toque
+  /// sin querer no puede bastar.
+  Future<void> _retirar(Future<void> Function() accion) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        backgroundColor: context.colores.superficieAlta,
+        title: const Text('¿Retirar la publicación?'),
+        content: const Text(
+          'Dejará de verse para todo el mundo. No se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(true),
+            style: TextButton.styleFrom(foregroundColor: context.colores.error),
+            child: const Text('Retirar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado != true || !mounted) return;
+    await _hacer(accion);
+  }
+
   Future<void> _hacer(Future<void> Function() accion) async {
+    if (_ocupado) return;
     setState(() => _ocupado = true);
     try {
       await accion();
@@ -199,7 +228,7 @@ class _FichaReporteState extends ConsumerState<_FichaReporte> {
                           child: FilledButton(
                             onPressed: _ocupado
                                 ? null
-                                : () => _hacer(
+                                : () => _retirar(
                                     () => repo.retirarPublicacion(r.id),
                                   ),
                             style: FilledButton.styleFrom(

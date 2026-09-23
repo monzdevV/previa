@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
+import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
@@ -62,15 +64,33 @@ class _Contenido extends ConsumerStatefulWidget {
 class _ContenidoState extends ConsumerState<_Contenido> {
   late PerfilResumen _p = widget.ficha.perfil;
 
+  /// Dos toques rapidos lanzarian seguir y dejar de seguir a la vez, y el
+  /// orden en que lleguen al servidor decide el resultado, no el usuario.
+  bool _enCurso = false;
+
+  @override
+  void didUpdateWidget(covariant _Contenido anterior) {
+    super.didUpdateWidget(anterior);
+    // Si la ficha se recarga, manda la del servidor y no la copia local.
+    if (anterior.ficha != widget.ficha) _p = widget.ficha.perfil;
+  }
+
   Future<void> _alternar() async {
+    if (_enCurso) return;
+    HapticFeedback.selectionClick();
     final antes = _p;
-    setState(() => _p = _p.copiarCon(leSigo: !antes.leSigo));
+    setState(() {
+      _enCurso = true;
+      _p = _p.copiarCon(leSigo: !antes.leSigo);
+    });
     try {
       await ref
           .read(repositorioSocialProvider)
           .alternarSeguimiento(antes.id, loSeguia: antes.leSigo);
     } catch (_) {
       if (mounted) setState(() => _p = antes);
+    } finally {
+      if (mounted) setState(() => _enCurso = false);
     }
   }
 
@@ -79,6 +99,9 @@ class _ContenidoState extends ConsumerState<_Contenido> {
     final ficha = widget.ficha;
     final textos = Theme.of(context).textTheme;
     final publicaciones = ref.watch(_publicacionesProvider(_p.id));
+    // A uno mismo no se le sigue ni se le escribe: se llega aqui desde el
+    // feed o el buscador tocando tu propia cara.
+    final esMio = ref.watch(uidActualProvider) == _p.id;
 
     return ListView(
       padding: const EdgeInsets.all(EspaciadoPrevia.m),
@@ -142,32 +165,34 @@ class _ContenidoState extends ConsumerState<_Contenido> {
           const _AvisoDemo(),
         ],
 
-        const SizedBox(height: EspaciadoPrevia.m),
-        Row(
-          children: [
-            Expanded(
-              child: _p.leSigo
-                  ? OutlinedButton.icon(
-                      onPressed: _alternar,
-                      icon: const Icon(Icons.check_rounded, size: 19),
-                      label: const Text('Siguiendo'),
-                    )
-                  : FilledButton(
-                      onPressed: _alternar,
-                      child: const Text('Seguir'),
-                    ),
-            ),
-            const SizedBox(width: EspaciadoPrevia.s),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () =>
-                    context.push('${Rutas.conversacion}/${_p.id}'),
-                icon: const Icon(Icons.send_rounded, size: 19),
-                label: const Text('Mensaje'),
+        if (!esMio) ...[
+          const SizedBox(height: EspaciadoPrevia.m),
+          Row(
+            children: [
+              Expanded(
+                child: _p.leSigo
+                    ? OutlinedButton.icon(
+                        onPressed: _alternar,
+                        icon: const Icon(Icons.check_rounded, size: 19),
+                        label: const Text('Siguiendo'),
+                      )
+                    : FilledButton(
+                        onPressed: _alternar,
+                        child: const Text('Seguir'),
+                      ),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(width: EspaciadoPrevia.s),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () =>
+                      context.push('${Rutas.conversacion}/${_p.id}'),
+                  icon: const Icon(Icons.send_rounded, size: 19),
+                  label: const Text('Mensaje'),
+                ),
+              ),
+            ],
+          ),
+        ],
 
         const SizedBox(height: EspaciadoPrevia.l),
         const Divider(),

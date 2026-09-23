@@ -112,7 +112,7 @@ class _HojaFiltros extends ConsumerWidget {
                     label: Text(etiqueta),
                     selected: filtros.ambiente.contains(etiqueta),
                     selectedColor: context.colores.primario,
-                    checkmarkColor: Colors.white,
+                    checkmarkColor: context.colores.sobrePrimario,
                     onSelected: (_) => notificador.alternarAmbiente(etiqueta),
                   ),
               ],

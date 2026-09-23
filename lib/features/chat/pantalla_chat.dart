@@ -8,13 +8,15 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 
 /// Mensajes en vivo. Supabase Realtime empuja cada insercion por WebSocket,
-/// asi que no hay que refrescar ni sondear.
-final mensajesProvider = StreamProvider.family<List<Mensaje>, String>(
+/// asi que no hay que refrescar ni sondear. Se cierra al salir del chat para
+/// no dejar la suscripcion abierta mientras se navega por otras pantallas.
+final mensajesProvider = StreamProvider.autoDispose.family<List<Mensaje>, String>(
   (ref, previaId) => ref.watch(repositorioPreviasProvider).mensajesDe(previaId),
 );
 
 /// Quien va, para poder poner nombre a cada mensaje.
-final miembrosProvider = FutureProvider.family<Map<String, String>, String>((
+final miembrosProvider = FutureProvider.autoDispose
+    .family<Map<String, String>, String>((
   ref,
   previaId,
 ) async {
@@ -78,12 +80,13 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
     }
   }
 
+  // La lista va invertida, asi que "el final" es el principio del scroll.
   void _alFinal() {
     if (!_scroll.hasClients) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) {
         _scroll.animateTo(
-          _scroll.position.maxScrollExtent,
+          _scroll.position.minScrollExtent,
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
         );
@@ -123,7 +126,11 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
         children: [
           Expanded(
             child: mensajes.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => Center(
+                child: CircularProgressIndicator(
+                  color: context.colores.primarioTexto,
+                ),
+              ),
               error: (e, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(EspaciadoPrevia.l),
@@ -137,11 +144,15 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                   ? const _ChatVacio()
                   : ListView.builder(
                       controller: _scroll,
+                      // Invertida para que al abrir se vea lo ultimo sin
+                      // tener que bajar a mano, como en cualquier chat.
+                      reverse: true,
                       padding: const EdgeInsets.all(EspaciadoPrevia.m),
                       itemCount: lista.length,
                       itemBuilder: (_, i) {
-                        final m = lista[i];
-                        final anterior = i > 0 ? lista[i - 1] : null;
+                        final indice = lista.length - 1 - i;
+                        final m = lista[indice];
+                        final anterior = indice > 0 ? lista[indice - 1] : null;
                         return _Burbuja(
                           mensaje: m,
                           esMio: m.autorId == yo,
@@ -189,6 +200,7 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                     onPressed: _enviando ? null : _enviar,
                     style: IconButton.styleFrom(
                       backgroundColor: context.colores.primario,
+                      foregroundColor: context.colores.sobrePrimario,
                       minimumSize: const Size(48, 48),
                     ),
                     icon: const Icon(Icons.send_rounded, size: 20),
@@ -270,7 +282,9 @@ class _Burbuja extends StatelessWidget {
                 Text(
                   mensaje.texto,
                   style: TextStyle(
-                    color: esMio ? Colors.white : context.colores.texto,
+                    color: esMio
+                        ? context.colores.sobrePrimario
+                        : context.colores.texto,
                     fontSize: 15,
                     height: 1.35,
                   ),
@@ -281,7 +295,7 @@ class _Burbuja extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     color: esMio
-                        ? Colors.white.withValues(alpha: 0.7)
+                        ? context.colores.sobrePrimario.withValues(alpha: 0.6)
                         : context.colores.textoTenue,
                   ),
                 ),

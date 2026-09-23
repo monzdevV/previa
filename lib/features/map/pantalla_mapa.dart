@@ -42,10 +42,31 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
     setState(() => _centroPendiente = null);
   }
 
+  /// Mueve la camara dejando [punto] en el centro de la franja de mapa que
+  /// queda a la vista, no en el centro de la pantalla: la lista inferior
+  /// arranca tapando dos tercios y lo que quedara en medio iria debajo.
+  void _enfocar(LatLng punto, double zoom) {
+    final alto = MediaQuery.sizeOf(context).height;
+    const tapado = 0.66;
+    _mapa.move(
+      punto,
+      zoom,
+      offset: Offset(0, -alto * tapado / 2),
+    );
+  }
+
   Future<void> _volverAMiPosicion() async {
-    final posicion = await ref.refresh(posicionDispositivoProvider.future);
+    final LatLng posicion;
+    try {
+      posicion = await ref.refresh(posicionDispositivoProvider.future);
+    } catch (_) {
+      // El fallo ya lo pinta el aviso de ubicacion, que escucha al mismo
+      // proveedor; aqui solo hay que no dejar la excepcion suelta.
+      return;
+    }
+    if (!mounted) return;
     ref.read(centroBusquedaProvider.notifier).fijar(posicion);
-    _mapa.move(posicion, 14);
+    _enfocar(posicion, 14);
     setState(() => _centroPendiente = null);
   }
 
@@ -59,6 +80,19 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
         ref.watch(centroBusquedaProvider) ??
         posicion.valueOrNull ??
         ServicioUbicacion.centroPorDefecto;
+
+    // El mapa arranca en la ciudad por defecto porque la posicion tarda en
+    // llegar, y `initialCenter` solo se lee una vez. Cuando llega la primera
+    // posicion buena se lleva la camara hasta ella, salvo que el usuario ya
+    // haya elegido otra zona a mano.
+    ref.listen<AsyncValue<LatLng>>(posicionDispositivoProvider, (antes, ahora) {
+      final punto = ahora.valueOrNull;
+      if (punto == null || antes?.valueOrNull != null) return;
+      if (ref.read(centroBusquedaProvider) != null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _enfocar(punto, _mapa.camera.zoom);
+      });
+    });
 
     return Scaffold(
       // La accion primaria se ancla al borde inferior, al alcance del pulgar,
@@ -94,15 +128,18 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                   ),
                   children: [
                     TileLayer(
-                      // Teselas oscuras de CARTO: casan con el tema de la aplicacion
-                      // y no exigen clave de API ni tarjeta.
-                      urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                      // Teselas de CARTO en el mismo modo que la aplicacion: un
+                      // plano negro dentro del tema claro parece un agujero. No
+                      // exigen clave de API ni tarjeta.
+                      urlTemplate:
+                          Theme.of(context).brightness == Brightness.light
+                          ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+                          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                       subdomains: const ['a', 'b', 'c'],
                       retinaMode: RetinaMode.isHighDensity(context),
                       userAgentPackageName: 'com.previa.previa',
                       tileProvider: ref.watch(proveedorTeselasProvider),
                     ),
-
 
                     // Radio de busqueda. En letra de mapa y no en ambar: el alcance
                     // de la busqueda no es una previa con sitio.
@@ -136,7 +173,9 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                             ),
                             borderColor: _previaResaltada == p.id
                                 ? context.colores.texto
-                                : context.colores.primario.withValues(alpha: 0.7),
+                                : context.colores.primario.withValues(
+                                    alpha: 0.7,
+                                  ),
                             borderStrokeWidth: _previaResaltada == p.id ? 2 : 1,
                           ),
                       ],
@@ -264,7 +303,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                   previas: previas,
                   onTocar: (p) {
                     setState(() => _previaResaltada = p.id);
-                    _mapa.move(p.ubicacion, 15);
+                    _enfocar(p.ubicacion, 15);
                     widget.onAbrirPrevia?.call(p);
                   },
                 ),
@@ -426,7 +465,9 @@ class _BotonFiltros extends StatelessWidget {
         child: Icon(
           icono,
           size: 21,
-          color: resaltado ? Colors.white : context.colores.texto,
+          color: resaltado
+              ? context.colores.sobrePrimario
+              : context.colores.texto,
         ),
       ),
     );
@@ -470,10 +511,7 @@ class _AvisoUbicacion extends ConsumerWidget {
               Expanded(
                 child: Text(
                   mensaje,
-                  style: TextStyle(
-                    color: context.colores.texto,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: context.colores.texto, fontSize: 14),
                 ),
               ),
             ],
@@ -540,20 +578,32 @@ class _ListaInferior extends StatelessWidget {
               ),
               Expanded(
                 child: previas.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => _Vacio(
-                    icono: Icons.cloud_off,
-                    titulo: 'No se ha podido buscar',
-                    detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+                  loading: () => _Arrastrable(
+                    controlador: controlador,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: context.colores.primarioTexto,
+                      ),
+                    ),
+                  ),
+                  error: (e, _) => _Arrastrable(
+                    controlador: controlador,
+                    child: const _Vacio(
+                      icono: Icons.cloud_off,
+                      titulo: 'No se ha podido buscar',
+                      detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+                    ),
                   ),
                   data: (lista) => lista.isEmpty
-                      ? const _Vacio(
-                          icono: Icons.grid_off,
-                          titulo: 'Nada por aquí ahora mismo',
-                          detalle:
-                              'Prueba a ampliar el radio en los filtros, '
-                              'o abre tú la previa y que venga la gente.',
+                      ? _Arrastrable(
+                          controlador: controlador,
+                          child: const _Vacio(
+                            icono: Icons.grid_off,
+                            titulo: 'Nada por aquí ahora mismo',
+                            detalle:
+                                'Prueba a ampliar el radio en los filtros, '
+                                'o abre tú la previa y que venga la gente.',
+                          ),
                         )
                       : ListView.separated(
                           controller: controlador,
@@ -580,6 +630,34 @@ class _ListaInferior extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Envuelve los estados sin lista en algo que use el controlador de la hoja.
+///
+/// Sin esto, mientras carga o si no hay nada, la hoja no se puede arrastrar:
+/// el gesto solo llega a la hoja a traves de un desplazable con su
+/// controlador, y un `Center` suelto no lo es.
+class _Arrastrable extends StatelessWidget {
+  const _Arrastrable({required this.controlador, required this.child});
+
+  final ScrollController controlador;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, limites) => ListView(
+        controller: controlador,
+        padding: EdgeInsets.zero,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(minHeight: limites.maxHeight),
+            child: Center(child: child),
+          ),
+        ],
+      ),
     );
   }
 }
