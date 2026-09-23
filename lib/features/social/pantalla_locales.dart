@@ -115,7 +115,6 @@ Future<void> _proponerLocal(
   String ciudad,
 ) async {
   final nombre = TextEditingController();
-  final urlEntradas = TextEditingController();
   final instagram = TextEditingController();
 
   final creado = await showModalBottomSheet<bool>(
@@ -144,15 +143,6 @@ Future<void> _proponerLocal(
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           TextField(
-            controller: urlEntradas,
-            keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              labelText: 'Enlace de entradas',
-              hintText: 'https://…',
-            ),
-          ),
-          const SizedBox(height: EspaciadoPrevia.s),
-          TextField(
             controller: instagram,
             decoration: const InputDecoration(
               labelText: 'Instagram',
@@ -176,7 +166,6 @@ Future<void> _proponerLocal(
       .crearLocal(
         nombre: nombre.text,
         ciudad: ciudad,
-        urlEntradas: urlEntradas.text.isEmpty ? null : urlEntradas.text,
         instagram: instagram.text.isEmpty ? null : instagram.text,
       );
   ref.invalidate(localesProvider);

@@ -260,11 +260,13 @@ class RepositorioSocial {
     });
   }
 
+  /// Proponer un sitio. El enlace de entradas no se acepta desde la app:
+  /// en una ficha con aspecto oficial seria la puerta perfecta para un
+  /// enlace falso, asi que lo ponen los moderadores.
   Future<Local> crearLocal({
     required String nombre,
     required String ciudad,
     String? zona,
-    String? urlEntradas,
     String? instagram,
   }) async {
     final fila = await _cliente
@@ -273,7 +275,6 @@ class RepositorioSocial {
           'name': nombre.trim(),
           'city': ciudad.trim(),
           'area_label': ?zona?.trim(),
-          'ticket_url': ?urlEntradas?.trim(),
           'instagram': ?instagram?.trim(),
         })
         .select('id, name, city, area_label, ticket_url, instagram')
@@ -463,8 +464,9 @@ class RepositorioSocial {
         .toList();
   }
 
-  /// Sube una foto directamente a la sala del local.
-  Future<void> publicarEnSala({
+  /// Sube una foto directamente a la sala del local y devuelve su id, que
+  /// es lo que necesita un reto para darse por cumplido.
+  Future<String> publicarEnSala({
     required String localId,
     required List<int> bytes,
     required String extension,
@@ -486,15 +488,22 @@ class RepositorioSocial {
           ),
         );
 
-    await _cliente.from('posts').insert({
-      'author_id': _yo,
-      'media_url': _cliente.storage.from('publicaciones').getPublicUrl(nombre),
-      'media_type': esVideo ? 'video' : 'photo',
-      'venue_id': localId,
-      'night': _comoNoche(noche ?? DateTime.now()),
-      if (texto != null && texto.trim().isNotEmpty) 'caption': texto.trim(),
-      if (zona != null && zona.trim().isNotEmpty) 'area_label': zona.trim(),
-    });
+    final fila = await _cliente
+        .from('posts')
+        .insert({
+          'author_id': _yo,
+          'media_url': _cliente.storage
+              .from('publicaciones')
+              .getPublicUrl(nombre),
+          'media_type': esVideo ? 'video' : 'photo',
+          'venue_id': localId,
+          'night': _comoNoche(noche ?? DateTime.now()),
+          if (texto != null && texto.trim().isNotEmpty) 'caption': texto.trim(),
+          if (zona != null && zona.trim().isNotEmpty) 'area_label': zona.trim(),
+        })
+        .select('id')
+        .single();
+    return fila['id'] as String;
   }
 
   /// La bandeja de mensajes: una fila por persona con lo ultimo dicho.

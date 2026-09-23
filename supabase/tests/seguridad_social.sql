@@ -60,7 +60,7 @@ begin
   perform set_config('request.jwt.claims',
     json_build_object('sub',v_diana,'role','authenticated')::text, true);
   insert into public.posts (author_id, media_url, media_type, caption, area_label)
-  values (v_diana,'https://ejemplo.test/1.jpg','photo','Una noche','Ciudad de prueba')
+  values (v_diana,'https://bfqzabpgtehncnbxtslg.supabase.co/storage/v1/object/public/publicaciones/prueba/1.jpg','photo','Una noche','Ciudad de prueba')
   returning id into v_post;
   execute 'reset role';
   insert into resultados_social values
@@ -72,7 +72,7 @@ begin
     json_build_object('sub',v_eva,'role','authenticated')::text, true);
   begin
     insert into public.posts (author_id, media_url, media_type)
-    values (v_diana,'https://ejemplo.test/falsa.jpg','photo');
+    values (v_diana,'https://bfqzabpgtehncnbxtslg.supabase.co/storage/v1/object/public/publicaciones/prueba/falsa.jpg','photo');
     execute 'reset role';
     insert into resultados_social values
       (18,'Nadie publica en nombre de otro','denegado','lo ha hecho', false);
