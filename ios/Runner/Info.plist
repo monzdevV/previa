@@ -56,8 +56,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -70,5 +68,11 @@
 	     Conviene que explique el para qué, no solo el qué. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Previa usa tu ubicación para enseñarte previas cerca de ti. Nunca la compartimos con nadie ni la guardamos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Previa usa la cámara para subir fotos de la noche, cumplir retos y escanear códigos QR de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Previa abre tu galería solo cuando eliges una foto para publicar o para tu perfil.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Previa usa el micrófono solo mientras grabas un vídeo para publicarlo.</string>
 </dict>
 </plist>
