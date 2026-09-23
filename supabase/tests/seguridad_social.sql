@@ -29,7 +29,7 @@ declare
   v_local uuid;
   v_priv  uuid;
   v_pub   uuid;
-  v_noche date := current_date;
+  v_noche date := privado.noche_actual();
   v_txt   text;
   v_int   int;
 begin
