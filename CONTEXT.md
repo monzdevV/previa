@@ -18,6 +18,11 @@ Cuatro pestañas:
 Alrededor: perfiles públicos, seguir gente, código QR, buscador y mensajes
 directos.
 
+Dentro de la sala de un local está el minijuego **No hay 🥚**: un sticker
+reparte un reto ("busca a X y haceos una foto") con alguien que también ha
+dicho que va a ese local esa noche, con su ficha y su cara. Se cumple
+subiendo la foto a la sala.
+
 ## Stack
 
 Flutter (Android, iOS, web) · Riverpod · go_router · Supabase (Postgres 17 +
@@ -76,9 +81,18 @@ Añadido para la parte social:
 | `direct_messages` | mensajes directos entre personas |
 | `venue_messages` | la sala de un local, por local y noche |
 | `notices` | avisos; los crean disparadores, nadie los inserta a mano |
+| `challenges` | retos de No hay 🥚; solo los escriben funciones |
 
 Funciones: `feed_publicaciones`, `locales_de_la_noche`, `quien_va`,
-`mis_conversaciones`.
+`mis_conversaciones`, y las del juego: `comprobar_reto` y `crear_reto` (solo
+`service_role`), `mi_reto`, `completar_reto`, `rajarse`, `quitar_foto_de_reto`.
+
+**Función de borde `no-hay-huevos`** (`supabase/functions/no-hay-huevos`):
+verifica la sesión, llama a `comprobar_reto`, pide el texto a Claude y llama
+a `crear_reto`. La IA solo recibe el nombre del local; el nombre de la
+persona lo pone Postgres sustituyendo `{persona}`. Sin el secreto
+`ANTHROPIC_API_KEY` funciona igual con retos de reserva. Se prueba con
+`node --test supabase/functions/no-hay-huevos/reto.test.ts`.
 Cubos de Storage: `publicaciones` y `avatares`, públicos de lectura, y cada
 quien solo escribe en su carpeta `<uid>/`.
 
@@ -109,6 +123,10 @@ amarillo.
 
 ## Pendiente, por orden
 
+0. **Poner la clave de la IA**: `npx supabase secrets set ANTHROPIC_API_KEY=...
+   --project-ref bfqzabpgtehncnbxtslg`. Sin ella los retos salen de la lista
+   de reserva de `reto.ts`.
+
 1. **Notificaciones push.** Los avisos dentro de la aplicación ya funcionan y
    se guardan en `notices`; falta el proyecto de Firebase y enviar desde un
    disparador. La lógica de qué avisar ya está hecha.
@@ -134,9 +152,21 @@ amarillo.
   perfil completo la política impide crear previas.
 - El rol de moderador (`profiles.is_moderator`) solo se pone desde el panel de
   Supabase; la aplicación no puede escribirlo.
-- Las pruebas de seguridad son dos: `supabase/tests/seguridad.sql` (16, el
-  núcleo) y `seguridad_social.sql` (18, la capa social). Se pegan en el editor
-  SQL y deben salir todas en PASA.
+- Las pruebas de seguridad son tres: `supabase/tests/seguridad.sql` (16, el
+  núcleo), `seguridad_social.sql` (18, la capa social) y `seguridad_retos.sql`
+  (20, cierre de escrituras y el juego). Se pegan en el editor SQL y deben
+  salir todas en PASA.
+- `posts`, `join_requests`, `direct_messages` y `venues` también conceden
+  privilegios **columna a columna** desde septiembre de 2026, igual que
+  `parties`. Una columna nueva que escriba la app hay que concederla a mano.
+- `posts.media_url` tiene que apuntar al cubo `publicaciones` del proyecto
+  (salvo `is_demo`). Si cambia el proyecto, cambia la restricción.
+- Las fechas de "la noche" en el servidor salen de `privado.noche_actual()`
+  (Europa/Madrid, antes de las 6 cuenta el día anterior). No uses
+  `current_date`: el servidor está en UTC.
+- El movimiento vive en `lib/app/movimiento.dart` (curva, duraciones y
+  `Pulsable`). Respeta `MediaQuery.disableAnimations`.
+- Los iconos se generan con `python tool/generar_iconos.py`.
 - Nada de esto se ha probado con una sesión real: compila, los tests pasan y
   las funciones devuelven datos por SQL, pero la primera subida de foto y el
   primer mensaje hay que hacerlos a mano.
