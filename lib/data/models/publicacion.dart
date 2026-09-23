@@ -321,7 +321,7 @@ class Aviso {
 
   final String id;
 
-  /// solicitud, aceptada, mensaje, like, seguidor o sala.
+  /// solicitud, aceptada, mensaje, like, seguidor, sala o reto.
   final String tipo;
 
   final bool leido;
@@ -344,6 +344,7 @@ class Aviso {
     'mensaje' => '$quien te ha escrito',
     'like' => 'A $quien le gusta tu publicación',
     'seguidor' => '$quien ha empezado a seguirte',
+    'reto' => '$quien ha cumplido un reto de No hay 🥚 contigo',
     _ => '$quien ha escrito en la sala',
   };
 

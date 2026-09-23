@@ -6,6 +6,8 @@ import '../../app/modo_de_tema.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
+import '../../data/repositories/repositorio_retos.dart';
+import '../juego/no_hay_huevos.dart' show nombreDelJuego;
 
 /// Ajustes, con los textos legales.
 ///
@@ -109,6 +111,8 @@ class PantallaAjustes extends StatelessWidget {
           const SizedBox(height: EspaciadoPrevia.s),
           const Divider(),
           const _ElectorDeTema(),
+          const Divider(),
+          const _InterruptorDelJuego(),
           const Divider(),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -214,4 +218,64 @@ class _ElectorDeTema extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Salir o no en los retos de los demas. Esta en ajustes y no escondido en
+/// el juego porque es una decision sobre ti, no sobre una partida.
+class _InterruptorDelJuego extends ConsumerStatefulWidget {
+  const _InterruptorDelJuego();
+
+  @override
+  ConsumerState<_InterruptorDelJuego> createState() =>
+      _InterruptorDelJuegoState();
+}
+
+class _InterruptorDelJuegoState extends ConsumerState<_InterruptorDelJuego> {
+  bool? _juego;
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(repositorioRetosProvider).juego().then(
+      (valor) {
+        if (mounted) setState(() => _juego = valor);
+      },
+      onError: (_) {
+        if (mounted) setState(() => _juego = true);
+      },
+    );
+  }
+
+  Future<void> _cambiar(bool valor) async {
+    if (_guardando) return;
+    final antes = _juego;
+    setState(() {
+      _juego = valor;
+      _guardando = true;
+    });
+    try {
+      await ref.read(repositorioRetosProvider).cambiarJuego(juego: valor);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _juego = antes);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido guardar.')),
+      );
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+    contentPadding: EdgeInsets.zero,
+    secondary: const Icon(Icons.egg_outlined),
+    title: Text('Salir en retos de $nombreDelJuego'),
+    subtitle: const Text(
+      'Si lo apagas, a nadie le tocará buscarte en un local.',
+    ),
+    value: _juego ?? true,
+    onChanged: _juego == null || _guardando ? null : _cambiar,
+  );
 }

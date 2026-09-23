@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import '../juego/no_hay_huevos.dart';
 
 final _mensajesProvider = FutureProvider.family<List<MensajeDeSala>, String>(
   (ref, localId) => ref.watch(repositorioSocialProvider).salaMensajes(localId),
@@ -37,16 +40,25 @@ class PantallaSala extends ConsumerStatefulWidget {
 }
 
 class _PantallaSalaState extends ConsumerState<PantallaSala> {
+  StreamSubscription<List<String>>? _suscripcion;
+
   @override
   void initState() {
     super.initState();
-    // Refresca al vuelo cuando alguien escribe en la sala.
-    ref
+    // Refresca al vuelo cuando alguien escribe en la sala. Se guarda para
+    // cerrarla al salir: si no, cada visita dejaria un canal abierto.
+    _suscripcion = ref
         .read(repositorioSocialProvider)
         .flujoDeSala(widget.localId)
         .listen((_) {
           if (mounted) ref.invalidate(_mensajesProvider(widget.localId));
         });
+  }
+
+  @override
+  void dispose() {
+    _suscripcion?.cancel();
+    super.dispose();
   }
 
   @override
@@ -79,10 +91,22 @@ class _PantallaSalaState extends ConsumerState<PantallaSala> {
             ],
           ),
         ),
-        body: TabBarView(
+        body: Stack(
           children: [
-            _Chat(localId: widget.localId),
-            _Fotos(localId: widget.localId),
+            TabBarView(
+              children: [
+                _Chat(localId: widget.localId),
+                _Fotos(localId: widget.localId),
+              ],
+            ),
+            // El sticker solo aparece si la sala te ha dejado entrar: el
+            // chat carga solo para quien ha dicho que va.
+            if (ref.watch(_mensajesProvider(widget.localId)).hasValue)
+              Positioned(
+                top: EspaciadoPrevia.m,
+                right: EspaciadoPrevia.m,
+                child: StickerNoHayHuevos(localId: widget.localId),
+              ),
           ],
         ),
       ),

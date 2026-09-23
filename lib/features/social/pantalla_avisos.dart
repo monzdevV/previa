@@ -8,6 +8,7 @@ import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
+import '../juego/no_hay_huevos.dart';
 
 final avisosProvider = FutureProvider<List<Aviso>>(
   (ref) => ref.watch(repositorioSocialProvider).misAvisos(),
@@ -71,15 +72,17 @@ class _PantallaAvisosState extends ConsumerState<PantallaAvisos> {
   }
 }
 
-class _Fila extends StatelessWidget {
+class _Fila extends ConsumerWidget {
   const _Fila({required this.aviso});
 
   final Aviso aviso;
 
   /// A donde lleva cada tipo de aviso.
-  void _abrir(BuildContext context) {
+  void _abrir(BuildContext context, WidgetRef ref) {
     final a = aviso;
-    if (a.tipo == 'mensaje' && a.actorId != null) {
+    if (a.tipo == 'reto' && a.postId != null) {
+      abrirRetoConmigo(context, ref, publicacionId: a.postId!, fotoUrl: a.postUrl);
+    } else if (a.tipo == 'mensaje' && a.actorId != null) {
       context.push('${Rutas.conversacion}/${a.actorId}');
     } else if (a.previaId != null) {
       context.push('${Rutas.previa}/${a.previaId}');
@@ -89,12 +92,12 @@ class _Fila extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final a = aviso;
     final textos = Theme.of(context).textTheme;
 
     return ListTile(
-      onTap: () => _abrir(context),
+      onTap: () => _abrir(context, ref),
       tileColor: a.leido ? null : context.colores.superficie,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: EspaciadoPrevia.m,
@@ -120,12 +123,13 @@ class _Fila extends StatelessWidget {
     'mensaje' => Icons.chat_bubble_outline_rounded,
     'like' => Icons.favorite_border_rounded,
     'seguidor' => Icons.person_add_alt_1_outlined,
+    'reto' => Icons.egg_outlined,
     _ => Icons.forum_outlined,
   };
 
   Color _tinta(BuildContext context, String tipo) => switch (tipo) {
     'aceptada' => context.colores.disponible,
-    'like' => context.colores.primarioTexto,
+    'like' || 'reto' => context.colores.primarioTexto,
     _ => context.colores.textoTenue,
   };
 }
