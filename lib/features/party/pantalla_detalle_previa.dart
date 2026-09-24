@@ -15,6 +15,7 @@ import '../map/proveedores_mapa.dart';
 import '../requests/pantalla_solicitudes.dart';
 import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import 'hoja_solicitar_plaza.dart';
+import '../map/capas_del_mapa.dart';
 
 // Se descartan al salir: cada previa abierta dejaria su copia en memoria, y
 // al volver a entrar se veria el estado de la primera visita (plazas, si ya
@@ -355,19 +356,9 @@ class _MapaZona extends ConsumerWidget {
                 ),
               ),
               children: [
-                TileLayer(
-                  // El plano sigue el modo de la aplicacion: uno negro dentro
-                  // del tema claro parece un hueco en la pantalla.
-                  urlTemplate:
-                      Theme.of(context).brightness == Brightness.light
-                      ? 'https://{s}.basemaps.cartocdn.com/light_all/'
-                            '{z}/{x}/{y}{r}.png'
-                      : 'https://{s}.basemaps.cartocdn.com/dark_all/'
-                            '{z}/{x}/{y}{r}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  retinaMode: RetinaMode.isHighDensity(context),
-                  userAgentPackageName: 'com.previa.previa',
-                  tileProvider: ref.watch(proveedorTeselasProvider),
+                ...capasBaseDelMapa(
+                  context,
+                  proveedor: ref.watch(proveedorTeselasProvider),
                 ),
                 CircleLayer(
                   circles: [
@@ -678,11 +669,7 @@ class _Accion extends ConsumerWidget {
 }
 
 class _Nota extends StatelessWidget {
-  const _Nota({
-    required this.icono,
-    required this.texto,
-    this.color,
-  });
+  const _Nota({required this.icono, required this.texto, this.color});
 
   final IconData icono;
   final String texto;
@@ -759,10 +746,7 @@ class _Dato extends StatelessWidget {
           ),
           Text(
             etiqueta,
-            style: TextStyle(
-              color: context.colores.textoSuave,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: context.colores.textoSuave, fontSize: 12),
           ),
         ],
       ),

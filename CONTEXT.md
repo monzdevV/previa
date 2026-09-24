@@ -26,7 +26,7 @@ subiendo la foto a la sala.
 ## Stack
 
 Flutter (Android, iOS, web) · Riverpod · go_router · Supabase (Postgres 17 +
-PostGIS) · flutter_map sobre teselas oscuras de CARTO.
+PostGIS) · flutter_map sobre teselas Canvas de Esri (sin clave; CARTO dejo de servir gratis en sept. 2026).
 
 Proyecto Supabase: `bfqzabpgtehncnbxtslg`, región eu-west-3.
 

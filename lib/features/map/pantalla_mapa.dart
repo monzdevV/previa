@@ -10,6 +10,7 @@ import '../../data/services/servicio_ubicacion.dart';
 import '../party/tarjeta_previa.dart';
 import 'hoja_filtros.dart';
 import 'proveedores_mapa.dart';
+import 'capas_del_mapa.dart';
 
 /// Mapa de previas cercanas.
 ///
@@ -48,11 +49,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
   void _enfocar(LatLng punto, double zoom) {
     final alto = MediaQuery.sizeOf(context).height;
     const tapado = 0.66;
-    _mapa.move(
-      punto,
-      zoom,
-      offset: Offset(0, -alto * tapado / 2),
-    );
+    _mapa.move(punto, zoom, offset: Offset(0, -alto * tapado / 2));
   }
 
   Future<void> _volverAMiPosicion() async {
@@ -127,18 +124,9 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                     },
                   ),
                   children: [
-                    TileLayer(
-                      // Teselas de CARTO en el mismo modo que la aplicacion: un
-                      // plano negro dentro del tema claro parece un agujero. No
-                      // exigen clave de API ni tarjeta.
-                      urlTemplate:
-                          Theme.of(context).brightness == Brightness.light
-                          ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-                          : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                      subdomains: const ['a', 'b', 'c'],
-                      retinaMode: RetinaMode.isHighDensity(context),
-                      userAgentPackageName: 'com.previa.previa',
-                      tileProvider: ref.watch(proveedorTeselasProvider),
+                    ...capasBaseDelMapa(
+                      context,
+                      proveedor: ref.watch(proveedorTeselasProvider),
                     ),
 
                     // Radio de busqueda. En letra de mapa y no en ambar: el alcance
@@ -221,7 +209,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa> {
                     const RichAttributionWidget(
                       alignment: AttributionAlignment.bottomLeft,
                       attributions: [
-                        TextSourceAttribution('OpenStreetMap · CARTO'),
+                        TextSourceAttribution('Esri · OpenStreetMap'),
                       ],
                     ),
                   ],

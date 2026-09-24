@@ -86,7 +86,9 @@ class TarjetaPrevia extends StatelessWidget {
                   ],
 
                   if (previa.ambiente.isNotEmpty) ...[
-                    const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
+                    const SizedBox(
+                      height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+                    ),
                     Wrap(
                       spacing: EspaciadoPrevia.xs + 2,
                       runSpacing: EspaciadoPrevia.xs + 2,
@@ -145,7 +147,10 @@ class _Portada extends StatelessWidget {
           Positioned(
             top: EspaciadoPrevia.s + EspaciadoPrevia.xs,
             right: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-            child: _PastillaPlazas(ocupacion: ocupacion, libres: previa.plazasLibres),
+            child: _PastillaPlazas(
+              ocupacion: ocupacion,
+              libres: previa.plazasLibres,
+            ),
           ),
 
           Positioned(
@@ -199,7 +204,8 @@ class _Fondo extends StatelessWidget {
       return CachedNetworkImage(
         imageUrl: foto,
         fit: BoxFit.cover,
-        placeholder: (_, _) => ColoredBox(color: context.colores.superficieAlta),
+        placeholder: (_, _) =>
+            ColoredBox(color: context.colores.superficieAlta),
         errorWidget: (_, _, _) => const _Relleno(),
       );
     }

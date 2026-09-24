@@ -84,7 +84,7 @@ class PantallaPrivacidad extends StatelessWidget {
             'publicaciones y las previas que organizas.',
         'Los datos se alojan en Supabase, que actúa como encargado del '
             'tratamiento, con servidores en la Unión Europea.',
-        'Los mapas se sirven desde OpenStreetMap y CARTO. Al cargar el mapa, '
+        'Los mapas se sirven desde Esri, con datos de OpenStreetMap. Al cargar el mapa, '
             'tu dirección IP llega a esos proveedores, como en cualquier web '
             'con mapas.',
         'No vendemos tus datos ni los cedemos con fines publicitarios.',
@@ -282,9 +282,8 @@ class _NotaDeRevision extends StatelessWidget {
             'revisión jurídica. Antes de abrir la aplicación al público hay '
             'que completar los datos del titular y que lo revise alguien con '
             'formación legal.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontSize: 13),
           ),
         ),
       ],

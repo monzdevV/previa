@@ -12,6 +12,7 @@ import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../map/proveedores_mapa.dart';
 import '../profile/proveedores_perfil.dart';
+import '../map/capas_del_mapa.dart';
 
 class PantallaCrearPrevia extends ConsumerStatefulWidget {
   const PantallaCrearPrevia({super.key});
@@ -280,9 +281,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                     style: textos.titleMedium,
                   ),
                   secondary: Icon(
-                    _enSitioPublico
-                        ? Icons.park_rounded
-                        : Icons.home_rounded,
+                    _enSitioPublico ? Icons.park_rounded : Icons.home_rounded,
                     color: context.colores.texto,
                   ),
                 ),
@@ -339,22 +338,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                               }
                             },
                           ),
-                          children: [
-                            TileLayer(
-                              // El plano sigue el modo de la aplicacion: uno
-                              // negro en el tema claro parece un agujero.
-                              urlTemplate:
-                                  Theme.of(context).brightness ==
-                                      Brightness.light
-                                  ? 'https://{s}.basemaps.cartocdn.com/'
-                                        'light_all/{z}/{x}/{y}{r}.png'
-                                  : 'https://{s}.basemaps.cartocdn.com/'
-                                        'dark_all/{z}/{x}/{y}{r}.png',
-                              subdomains: const ['a', 'b', 'c'],
-                              retinaMode: RetinaMode.isHighDensity(context),
-                              userAgentPackageName: 'com.previa.previa',
-                            ),
-                          ],
+                          children: [...capasBaseDelMapa(context)],
                         ),
                         // La chincheta se queda fija en el centro y es el mapa
                         // el que se mueve: mas facil de afinar con el pulgar.
