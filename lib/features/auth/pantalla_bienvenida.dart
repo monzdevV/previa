@@ -1,67 +1,163 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 
+/// La entrada: un cartel amarillo a sangre.
+///
+/// Es la unica pantalla donde el amarillo es el fondo entero. Aqui aun no hay
+/// contenido de nadie que pueda perder protagonismo, y el primer golpe de
+/// vista tiene que decir "esto es la noche", no "esto es un formulario".
 class PantallaBienvenida extends StatelessWidget {
   const PantallaBienvenida({super.key});
 
+  static const _amarillo = BloquesPrevia.amarillo;
+  static const _tinta = BloquesPrevia.tintaSobreBloque;
+
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
+    final reducido = MovimientoPrevia.reducido(context);
 
-    return Scaffold(
-      backgroundColor: context.colores.fondo,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            EspaciadoPrevia.l,
-            EspaciadoPrevia.l,
-            EspaciadoPrevia.l,
-            EspaciadoPrevia.l,
-          ),
+    Widget entrar(Widget hijo, int orden) => reducido
+        ? hijo
+        : hijo
+              .animate(delay: MovimientoPrevia.escalon * (orden * 2))
+              .fadeIn(duration: MovimientoPrevia.normal)
+              .moveY(begin: 24, end: 0, curve: MovimientoPrevia.curva);
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Iconos de la barra de estado en negro sobre el amarillo.
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: _amarillo,
+        body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Spacer(flex: 2),
-
-              const _Marca(),
-              const SizedBox(height: EspaciadoPrevia.xl),
-
-              Text(
-                'La noche\nempieza antes.',
-                style: textos.displaySmall?.copyWith(fontSize: 40),
-              ),
-              const SizedBox(height: EspaciadoPrevia.m),
-              Text(
-                'Encuentra previas con sitio cerca de ti, '
-                'pide plaza para tu grupo y conoce gente antes de salir.',
-                style: textos.bodyLarge?.copyWith(
-                  color: context.colores.textoSuave,
-                  height: 1.5,
+              const Padding(
+                padding: EdgeInsets.fromLTRB(
+                  EspaciadoPrevia.l,
+                  EspaciadoPrevia.m,
+                  EspaciadoPrevia.l,
+                  0,
+                ),
+                child: Row(
+                  children: [
+                    Titular('Previa', tamano: 26, color: _tinta),
+                    Spacer(),
+                    Titular('¿Salimos?', tamano: 16, color: _tinta),
+                  ],
                 ),
               ),
 
-              const Spacer(flex: 3),
-
-              _BotonDeMarca(
-                texto: 'Crear cuenta',
-                onPressed: () => context.push(Rutas.registro),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: EspaciadoPrevia.l,
+                  ),
+                  child: Stack(
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: entrar(
+                            const Titular(
+                              'La noche\nempieza\nantes',
+                              tamano: 76,
+                              color: _tinta,
+                            ),
+                            1,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: EspaciadoPrevia.xl,
+                        right: 0,
+                        child: entrar(
+                          const Pegatina('🌙', tamano: 64, giro: 0.3),
+                          2,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: EspaciadoPrevia.xl,
+                        right: EspaciadoPrevia.l,
+                        child: entrar(
+                          const Pegatina('🥚', tamano: 56, giro: -0.25),
+                          3,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: EspaciadoPrevia.s,
+                        left: 0,
+                        child: entrar(
+                          const Pegatina('✨', tamano: 40, giro: 0.1),
+                          4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
-              OutlinedButton(
-                onPressed: () => context.push(Rutas.entrar),
-                child: const Text('Ya tengo cuenta'),
-              ),
 
+              const Marquesina(
+                texto: 'Previas cerca · Quién va esta noche · No hay huevos',
+                fondo: _tinta,
+                tinta: _amarillo,
+                inclinacion: -0.03,
+              ),
               const SizedBox(height: EspaciadoPrevia.l),
-              Text(
-                'Solo para mayores de 18 · Tu ubicación exacta nunca es pública',
-                textAlign: TextAlign.center,
-                style: textos.bodyMedium?.copyWith(
-                  fontSize: 12,
-                  color: context.colores.textoTenue,
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: EspaciadoPrevia.l,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Encuentra previas con sitio cerca, di a qué local vas '
+                      'y conoce gente antes de salir.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: _tinta,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: EspaciadoPrevia.l),
+                    FilledButton(
+                      onPressed: () => context.push(Rutas.registro),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _tinta,
+                        foregroundColor: _amarillo,
+                      ),
+                      child: const Text('CREAR CUENTA'),
+                    ),
+                    const SizedBox(
+                      height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+                    ),
+                    OutlinedButton(
+                      onPressed: () => context.push(Rutas.entrar),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _tinta,
+                        side: const BorderSide(color: _tinta, width: 2),
+                      ),
+                      child: const Text('YA TENGO CUENTA'),
+                    ),
+                    const SizedBox(height: EspaciadoPrevia.m),
+                    Text(
+                      'Solo para mayores de 18 · Tu ubicación exacta nunca es pública',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 12,
+                        color: _tinta.withValues(alpha: .7),
+                      ),
+                    ),
+                    const SizedBox(height: EspaciadoPrevia.m),
+                  ],
                 ),
               ),
             ],
@@ -70,64 +166,4 @@ class PantallaBienvenida extends StatelessWidget {
       ),
     );
   }
-}
-
-class _Marca extends StatelessWidget {
-  const _Marca();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 54,
-          height: 54,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            gradient: context.colores.degradado,
-            borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-          ),
-          child: Icon(
-            Icons.local_fire_department_rounded,
-            color: context.colores.sobrePrimario,
-            size: 30,
-          ),
-        ),
-        const SizedBox(width: EspaciadoPrevia.s + EspaciadoPrevia.xs),
-        Text(
-          'Previa',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Accion principal con el degradado de marca.
-///
-/// Es el unico sitio donde el degradado cubre un boton entero: en las
-/// referencias tambien esta reservado a la accion que abre la aplicacion.
-class _BotonDeMarca extends StatelessWidget {
-  const _BotonDeMarca({required this.texto, required this.onPressed});
-
-  final String texto;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      gradient: context.colores.degradado,
-      borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
-    ),
-    child: FilledButton(
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.transparent,
-        foregroundColor: context.colores.sobrePrimario,
-      ),
-      child: Text(texto),
-    ),
-  );
 }

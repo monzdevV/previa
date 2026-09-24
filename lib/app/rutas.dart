@@ -161,7 +161,10 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const PantallaCondiciones(),
       ),
       GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
-      GoRoute(path: Rutas.mensajes, builder: (_, _) => const PantallaMensajes()),
+      GoRoute(
+        path: Rutas.mensajes,
+        builder: (_, _) => const PantallaMensajes(),
+      ),
       GoRoute(path: Rutas.avisos, builder: (_, _) => const PantallaAvisos()),
       GoRoute(
         path: '${Rutas.conversacion}/:id',

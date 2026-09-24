@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:previa/data/models/local.dart';
 import 'package:previa/data/models/previa.dart';
 import 'package:previa/data/repositories/repositorio_auth.dart';
 import 'package:previa/data/models/publicacion.dart';
@@ -17,6 +18,7 @@ import 'package:previa/features/map/pantalla_inicio.dart';
 import 'package:previa/features/map/pantalla_mapa.dart';
 import 'package:previa/features/map/proveedores_mapa.dart';
 import 'package:previa/features/party/pantalla_detalle_previa.dart';
+import 'package:previa/features/social/pantalla_locales.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'apoyo_visual.dart';
@@ -72,6 +74,14 @@ class _RepoSocialDeMuestra extends RepositorioSocial {
   /// Sin avisos: la chincheta no sale y el golden no depende de la red.
   @override
   Stream<int> flujoDeAvisos() => Stream.value(0);
+
+  @override
+  Future<List<Local>> localesDeLaNoche(String ciudad, {DateTime? noche}) async =>
+      const [
+        Local(id: 'l1', nombre: 'Oasis', ciudad: 'Zaragoza', zona: 'Centro', van: 23, voy: true),
+        Local(id: 'l2', nombre: 'Sala López', ciudad: 'Zaragoza', zona: 'Casco', van: 1),
+        Local(id: 'l3', nombre: 'Kembo', ciudad: 'Zaragoza', van: 0),
+      ];
 
   @override
   Future<List<Publicacion>> feed({
@@ -318,6 +328,24 @@ void main() {
     await expectLater(
       find.byType(PantallaDetallePrevia),
       matchesGoldenFile('goldens/detalle_direccion_retenida.png'),
+    );
+  });
+
+  testWidgets('cada local de la noche es un bloque de color distinto', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      _app(const PantallaLocales(), margen: margenAndroid),
+    );
+    await _asentar(tester);
+
+    await expectLater(
+      find.byType(PantallaLocales),
+      matchesGoldenFile('goldens/locales.png'),
     );
   });
 }

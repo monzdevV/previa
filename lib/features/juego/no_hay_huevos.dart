@@ -65,10 +65,11 @@ class StickerNoHayHuevos extends StatelessWidget {
             child: Text(
               nombreDelJuego,
               style: TextStyle(
+                fontFamily: LetraPrevia.titular,
                 color: c.sobrePrimario,
-                fontSize: 17,
+                fontSize: 18,
                 fontWeight: FontWeight.w900,
-                letterSpacing: -0.3,
+                letterSpacing: -0.4,
               ),
             ),
           ),
@@ -432,10 +433,10 @@ class _Invitacion extends StatelessWidget {
           duration: 700.ms,
         ),
         const SizedBox(height: EspaciadoPrevia.s),
-        Text(
+        const Titular(
           nombreDelJuego,
-          textAlign: TextAlign.center,
-          style: textos.headlineMedium,
+          tamano: 40,
+          alineacion: TextAlign.center,
         ),
         const SizedBox(height: EspaciadoPrevia.s),
         Text(

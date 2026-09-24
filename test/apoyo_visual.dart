@@ -56,6 +56,18 @@ Future<void> cargarTipografias() async {
   }
   await sistema.load();
 
+  // La de titulares viene con el proyecto y no con el SDK.
+  final titulares = FontLoader('Rubik');
+  for (final peso in const [700, 800, 900]) {
+    final fichero = File('assets/fonts/Rubik-$peso.ttf');
+    if (!fichero.existsSync()) continue;
+    final bytes = await fichero.readAsBytes();
+    titulares.addFont(
+      Future.value(ByteData.view(Uint8List.fromList(bytes).buffer)),
+    );
+  }
+  await titulares.load();
+
   // Sin esto cada icono sale como un cuadrado vacio y el golden no sirve
   // para juzgar si la pantalla se lee.
   final iconos = File('${fuentes.path}/materialicons-regular.otf');

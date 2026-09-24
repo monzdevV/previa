@@ -55,7 +55,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(theme: temaDePrueba(), home: const PantallaBienvenida()),
     );
-    await tester.pumpAndSettle();
+    // La cinta corre sin parar, asi que el arbol nunca queda quieto: se deja
+    // pasar el tiempo de las entradas en lugar de esperar a que se asiente.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 350));
+    }
 
     await expectLater(
       find.byType(PantallaBienvenida),

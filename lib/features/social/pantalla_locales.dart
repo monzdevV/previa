@@ -43,7 +43,7 @@ class PantallaLocales extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('¿A dónde vas?'),
+        title: const Text('ESTA NOCHE'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_location_alt_outlined),
@@ -55,6 +55,7 @@ class PantallaLocales extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          Marquesina(texto: '¿A dónde vas? · $ciudad · Sala abierta'),
           Padding(
             padding: const EdgeInsets.all(EspaciadoPrevia.m),
             child: TextFormField(
@@ -76,12 +77,12 @@ class PantallaLocales extends ConsumerWidget {
                   color: context.colores.primarioTexto,
                 ),
               ),
-              error: (e, _) => const _Mensaje(
-                texto: 'No se ha podido cargar la noche.',
-              ),
+              error: (e, _) =>
+                  const _Mensaje(texto: 'No se ha podido cargar la noche.'),
               data: (lista) => lista.isEmpty
                   ? const _Mensaje(
-                      texto: 'Todavía no hay sitios en esta ciudad.\n'
+                      texto:
+                          'Todavía no hay sitios en esta ciudad.\n'
                           'Añade el primero con el botón de arriba.',
                     )
                   : RefreshIndicator(
@@ -102,6 +103,7 @@ class PantallaLocales extends ConsumerWidget {
                         itemBuilder: (_, i) => _FichaLocal(
                           key: ValueKey(lista[i].id),
                           local: lista[i],
+                          color: BloquesPrevia.deIndice(i),
                         ),
                       ),
                     ),
@@ -176,9 +178,13 @@ Future<void> _proponerLocal(
 }
 
 class _FichaLocal extends ConsumerStatefulWidget {
-  const _FichaLocal({super.key, required this.local});
+  const _FichaLocal({super.key, required this.local, required this.color});
 
   final Local local;
+
+  /// Cada local es un cartel de un color; rotan para que dos seguidos no se
+  /// confundan.
+  final Color color;
 
   @override
   ConsumerState<_FichaLocal> createState() => _FichaLocalState();
@@ -226,101 +232,100 @@ class _FichaLocalState extends ConsumerState<_FichaLocal> {
 
   @override
   Widget build(BuildContext context) {
+    const tinta = BloquesPrevia.tintaSobreBloque;
     final textos = Theme.of(context).textTheme;
 
-    return Material(
-      color: context.colores.superficie,
-      borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        onTap: () => _verQuienVa(context, ref, _l),
-        child: Padding(
-          padding: const EdgeInsets.all(EspaciadoPrevia.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _l.nombre,
-                      style: textos.titleLarge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+    final van = _l.van == 0
+        ? 'Nadie ha dicho que va'
+        : _l.van == 1
+        ? '1 persona va'
+        : '${_l.van} personas van';
+
+    return Pulsable(
+      onTap: () => _verQuienVa(context, ref, _l),
+      escala: 0.98,
+      child: Container(
+        padding: const EdgeInsets.all(EspaciadoPrevia.m + 4),
+        decoration: BoxDecoration(
+          color: widget.color,
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Titular(
+                    _l.nombre,
+                    tamano: 34,
+                    color: tinta,
+                    lineas: 2,
                   ),
-                  const SizedBox(width: EspaciadoPrevia.s),
-                  _BotonVoy(voy: _l.voy, onTap: _alternarVoy),
-                ],
-              ),
-              const SizedBox(height: EspaciadoPrevia.xs + 2),
-              Row(
-                children: [
-                  Icon(
-                    Icons.people_alt_rounded,
-                    size: 16,
-                    color: _l.van > 0
-                        ? context.colores.disponible
-                        : context.colores.textoTenue,
-                  ),
-                  const SizedBox(width: EspaciadoPrevia.xs + 2),
-                  Text(
-                    _l.van == 0
-                        ? 'Nadie ha dicho que va todavía'
-                        : _l.van == 1
-                        ? '1 persona va esta noche'
-                        : '${_l.van} personas van esta noche',
-                    style: textos.bodyMedium?.copyWith(
-                      color: _l.van > 0
-                          ? context.colores.disponible
-                          : context.colores.textoTenue,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: EspaciadoPrevia.s + 4),
-              Row(
-                children: [
-                  Expanded(
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => PantallaSala(
-                            localId: _l.id,
-                            nombreLocal: _l.nombre,
-                          ),
-                        ),
-                      ),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(42),
-                        backgroundColor: context.colores.superficieActiva,
-                        foregroundColor: context.colores.texto,
-                      ),
-                      icon: const Icon(Icons.forum_outlined, size: 19),
-                      label: const Text('Sala de esta noche'),
-                    ),
-                  ),
-                  if (_l.tieneEntradas) ...[
-                    const SizedBox(width: EspaciadoPrevia.s),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _abrir(_l.urlEntradas!),
-                        icon: const Icon(
-                          Icons.local_activity_outlined,
-                          size: 19,
-                        ),
-                        label: const Text('Entrada'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(42),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
+                const SizedBox(width: EspaciadoPrevia.s),
+                _BotonVoy(voy: _l.voy, onTap: _alternarVoy),
+              ],
+            ),
+            if (_l.zona != null && _l.zona!.isNotEmpty) ...[
+              const SizedBox(height: EspaciadoPrevia.xs),
+              Text(
+                _l.zona!,
+                style: textos.bodyMedium?.copyWith(
+                  color: tinta.withValues(alpha: .75),
+                ),
               ),
             ],
-          ),
+            const SizedBox(height: EspaciadoPrevia.m),
+            Text(
+              van.toUpperCase(),
+              style: textos.labelLarge?.copyWith(
+                color: tinta,
+                fontSize: 13,
+                letterSpacing: 0.6,
+              ),
+            ),
+            const SizedBox(height: EspaciadoPrevia.m),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => PantallaSala(
+                          localId: _l.id,
+                          nombreLocal: _l.nombre,
+                        ),
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      backgroundColor: tinta,
+                      foregroundColor: widget.color,
+                    ),
+                    icon: const Icon(Icons.forum_rounded, size: 19),
+                    label: const Text('SALA'),
+                  ),
+                ),
+                if (_l.tieneEntradas) ...[
+                  const SizedBox(width: EspaciadoPrevia.s),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _abrir(_l.urlEntradas!),
+                      icon: const Icon(Icons.local_activity_rounded, size: 19),
+                      label: const Text('ENTRADA'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(46),
+                        foregroundColor: tinta,
+                        side: const BorderSide(color: tinta, width: 2),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -372,7 +377,8 @@ Future<void> _verQuienVa(BuildContext context, WidgetRef ref, Local local) {
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: EspaciadoPrevia.xl),
                   child: _Mensaje(
-                    texto: 'Nadie lo ha dicho todavía.\n'
+                    texto:
+                        'Nadie lo ha dicho todavía.\n'
                         'Di que vas y que te vean.',
                   ),
                 )
@@ -408,23 +414,33 @@ class _BotonVoy extends StatelessWidget {
   final bool voy;
   final VoidCallback onTap;
 
+  // Va encima de un bloque de color que cambia de un local a otro, asi que
+  // no puede usar ningun color de marca: blanco relleno si vas, contorno
+  // negro si no.
   @override
-  Widget build(BuildContext context) => voy
-      ? FilledButton.icon(
-          onPressed: onTap,
-          style: FilledButton.styleFrom(
-            minimumSize: const Size(96, 38),
-            backgroundColor: context.colores.disponible,
-            foregroundColor: context.colores.sobrePrimario,
-          ),
-          icon: const Icon(Icons.check_rounded, size: 18),
-          label: const Text('Voy'),
-        )
-      : OutlinedButton(
-          onPressed: onTap,
-          style: OutlinedButton.styleFrom(minimumSize: const Size(96, 38)),
-          child: const Text('Voy'),
-        );
+  Widget build(BuildContext context) {
+    const tinta = BloquesPrevia.tintaSobreBloque;
+    return voy
+        ? FilledButton.icon(
+            onPressed: onTap,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(96, 40),
+              backgroundColor: Colors.white,
+              foregroundColor: tinta,
+            ),
+            icon: const Icon(Icons.check_rounded, size: 18),
+            label: const Text('VOY'),
+          )
+        : OutlinedButton(
+            onPressed: onTap,
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(96, 40),
+              foregroundColor: tinta,
+              side: const BorderSide(color: tinta, width: 2),
+            ),
+            child: const Text('VOY'),
+          );
+  }
 }
 
 class _Mensaje extends StatelessWidget {

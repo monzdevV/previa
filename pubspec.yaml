@@ -67,3 +67,15 @@ flutter:
     - assets/images/
     - assets/icons/
 
+  # Rubik (licencia OFL, ver assets/fonts/OFL-Rubik.txt): la letra gorda y
+  # redondeada de los titulares. El cuerpo sigue en la del sistema.
+  fonts:
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-700.ttf
+          weight: 700
+        - asset: assets/fonts/Rubik-800.ttf
+          weight: 800
+        - asset: assets/fonts/Rubik-900.ttf
+          weight: 900
+

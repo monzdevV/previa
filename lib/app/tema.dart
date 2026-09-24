@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'colores.dart';
 
 export 'colores.dart';
+export 'componentes.dart';
 export 'movimiento.dart';
 
 /// Sistema visual de Previa.
@@ -10,8 +11,11 @@ export 'movimiento.dart';
 /// El liston son las apps que la gente ya usa cada noche: Instagram, TikTok,
 /// BeReal y Discord. De ahi salen las tres reglas que mandan sobre el resto:
 /// la imagen ocupa el marco, las caras estan siempre presentes, y todo se
-/// maneja con el pulgar. Nada de esto busca ser original: busca estar al
-/// nivel de lo que el usuario ya tiene instalado.
+/// maneja con el pulgar.
+///
+/// La voz sale del mundo de las discotecas (la referencia fijada es Nyxell):
+/// titulares enormes en mayusculas con una letra gorda y redondeada, bloques
+/// de color plano, cintas de texto que corren y botones en pastilla.
 abstract final class EspaciadoPrevia {
   static const xs = 4.0;
   static const s = 8.0;
@@ -27,6 +31,33 @@ abstract final class EspaciadoPrevia {
 
   /// Para pastillas y avatares, que son redondos.
   static const pastilla = 999.0;
+}
+
+/// La letra de los titulares. Gorda y redondeada, va siempre en mayusculas
+/// (ver `Titular`) y nunca en parrafos: el cuerpo es la del sistema.
+abstract final class LetraPrevia {
+  static const titular = 'Rubik';
+}
+
+/// Bloques de color plano para secciones y fichas, como carteles pegados.
+///
+/// Son los mismos en claro y en oscuro: un bloque es un objeto de color, no
+/// un fondo que tenga que adaptarse. Encima siempre va [tintaSobreBloque],
+/// que en todos ellos pasa el contraste de texto.
+abstract final class BloquesPrevia {
+  static const amarillo = Color(0xFFFFE500);
+  static const menta = Color(0xFF3DD6B5);
+  static const azul = Color(0xFF4B93FF);
+  static const rojo = Color(0xFFFF5A4E);
+  static const lila = Color(0xFFB794FF);
+
+  static const todos = [amarillo, menta, azul, rojo, lila];
+
+  static const tintaSobreBloque = Color(0xFF120F12);
+
+  /// El color de un elemento de una lista, rotando para que dos seguidos
+  /// nunca se repitan.
+  static Color deIndice(int i) => todos[i % todos.length];
 }
 
 /// El tema, construido desde una paleta.
@@ -57,9 +88,19 @@ ThemeData construirTemaPrevia({
   );
 
   final contorno = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
+    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
     borderSide: BorderSide(color: c.borde),
   );
+
+  TextStyle titular(double tamano, {FontWeight peso = FontWeight.w900}) =>
+      TextStyle(
+        fontFamily: LetraPrevia.titular,
+        fontSize: tamano,
+        height: 1.0,
+        fontWeight: peso,
+        letterSpacing: -0.02 * tamano,
+        color: c.texto,
+      );
 
   return ThemeData(
     useMaterial3: true,
@@ -76,39 +117,16 @@ ThemeData construirTemaPrevia({
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(
-        fontFamily: caraDelSistema,
-        color: c.texto,
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-      ),
+      titleTextStyle: titular(24),
     ),
 
-    // La cara del sistema en todo. Las referencias no estrenan tipografia de
-    // display: su caracter viene de la imagen y del color, no de la letra.
+    // Titulares en Rubik; lo que se lee de corrido, en la del sistema.
     textTheme: TextTheme(
-      displaySmall: TextStyle(
-        fontSize: 34,
-        height: 1.12,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.8,
-        color: c.texto,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 26,
-        height: 1.18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.5,
-        color: c.texto,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 18,
-        height: 1.25,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        color: c.texto,
-      ),
+      displayLarge: titular(64),
+      displayMedium: titular(48),
+      displaySmall: titular(36),
+      headlineMedium: titular(28),
+      titleLarge: titular(19, peso: FontWeight.w800).copyWith(height: 1.15),
       titleMedium: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w600,
@@ -126,7 +144,12 @@ ThemeData construirTemaPrevia({
         fontWeight: FontWeight.w400,
         color: c.textoSuave,
       ),
-      labelLarge: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      labelLarge: const TextStyle(
+        fontFamily: LetraPrevia.titular,
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.2,
+      ),
       labelMedium: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -150,23 +173,21 @@ ThemeData construirTemaPrevia({
         foregroundColor: c.sobrePrimario,
         disabledBackgroundColor: c.superficieActiva,
         disabledForegroundColor: c.textoTenue,
-        minimumSize: const Size.fromHeight(50),
+        minimumSize: const Size.fromHeight(52),
         padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.l),
-        // Sin textStyle propio: heredan labelLarge del textTheme, que es
-        // quien lleva la cara del sistema. Fijarlo aqui la perdia.
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
-        ),
+        // Sin textStyle propio: heredan labelLarge del textTheme, que ya
+        // lleva la letra de titulares. Fijarlo aqui la perdia.
+        shape: const StadiumBorder(),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: c.texto,
-        minimumSize: const Size.fromHeight(50),
-        side: BorderSide(color: c.borde),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio - 4),
-        ),
+        minimumSize: const Size.fromHeight(52),
+        // Contorno grueso en el color del texto: la pastilla vacia es la
+        // pareja del boton relleno, no un boton de segunda.
+        side: BorderSide(color: c.texto, width: 2),
+        shape: const StadiumBorder(),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -201,16 +222,16 @@ ThemeData construirTemaPrevia({
       backgroundColor: c.superficieAlta,
       selectedColor: c.primario,
       secondaryLabelStyle: TextStyle(
-        fontFamily: caraDelSistema,
+        fontFamily: LetraPrevia.titular,
         color: c.sobrePrimario,
         fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
       labelStyle: TextStyle(
-        fontFamily: caraDelSistema,
+        fontFamily: LetraPrevia.titular,
         color: c.texto,
         fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
       side: BorderSide.none,
       shape: RoundedRectangleBorder(

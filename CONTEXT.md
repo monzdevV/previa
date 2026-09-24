@@ -42,16 +42,25 @@ Proyecto Supabase: `bfqzabpgtehncnbxtslg`, región eu-west-3.
 
 ## Reglas de diseño
 
-Referencias fijadas por el usuario: **Instagram, TikTok, BeReal, Discord**.
-No se busca ser original, se busca estar a ese nivel.
+Referencias fijadas por el usuario: **Instagram, TikTok, BeReal, Discord**
+para la estructura, y **Nyxell** (nyxell.com) para la voz visual: titulares
+enormes en mayúsculas con letra gorda y redondeada, bloques de color plano,
+cintas de texto que corren y botones en pastilla. Se toma el lenguaje, no la
+marca: Previa conserva su amarillo, su nombre y sus propias "pegatinas".
 
 - La imagen ocupa el marco. Las caras están siempre presentes.
 - **Amarillo `#FFE500` sobre negro puro `#000000`.** Sobre el amarillo el
   texto va en negro, nunca en blanco (`ColoresPrevia.sobrePrimario`).
 - Verde `#35E07F` significa "queda sitio" o "está disponible".
-- Esquinas generosas: `radio` 16, `radioGrande` 24, `pastilla` para todo lo
-  que sea etiqueta, estado o avatar.
-- Tipografía del sistema. Nada de fuentes de display.
+- Esquinas generosas: `radio` 16, `radioGrande` 24, `pastilla` para botones,
+  etiquetas, estados y avatares.
+- **Titulares en Rubik 900 y en mayúsculas** con el widget `Titular` (las
+  mayúsculas las pone el widget; el texto va escrito normal). El cuerpo sigue
+  en la letra del sistema. Rubik va en `assets/fonts` con su licencia OFL.
+- Bloques de color (`BloquesPrevia`: amarillo, menta, azul, rojo, lila) para
+  fichas y secciones, siempre con `tintaSobreBloque` encima.
+- `Marquesina` (cinta que corre) para rotular secciones y `Pegatina` (emoji
+  grande torcido) como ilustración.
 - Todo el sistema vive en `lib/app/tema.dart`.
 
 ## Invariante de privacidad

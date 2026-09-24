@@ -182,10 +182,13 @@ class _Marca extends StatelessWidget {
         ),
       ),
       const SizedBox(width: EspaciadoPrevia.s),
-      Text(
-        'Previa',
-        style: Theme.of(context).textTheme.titleLarge
-            ?.copyWith(fontSize: 20, fontWeight: FontWeight.w800),
+      // Es un logotipo: con la letra del sistema agrandada se encoge para
+      // caber junto a los iconos en vez de desbordar la barra.
+      const Flexible(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Titular('Previa', tamano: 26),
+        ),
       ),
     ],
   );

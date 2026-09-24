@@ -1,6 +1,6 @@
 ---
 name: Previa
-description: Red social de la noche. Amarillo sobre negro, la imagen a sangre y las caras siempre delante.
+description: Red social de la noche. Amarillo sobre negro, titulares gordos en mayúsculas, bloques de color y las caras siempre delante.
 fuente-de-verdad: lib/app/colores.dart, lib/app/tema.dart, lib/app/movimiento.dart
 colors:
   oscuro:
@@ -78,9 +78,26 @@ chips y avatares (que son círculos).
 
 ## Tipografía
 
-La del sistema en todo. El carácter lo ponen la imagen y el color, no la
-letra. Cifras tabulares (`FontFeature.tabularFigures()`) donde un número
-cambia delante del usuario: likes, plazas, contadores.
+Dos letras, con papeles que no se cruzan:
+
+- **Rubik 900, en mayúsculas**, para titulares, nombres de locales, la marca
+  y las etiquetas de los botones. Gorda y redondeada, a lo discoteca; la
+  referencia es Nyxell. Va por el widget `Titular`, que pone las mayúsculas.
+- **La del sistema** para todo lo que se lee de corrido.
+
+Cifras tabulares (`FontFeature.tabularFigures()`) donde un número cambia
+delante del usuario: likes, plazas, contadores.
+
+## Bloques, cintas y pegatinas
+
+- **Bloques de color plano** (`BloquesPrevia`): amarillo, menta, azul, rojo y
+  lila. Cada local de la pestaña Noche es un cartel de un color, rotando.
+  Encima siempre `tintaSobreBloque` (casi negro), que pasa el contraste en
+  todos.
+- **Marquesina**: cinta de texto en mayúsculas que corre, para rotular una
+  sección. Se para si el sistema pide menos movimiento.
+- **Pegatina**: un emoji grande y torcido hace de ilustración.
+- La bienvenida es la única pantalla con el amarillo a sangre.
 
 ## Movimiento
 
