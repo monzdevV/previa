@@ -230,36 +230,59 @@ class RepositorioSocial {
         .toList();
   }
 
-  /// Quien va a un local. Ver caras conocidas es lo que empuja a ir.
-  Future<List<PerfilResumen>> quienVa(String localId, {DateTime? noche}) async {
+  /// Quien va a un local, con como va. Ver caras conocidas es lo que
+  /// empuja a ir.
+  Future<List<Asistente>> quienVa(String localId, {DateTime? noche}) async {
     final filas = await _cliente.rpc(
       'quien_va',
       params: {'local': localId, 'noche': _comoNoche(noche ?? DateTime.now())},
     );
     return (filas as List)
-        .map((f) => PerfilResumen.desdeJson(f as Map<String, dynamic>))
+        .map((f) => Asistente.desdeJson(f as Map<String, dynamic>))
         .toList();
   }
 
-  Future<void> alternarVoy(
-    String localId, {
-    required bool yaIba,
+  /// Dice como vas a un local esta noche. Nulo es "no voy".
+  ///
+  /// Va por `decir_si_voy`, que cambia de "quiza" a "voy" en una sola
+  /// transaccion. Si el servidor aun no tiene esa funcion (la migracion
+  /// `vas_y_redes` sin aplicar) se cae al camino de antes, donde solo existe
+  /// ir o no ir: cualquier forma de ir se guarda como "voy". Quiza no tiene
+  /// donde guardarse ahi y se dice claramente en lugar de fingirlo.
+  Future<void> decirSiVoy(
+    String localId,
+    EstadoNoche? estado, {
     DateTime? noche,
-  }) {
+  }) async {
     final fecha = _comoNoche(noche ?? DateTime.now());
-    if (yaIba) {
-      return _cliente
-          .from('venue_plans')
-          .delete()
-          .eq('venue_id', localId)
-          .eq('profile_id', _yo)
-          .eq('night', fecha);
+    try {
+      await _cliente.rpc(
+        'decir_si_voy',
+        params: {'local': localId, 'estado': estado?.clave, 'noche': fecha},
+      );
+      return;
+    } on PostgrestException catch (e) {
+      if (e.code != 'PGRST202') rethrow;
     }
-    return _cliente.from('venue_plans').insert({
-      'venue_id': localId,
-      'profile_id': _yo,
-      'night': fecha,
-    });
+
+    if (estado == EstadoNoche.quiza) {
+      throw const ErrorPrevia(
+        '“Quizá” llega con la próxima actualización del servidor.',
+      );
+    }
+    await _cliente
+        .from('venue_plans')
+        .delete()
+        .eq('venue_id', localId)
+        .eq('profile_id', _yo)
+        .eq('night', fecha);
+    if (estado != null) {
+      await _cliente.from('venue_plans').insert({
+        'venue_id': localId,
+        'profile_id': _yo,
+        'night': fecha,
+      });
+    }
   }
 
   /// Si has dicho que vas a este local esta noche.

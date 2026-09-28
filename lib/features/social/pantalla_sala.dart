@@ -9,7 +9,6 @@ import 'package:intl/intl.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../juego/no_hay_huevos.dart';
 
 final _mensajesProvider = FutureProvider.family<List<MensajeDeSala>, String>(

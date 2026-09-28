@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:previa/data/models/local.dart';
+import 'package:previa/data/models/cara.dart';
 import 'package:previa/data/models/previa.dart';
 import 'package:previa/data/repositories/repositorio_auth.dart';
 import 'package:previa/data/models/publicacion.dart';
@@ -78,9 +79,30 @@ class _RepoSocialDeMuestra extends RepositorioSocial {
   @override
   Future<List<Local>> localesDeLaNoche(String ciudad, {DateTime? noche}) async =>
       const [
-        Local(id: 'l1', nombre: 'Oasis', ciudad: 'Zaragoza', zona: 'Centro', van: 23, voy: true),
-        Local(id: 'l2', nombre: 'Sala López', ciudad: 'Zaragoza', zona: 'Casco', van: 1),
-        Local(id: 'l3', nombre: 'Kembo', ciudad: 'Zaragoza', van: 0),
+        Local(
+          id: 'l1',
+          nombre: 'Oasis',
+          ciudad: 'Zaragoza',
+          zona: 'Centro',
+          van: 23,
+          aqui: 4,
+          quiza: 3,
+          miEstado: EstadoNoche.voy,
+          caras: [
+            Cara(id: 'a', nombre: 'Lucía'),
+            Cara(id: 'b', nombre: 'Dani'),
+            Cara(id: 'c', nombre: 'Marta'),
+          ],
+        ),
+        Local(
+          id: 'l2',
+          nombre: 'Sala López',
+          ciudad: 'Zaragoza',
+          zona: 'Casco Viejo',
+          van: 1,
+          caras: [Cara(id: 'd', nombre: 'Irene')],
+        ),
+        Local(id: 'l3', nombre: 'Kembo', ciudad: 'Zaragoza', quiza: 2),
       ];
 
   @override

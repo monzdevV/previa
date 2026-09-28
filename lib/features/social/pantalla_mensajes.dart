@@ -7,7 +7,6 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 final conversacionesProvider = FutureProvider<List<Conversacion>>(
   (ref) => ref.watch(repositorioSocialProvider).misConversaciones(),
@@ -21,36 +20,54 @@ final _mensajesProvider = StreamProvider.autoDispose
           ref.watch(repositorioSocialProvider).flujoDeMensajes(otroId),
     );
 
-/// La bandeja de mensajes.
-class PantallaMensajes extends ConsumerWidget {
+/// La bandeja de mensajes, como pantalla suelta. Se llega aqui desde un
+/// aviso; lo normal es verla dentro del buzon.
+class PantallaMensajes extends StatelessWidget {
   const PantallaMensajes({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Mensajes')),
+    body: const ListaConversaciones(),
+  );
+}
+
+/// Las conversaciones, sin marco: la usan el buzon y la pantalla suelta.
+class ListaConversaciones extends ConsumerWidget {
+  const ListaConversaciones({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversaciones = ref.watch(conversacionesProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Mensajes')),
-      body: conversaciones.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: context.colores.primarioTexto),
-        ),
-        error: (e, _) => const _Mensaje(texto: 'No se ha podido cargar.'),
-        data: (lista) => lista.isEmpty
-            ? const _Mensaje(
-                texto: 'Aquí aparecerán tus conversaciones.\n'
-                    'Solo puedes escribir a quien sigues o te sigue.',
-              )
-            : RefreshIndicator(
-                color: context.colores.primario,
-                backgroundColor: context.colores.superficie,
-                onRefresh: () async => ref.refresh(conversacionesProvider.future),
-                child: ListView.builder(
-                  itemCount: lista.length,
-                  itemBuilder: (_, i) => _Fila(conversacion: lista[i]),
-                ),
-              ),
+    return conversaciones.when(
+      loading: () => const Cargando(),
+      error: (e, _) => EstadoVacio(
+        icono: Icons.cloud_off_rounded,
+        titulo: 'Sin conexión',
+        detalle: 'No hemos podido traer tus mensajes.',
+        accion: 'Reintentar',
+        onAccion: () => ref.invalidate(conversacionesProvider),
       ),
+      data: (lista) => lista.isEmpty
+          ? EstadoVacio(
+              pegatina: '💬',
+              titulo: 'Aún no hablas con nadie',
+              detalle:
+                  'Puedes escribir a quien sigues o a quien te sigue. '
+                  'Busca a tu gente y empieza.',
+              accion: 'Buscar gente',
+              onAccion: () => context.push(Rutas.buscar),
+            )
+          : RefreshIndicator(
+              color: context.colores.primarioTexto,
+              backgroundColor: context.colores.superficie,
+              onRefresh: () async => ref.refresh(conversacionesProvider.future),
+              child: ListView.builder(
+                itemCount: lista.length,
+                itemBuilder: (_, i) => _Fila(conversacion: lista[i]),
+              ),
+            ),
     );
   }
 }

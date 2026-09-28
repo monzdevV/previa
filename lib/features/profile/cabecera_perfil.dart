@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/perfil.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../social/pantalla_resumen_noche.dart' show InsigniaDeRacha;
 import 'proveedores_perfil.dart';
 

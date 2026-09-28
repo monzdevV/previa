@@ -55,6 +55,17 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
   final Color error;
 
   Color get navegacion => texto;
+
+  bool get _esOscura => fondo.computeLuminance() < 0.5;
+
+  /// Relleno del vidrio. Bastante opaco a proposito: por debajo pasan fotos
+  /// de discoteca, que son justo el fondo en el que peor se lee.
+  Color get cristal =>
+      _esOscura ? const Color(0xA8161616) : const Color(0xC7FFFFFF);
+
+  /// El filo del vidrio: una linea de luz, no un borde de caja.
+  Color get bordeCristal =>
+      _esOscura ? const Color(0x24FFFFFF) : const Color(0x14000000);
   Color get acento => disponible;
   Color get aviso => secundario;
 

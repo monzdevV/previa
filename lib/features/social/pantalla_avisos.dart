@@ -7,7 +7,6 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../juego/no_hay_huevos.dart';
 
 final avisosProvider = FutureProvider<List<Aviso>>(
@@ -20,19 +19,30 @@ final sinLeerProvider = StreamProvider<int>(
   (ref) => ref.watch(repositorioSocialProvider).flujoDeAvisos(),
 );
 
-/// Los avisos.
+/// Los avisos, como pantalla suelta.
+class PantallaAvisos extends StatelessWidget {
+  const PantallaAvisos({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Avisos')),
+    body: const ListaAvisos(),
+  );
+}
+
+/// Los avisos, sin marco.
 ///
 /// Sin esto alguien te pide plaza o te escribe y no te enteras hasta que
 /// abres la pantalla concreta, que es lo que hace que una aplicacion social
 /// se pruebe una vez y no se vuelva a abrir.
-class PantallaAvisos extends ConsumerStatefulWidget {
-  const PantallaAvisos({super.key});
+class ListaAvisos extends ConsumerStatefulWidget {
+  const ListaAvisos({super.key});
 
   @override
-  ConsumerState<PantallaAvisos> createState() => _PantallaAvisosState();
+  ConsumerState<ListaAvisos> createState() => _ListaAvisosState();
 }
 
-class _PantallaAvisosState extends ConsumerState<PantallaAvisos> {
+class _ListaAvisosState extends ConsumerState<ListaAvisos> {
   @override
   void initState() {
     super.initState();
@@ -45,29 +55,33 @@ class _PantallaAvisosState extends ConsumerState<PantallaAvisos> {
   Widget build(BuildContext context) {
     final avisos = ref.watch(avisosProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Avisos')),
-      body: avisos.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: context.colores.primarioTexto),
-        ),
-        error: (e, _) => const _Mensaje(texto: 'No se ha podido cargar.'),
-        data: (lista) => lista.isEmpty
-            ? const _Mensaje(
-                texto: 'Nada nuevo.\nAquí verás quién te pide plaza, '
-                    'quién te escribe y quién te sigue.',
-              )
-            : RefreshIndicator(
-                color: context.colores.primarioTexto,
-                backgroundColor: context.colores.superficie,
-                onRefresh: () async => ref.refresh(avisosProvider.future),
-                child: ListView.separated(
-                  itemCount: lista.length,
-                  separatorBuilder: (_, _) => const Divider(),
-                  itemBuilder: (_, i) => _Fila(aviso: lista[i]),
-                ),
-              ),
+    return avisos.when(
+      loading: () => const Cargando(),
+      error: (e, _) => EstadoVacio(
+        icono: Icons.cloud_off_rounded,
+        titulo: 'Sin conexión',
+        detalle: 'No hemos podido traer tus avisos.',
+        accion: 'Reintentar',
+        onAccion: () => ref.invalidate(avisosProvider),
       ),
+      data: (lista) => lista.isEmpty
+          ? const EstadoVacio(
+              pegatina: '🔔',
+              titulo: 'Todo tranquilo',
+              detalle:
+                  'Aquí verás quién te pide plaza, quién te escribe '
+                  'y quién te sigue.',
+            )
+          : RefreshIndicator(
+              color: context.colores.primarioTexto,
+              backgroundColor: context.colores.superficie,
+              onRefresh: () async => ref.refresh(avisosProvider.future),
+              child: ListView.separated(
+                itemCount: lista.length,
+                separatorBuilder: (_, _) => const Divider(),
+                itemBuilder: (_, i) => _Fila(aviso: lista[i]),
+              ),
+            ),
     );
   }
 }
@@ -173,22 +187,4 @@ class ChinchetaDeAvisos extends ConsumerWidget {
       ],
     );
   }
-}
-
-class _Mensaje extends StatelessWidget {
-  const _Mensaje({required this.texto});
-
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(EspaciadoPrevia.xl),
-      child: Text(
-        texto,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
-    ),
-  );
 }

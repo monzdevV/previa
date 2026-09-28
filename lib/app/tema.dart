@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'colores.dart';
 
+export '../data/models/cara.dart';
+export 'avatar.dart';
 export 'colores.dart';
 export 'componentes.dart';
+export 'cristal.dart';
 export 'movimiento.dart';
 
 /// Sistema visual de Previa.
@@ -253,6 +256,8 @@ ThemeData construirTemaPrevia({
 
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: c.superficie,
+      dragHandleColor: c.superficieActiva,
+      dragHandleSize: const Size(36, 4),
       surfaceTintColor: Colors.transparent,
       modalBackgroundColor: c.superficie,
       shape: RoundedRectangleBorder(
@@ -318,4 +323,14 @@ enum Ocupacion {
     Ocupacion.llenandose => c.aviso,
     Ocupacion.completa => c.textoTenue,
   };
+}
+
+extension HolguraDeLaBarra on BuildContext {
+  /// Relleno inferior para lo que se desplaza en una pestaña principal.
+  ///
+  /// La barra de pestañas flota encima del contenido (es de vidrio y deja
+  /// pasar el feed por debajo), asi que el final de cada lista tiene que
+  /// dejarle sitio o el ultimo elemento queda tapado.
+  double get holguraInferior =>
+      MediaQuery.paddingOf(this).bottom + EspaciadoPrevia.m;
 }

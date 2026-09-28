@@ -8,7 +8,6 @@ import '../../data/models/perfil.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
 import 'proveedores_perfil.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 class PantallaEditarPerfil extends ConsumerStatefulWidget {
   const PantallaEditarPerfil({super.key});

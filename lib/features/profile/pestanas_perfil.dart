@@ -7,7 +7,7 @@ import '../../app/tema.dart';
 import '../../data/models/noche.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil, refrescarFeed;
+import '../feed/pantalla_feed.dart' show refrescarFeed;
 import '../social/pantalla_resumen_noche.dart';
 import 'proveedores_perfil.dart';
 

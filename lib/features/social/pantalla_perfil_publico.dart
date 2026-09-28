@@ -10,7 +10,6 @@ import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 final _perfilProvider = FutureProvider.family<PerfilPublico, String>(
   (ref, id) => ref.watch(repositorioSocialProvider).perfilPublico(id),

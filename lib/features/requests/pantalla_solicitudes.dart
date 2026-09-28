@@ -8,7 +8,6 @@ import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import '../map/proveedores_mapa.dart';
 
 final solicitudesDeProvider = FutureProvider.family<List<Solicitud>, String>(

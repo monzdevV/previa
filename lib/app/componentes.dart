@@ -163,3 +163,110 @@ class Pegatina extends StatelessWidget {
     ),
   );
 }
+
+/// Lo que se enseña cuando no hay nada: vacío, error o sin conexión.
+///
+/// Un solo componente para toda la app porque los huecos son justo donde
+/// una app se nota hecha a trozos: cada pantalla inventaba su texto gris
+/// centrado. Este lleva una pegatina, un titular y, si hay algo que hacer,
+/// el botón que lo hace. Un vacío sin salida es un callejón.
+class EstadoVacio extends StatelessWidget {
+  const EstadoVacio({
+    super.key,
+    required this.titulo,
+    this.detalle,
+    this.pegatina,
+    this.icono,
+    this.accion,
+    this.onAccion,
+    this.compacto = false,
+  });
+
+  final String titulo;
+  final String? detalle;
+
+  /// Emoji de ilustración. Si no hay, se usa [icono].
+  final String? pegatina;
+  final IconData? icono;
+  final String? accion;
+  final VoidCallback? onAccion;
+
+  /// Dentro de una sección de otra pantalla, en lugar de ocuparla entera.
+  final bool compacto;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(
+          compacto ? EspaciadoPrevia.m : EspaciadoPrevia.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (pegatina != null)
+              Pegatina(pegatina!, tamano: compacto ? 40 : 56, giro: -0.12)
+            else if (icono != null)
+              Icon(
+                icono,
+                size: compacto ? 32 : 44,
+                color: context.colores.textoTenue,
+              ),
+            SizedBox(height: compacto ? EspaciadoPrevia.s : EspaciadoPrevia.m),
+            Titular(
+              titulo,
+              tamano: compacto ? 20 : 26,
+              alineacion: TextAlign.center,
+            ),
+            if (detalle != null) ...[
+              const SizedBox(height: EspaciadoPrevia.s),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Text(
+                  detalle!,
+                  textAlign: TextAlign.center,
+                  style: textos.bodyMedium,
+                ),
+              ),
+            ],
+            if (accion != null && onAccion != null) ...[
+              SizedBox(
+                height: compacto ? EspaciadoPrevia.m : EspaciadoPrevia.l,
+              ),
+              FilledButton(
+                onPressed: onAccion,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                ),
+                child: Text(accion!.toUpperCase()),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// La ruleta de carga de la casa, para cuando no se sabe la forma de lo que
+/// llega. Si se sabe, mejor un esqueleto.
+class Cargando extends StatelessWidget {
+  const Cargando({super.key, this.relleno = EspaciadoPrevia.xl});
+
+  final double relleno;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: EdgeInsets.all(relleno),
+      child: SizedBox.square(
+        dimension: 26,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.6,
+          color: context.colores.primarioTexto,
+        ),
+      ),
+    ),
+  );
+}

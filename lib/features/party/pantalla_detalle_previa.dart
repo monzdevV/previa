@@ -13,7 +13,6 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
 import '../requests/pantalla_solicitudes.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 import 'hoja_solicitar_plaza.dart';
 import '../map/capas_del_mapa.dart';
 

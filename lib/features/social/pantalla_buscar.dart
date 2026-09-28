@@ -12,7 +12,6 @@ import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 /// Prefijo del codigo QR. Tener un esquema propio permite distinguir un QR
 /// de Previa de cualquier otro que apunte a una web.

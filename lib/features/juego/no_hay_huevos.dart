@@ -11,7 +11,6 @@ import '../../data/models/reto.dart';
 import '../../data/repositories/repositorio_retos.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../../data/services/servicio_ubicacion.dart';
-import '../feed/pantalla_feed.dart' show AvatarPerfil;
 
 /// Nombre del juego. El huevo es un emoji a proposito: es la gracia del
 /// nombre y lo que lo hace reconocible como sticker.

@@ -52,6 +52,7 @@ dependencies:
   # Movimiento declarativo (entradas, rebotes, meneos) sin un
   # AnimationController por widget.
   flutter_animate: ^4.5.2
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:

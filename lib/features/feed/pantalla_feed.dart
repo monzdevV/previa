@@ -11,7 +11,7 @@ import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../social/pantalla_avisos.dart';
+import '../inicio/hoja_crear.dart';
 
 /// Zona seleccionada en el feed. Nulo significa "toda la noche".
 class ZonaDelFeed extends Notifier<String?> {
@@ -68,28 +68,14 @@ class PantallaFeed extends ConsumerWidget {
       appBar: AppBar(
         titleSpacing: EspaciadoPrevia.m,
         title: const _Marca(),
+        // Una sola accion arriba. Buscar, avisos y mensajes vivian aqui en
+        // fila y competian con la marca; ahora tienen su pestaña (Buzon).
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded),
-            onPressed: () => context.push(Rutas.buscar),
-          ),
-          IconButton(
-            icon: const ChinchetaDeAvisos(
-              hijo: Icon(Icons.favorite_border_rounded),
-            ),
+            tooltip: 'Crear',
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 28),
             onPressed: () async {
-              await context.push(Rutas.avisos);
-              refrescarFeed(ref);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
-            onPressed: () => context.push(Rutas.mensajes),
-          ),
-          IconButton(
-            icon: const Icon(Icons.add_box_outlined),
-            onPressed: () async {
-              await context.push(Rutas.publicar);
+              await mostrarHojaCrear(context);
               refrescarFeed(ref);
             },
           ),
@@ -151,6 +137,9 @@ class PantallaFeed extends ConsumerWidget {
                       indice: i,
                     ),
                   ),
+                SliverToBoxAdapter(
+                  child: SizedBox(height: context.holguraInferior),
+                ),
               ],
             );
           },
@@ -631,52 +620,6 @@ class _MediaState extends State<_Media> {
             ),
         ],
       ),
-    );
-  }
-}
-
-/// Avatar circular reutilizable. Si no hay foto, la inicial sobre el gris.
-class AvatarPerfil extends StatelessWidget {
-  const AvatarPerfil({
-    super.key,
-    required this.url,
-    required this.inicial,
-    this.lado = 40,
-  });
-
-  final String? url;
-  final String inicial;
-  final double lado;
-
-  @override
-  Widget build(BuildContext context) {
-    final letra = inicial.isNotEmpty ? inicial[0].toUpperCase() : '?';
-
-    return Container(
-      width: lado,
-      height: lado,
-      clipBehavior: Clip.antiAlias,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.colores.superficieActiva,
-        shape: BoxShape.circle,
-      ),
-      child: url != null && url!.isNotEmpty
-          ? CachedNetworkImage(
-              imageUrl: url!,
-              fit: BoxFit.cover,
-              width: lado,
-              height: lado,
-              errorWidget: (_, _, _) => Text(letra),
-            )
-          : Text(
-              letra,
-              style: TextStyle(
-                color: context.colores.texto,
-                fontSize: lado * 0.4,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
     );
   }
 }
