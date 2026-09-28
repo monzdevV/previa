@@ -148,6 +148,7 @@ class PastillaCristal extends StatelessWidget {
     this.onTap,
     this.cargando = false,
     this.alto = 44,
+    this.desplegable = false,
   });
 
   final String texto;
@@ -155,6 +156,9 @@ class PastillaCristal extends StatelessWidget {
   final VoidCallback? onTap;
   final bool cargando;
   final double alto;
+
+  /// Si al tocarla se abre algo para elegir: lleva la flechita.
+  final bool desplegable;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +194,7 @@ class PastillaCristal extends StatelessWidget {
                 ),
               ),
             ),
-            if (onTap != null) ...[
+            if (desplegable) ...[
               const SizedBox(width: EspaciadoPrevia.xs),
               Icon(Icons.expand_more_rounded, size: 18, color: c.textoSuave),
             ],

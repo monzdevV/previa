@@ -198,6 +198,7 @@ class _Cabecera extends StatelessWidget {
               icono: Icons.place_rounded,
               texto: ciudad,
               onTap: () => _cambiarCiudad(context, ref, ciudad),
+              desplegable: true,
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),

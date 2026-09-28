@@ -6,17 +6,7 @@ import '../../core/ambientes.dart';
 import 'proveedores_mapa.dart';
 
 Future<void> mostrarHojaFiltros(BuildContext context) {
-  return showModalBottomSheet(
-    context: context,
-    backgroundColor: context.colores.fondo,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(EspaciadoPrevia.radioGrande),
-      ),
-    ),
-    builder: (_) => const _HojaFiltros(),
-  );
+  return mostrarHoja<void>(context, builder: (_) => const _HojaFiltros());
 }
 
 class _HojaFiltros extends ConsumerWidget {
@@ -30,14 +20,19 @@ class _HojaFiltros extends ConsumerWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(EspaciadoPrevia.l),
+        padding: const EdgeInsets.fromLTRB(
+          EspaciadoPrevia.l,
+          0,
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.l,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text('Filtros', style: textos.headlineMedium),
+                const Titular('Filtros', tamano: 30),
                 const Spacer(),
                 if (!filtros.sonLosPorDefecto)
                   TextButton(
