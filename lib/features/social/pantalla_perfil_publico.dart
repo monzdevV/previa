@@ -1,15 +1,16 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
+import '../profile/cabecera_perfil.dart';
+import '../profile/calendario_social.dart';
+import '../profile/pestanas_perfil.dart';
 
 final _perfilProvider = FutureProvider.family<PerfilPublico, String>(
   (ref, id) => ref.watch(repositorioSocialProvider).perfilPublico(id),
@@ -23,7 +24,8 @@ final _publicacionesProvider = FutureProvider.family<List<Publicacion>, String>(
 ///
 /// Es la pantalla que cierra el circulo social: sin ella se puede seguir a
 /// alguien pero no saber quien es, que es justo lo contrario de lo que hace
-/// falta antes de quedar con un desconocido.
+/// falta antes de quedar con un desconocido. Por eso la foto, sus redes y
+/// cuando sale van antes que cualquier boton.
 class PantallaPerfilPublico extends ConsumerWidget {
   const PantallaPerfilPublico({super.key, required this.perfilId});
 
@@ -34,21 +36,40 @@ class PantallaPerfilPublico extends ConsumerWidget {
     final perfil = ref.watch(_perfilProvider(perfilId));
 
     return Scaffold(
-      appBar: AppBar(title: Text(perfil.valueOrNull?.perfil.nombre ?? 'Perfil')),
       body: perfil.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(color: context.colores.primarioTexto),
-        ),
-        error: (e, _) => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(EspaciadoPrevia.xl),
-            child: Text('No se ha podido cargar este perfil.'),
-          ),
+        loading: () => const Stack(children: [Cargando(), _Volver()]),
+        error: (e, _) => Stack(
+          children: [
+            EstadoVacio(
+              icono: Icons.person_off_outlined,
+              titulo: 'No disponible',
+              detalle: 'Este perfil no existe o no se puede ver ahora.',
+              accion: 'Reintentar',
+              onAccion: () => ref.invalidate(_perfilProvider(perfilId)),
+            ),
+            const _Volver(),
+          ],
         ),
         data: (ficha) => _Contenido(ficha: ficha),
       ),
     );
   }
+}
+
+class _Volver extends StatelessWidget {
+  const _Volver();
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.all(EspaciadoPrevia.m),
+      child: BotonCristal(
+        icono: Icons.arrow_back_rounded,
+        etiqueta: 'Volver',
+        onTap: () => Navigator.of(context).maybePop(),
+      ),
+    ),
+  );
 }
 
 class _Contenido extends ConsumerStatefulWidget {
@@ -63,6 +84,9 @@ class _Contenido extends ConsumerStatefulWidget {
 class _ContenidoState extends ConsumerState<_Contenido> {
   late PerfilResumen _p = widget.ficha.perfil;
 
+  /// Lo que se ha movido el contador de seguidores sin esperar al servidor.
+  int _ajusteSeguidores = 0;
+
   /// Dos toques rapidos lanzarian seguir y dejar de seguir a la vez, y el
   /// orden en que lleguen al servidor decide el resultado, no el usuario.
   bool _enCurso = false;
@@ -71,23 +95,33 @@ class _ContenidoState extends ConsumerState<_Contenido> {
   void didUpdateWidget(covariant _Contenido anterior) {
     super.didUpdateWidget(anterior);
     // Si la ficha se recarga, manda la del servidor y no la copia local.
-    if (anterior.ficha != widget.ficha) _p = widget.ficha.perfil;
+    if (anterior.ficha != widget.ficha) {
+      _p = widget.ficha.perfil;
+      _ajusteSeguidores = 0;
+    }
   }
 
   Future<void> _alternar() async {
     if (_enCurso) return;
     HapticFeedback.selectionClick();
     final antes = _p;
+    final ajusteAntes = _ajusteSeguidores;
     setState(() {
       _enCurso = true;
       _p = _p.copiarCon(leSigo: !antes.leSigo);
+      _ajusteSeguidores += antes.leSigo ? -1 : 1;
     });
     try {
       await ref
           .read(repositorioSocialProvider)
           .alternarSeguimiento(antes.id, loSeguia: antes.leSigo);
     } catch (_) {
-      if (mounted) setState(() => _p = antes);
+      if (mounted) {
+        setState(() {
+          _p = antes;
+          _ajusteSeguidores = ajusteAntes;
+        });
+      }
     } finally {
       if (mounted) setState(() => _enCurso = false);
     }
@@ -96,213 +130,116 @@ class _ContenidoState extends ConsumerState<_Contenido> {
   @override
   Widget build(BuildContext context) {
     final ficha = widget.ficha;
-    final textos = Theme.of(context).textTheme;
     final publicaciones = ref.watch(_publicacionesProvider(_p.id));
     // A uno mismo no se le sigue ni se le escribe: se llega aqui desde el
     // feed o el buscador tocando tu propia cara.
     final esMio = ref.watch(uidActualProvider) == _p.id;
 
-    return ListView(
-      padding: const EdgeInsets.all(EspaciadoPrevia.m),
-      children: [
-        Row(
-          children: [
-            AvatarPerfil(url: _p.avatar, inicial: _p.nombre, lado: 86),
-            const SizedBox(width: EspaciadoPrevia.m),
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _Contador(
-                    valor: publicaciones.valueOrNull?.length ?? 0,
-                    etiqueta: 'noches',
-                  ),
-                  _Contador(
-                    valor: ficha.seguidores,
-                    etiqueta: 'seguidores',
-                  ),
-                  _Contador(valor: ficha.siguiendo, etiqueta: 'siguiendo'),
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: CabeceraDePerfil(
+            ficha: FichaDeCabecera(
+              nombre: _p.nombre,
+              usuario: _p.usuario,
+              avatar: _p.avatar,
+              bio: ficha.bio,
+              ciudad: ficha.ciudad,
+              reputacion: _p.reputacion,
+              instagram: ficha.instagram,
+              tiktok: ficha.tiktok,
+              xUsuario: ficha.xUsuario,
+              seguidores: ficha.seguidores + _ajusteSeguidores,
+              siguiendo: ficha.siguiendo,
+              publicaciones: publicaciones.valueOrNull?.length,
+            ),
+            encima: const _Volver(),
+            acciones: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (ficha.esDemo) ...[
+                  const _AvisoDemo(),
+                  const SizedBox(height: EspaciadoPrevia.m),
                 ],
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: EspaciadoPrevia.m),
-        Text(_p.nombre, style: textos.titleLarge),
-        if (_p.usuario != null)
-          Text('@${_p.usuario}', style: textos.bodyMedium),
-
-        if (ficha.bio != null && ficha.bio!.isNotEmpty) ...[
-          const SizedBox(height: EspaciadoPrevia.s),
-          Text(ficha.bio!, style: textos.bodyLarge),
-        ],
-
-        const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
-        Wrap(
-          spacing: EspaciadoPrevia.s,
-          runSpacing: EspaciadoPrevia.xs + 2,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            if (ficha.ciudad != null) _Dato(Icons.place_outlined, ficha.ciudad!),
-            if (_p.reputacion != null)
-              _Dato(
-                Icons.star_rounded,
-                '${_p.reputacion!.toStringAsFixed(1).replaceAll('.', ',')} de 5',
-              ),
-            if (ficha.instagram != null)
-              ActionChip(
-                avatar: const Icon(Icons.alternate_email_rounded, size: 16),
-                label: Text(ficha.instagram!),
-                onPressed: () => _abrirInstagram(ficha.instagram!),
-              ),
-          ],
-        ),
-
-        if (ficha.esDemo) ...[
-          const SizedBox(height: EspaciadoPrevia.m),
-          const _AvisoDemo(),
-        ],
-
-        if (!esMio) ...[
-          const SizedBox(height: EspaciadoPrevia.m),
-          Row(
-            children: [
-              Expanded(
-                child: _p.leSigo
-                    ? OutlinedButton.icon(
-                        onPressed: _alternar,
-                        icon: const Icon(Icons.check_rounded, size: 19),
-                        label: const Text('Siguiendo'),
-                      )
-                    : FilledButton(
-                        onPressed: _alternar,
-                        child: const Text('Seguir'),
+                if (!esMio)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: MovimientoPrevia.rapido,
+                          child: _p.leSigo
+                              ? OutlinedButton.icon(
+                                  key: const ValueKey('sigo'),
+                                  onPressed: _alternar,
+                                  style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(46),
+                                  ),
+                                  icon: const Icon(Icons.check_rounded, size: 19),
+                                  label: const Text('Siguiendo'),
+                                )
+                              : FilledButton(
+                                  key: const ValueKey('seguir'),
+                                  onPressed: _alternar,
+                                  style: FilledButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(46),
+                                  ),
+                                  child: const Text('SEGUIR'),
+                                ),
+                        ),
                       ),
-              ),
-              const SizedBox(width: EspaciadoPrevia.s),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      context.push('${Rutas.conversacion}/${_p.id}'),
-                  icon: const Icon(Icons.send_rounded, size: 19),
-                  label: const Text('Mensaje'),
-                ),
-              ),
-            ],
-          ),
-        ],
-
-        const SizedBox(height: EspaciadoPrevia.l),
-        const Divider(),
-        const SizedBox(height: EspaciadoPrevia.m),
-
-        publicaciones.when(
-          loading: () => Center(
-            child: Padding(
-              padding: EdgeInsets.all(EspaciadoPrevia.xl),
-              child: CircularProgressIndicator(color: context.colores.primarioTexto),
+                      const SizedBox(width: EspaciadoPrevia.s),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () =>
+                              context.push('${Rutas.conversacion}/${_p.id}'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(46),
+                          ),
+                          icon: const Icon(Icons.send_rounded, size: 18),
+                          label: const Text('Mensaje'),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ),
-          error: (e, _) => const SizedBox.shrink(),
-          data: (lista) => lista.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: EspaciadoPrevia.xl,
-                  ),
-                  child: Text(
-                    'Todavía no ha publicado nada.',
-                    textAlign: TextAlign.center,
-                    style: textos.bodyMedium,
-                  ),
-                )
-              : GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 3,
-                        crossAxisSpacing: 3,
-                      ),
-                  itemCount: lista.length,
-                  itemBuilder: (_, i) => _Miniatura(publicacion: lista[i]),
-                ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            EspaciadoPrevia.m,
+            EspaciadoPrevia.xl,
+            EspaciadoPrevia.m,
+            EspaciadoPrevia.l,
+          ),
+          sliver: SliverToBoxAdapter(
+            child: CalendarioSocial(perfilId: _p.id, esMio: esMio),
+          ),
+        ),
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            EspaciadoPrevia.m,
+            EspaciadoPrevia.s,
+            EspaciadoPrevia.m,
+            EspaciadoPrevia.m,
+          ),
+          sliver: SliverToBoxAdapter(child: Titular('Fotos', tamano: 24)),
+        ),
+        SliverRejillaDeFotos(
+          publicaciones: publicaciones,
+          vacio: const EstadoVacio(
+            compacto: true,
+            pegatina: '🌙',
+            titulo: 'Sin fotos todavía',
+            detalle: 'Cuando suba algo de sus noches aparecerá aquí.',
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: SizedBox(height: context.holguraInferior + EspaciadoPrevia.l),
         ),
       ],
     );
   }
-}
-
-Future<void> _abrirInstagram(String usuario) async {
-  final destino = Uri.parse('https://instagram.com/$usuario');
-  await launchUrl(destino, mode: LaunchMode.externalApplication);
-}
-
-class _Miniatura extends StatelessWidget {
-  const _Miniatura({required this.publicacion});
-
-  final Publicacion publicacion;
-
-  @override
-  Widget build(BuildContext context) => Stack(
-    fit: StackFit.expand,
-    children: [
-      CachedNetworkImage(
-        imageUrl: publicacion.miniaturaUrl ?? publicacion.mediaUrl,
-        fit: BoxFit.cover,
-        placeholder: (_, _) =>
-            ColoredBox(color: context.colores.superficie),
-        errorWidget: (_, _, _) =>
-            ColoredBox(color: context.colores.superficie),
-      ),
-      if (publicacion.esVideo)
-        const Positioned(
-          top: 4,
-          right: 4,
-          child: Icon(
-            Icons.play_circle_fill_rounded,
-            size: 18,
-            color: Colors.white,
-          ),
-        ),
-    ],
-  );
-}
-
-class _Contador extends StatelessWidget {
-  const _Contador({required this.valor, required this.etiqueta});
-
-  final int valor;
-  final String etiqueta;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Text(
-        '$valor',
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      Text(etiqueta, style: Theme.of(context).textTheme.labelMedium),
-    ],
-  );
-}
-
-class _Dato extends StatelessWidget {
-  const _Dato(this.icono, this.texto);
-
-  final IconData icono;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icono, size: 16, color: context.colores.textoTenue),
-      const SizedBox(width: EspaciadoPrevia.xs),
-      Text(texto, style: Theme.of(context).textTheme.bodyMedium),
-    ],
-  );
 }
 
 class _AvisoDemo extends StatelessWidget {

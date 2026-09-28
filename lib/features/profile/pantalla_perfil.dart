@@ -6,11 +6,19 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
+import '../party/tarjeta_previa.dart';
+import '../social/pantalla_resumen_noche.dart' show InsigniaDeRacha;
 import 'cabecera_perfil.dart';
+import 'calendario_social.dart';
 import 'pestanas_perfil.dart';
 import 'proveedores_perfil.dart';
-import '../party/tarjeta_previa.dart';
 
+/// Tu perfil, como lo ven los demas, con lo tuyo encima.
+///
+/// Antes era una lista de catorce entradas (solicitudes, valorar, datos,
+/// borrar la cuenta...) debajo de la foto. Todo eso se usa una vez al mes y
+/// vive ahora en Ajustes, detras del unico boton de arriba. Aqui queda lo que
+/// se viene a mirar: tu cara, tus redes y tus noches.
 class PantallaPerfil extends ConsumerStatefulWidget {
   const PantallaPerfil({super.key});
 
@@ -19,294 +27,175 @@ class PantallaPerfil extends ConsumerStatefulWidget {
 }
 
 class _PantallaPerfilState extends ConsumerState<PantallaPerfil> {
-  /// Borrar la cuenta tarda y no se puede repetir: un segundo toque mientras
-  /// va el primero lanzaria otra peticion contra una cuenta a medio borrar.
-  bool _eliminando = false;
+  /// 0: tus fotos, 1: las de esas noches.
+  int _seccion = 0;
 
   @override
   Widget build(BuildContext context) {
     final perfil = ref.watch(miPerfilProvider);
-    final misPrevias = ref.watch(misPreviasProvider);
-    final textos = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi perfil'),
-        actions: [
-          IconButton(
-            tooltip: 'Editar perfil',
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push(Rutas.editarPerfil),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        color: context.colores.primarioTexto,
-        // Se espera a que vuelvan los datos: si no, la ruleta se va al
-        // instante y parece que no ha hecho nada.
-        onRefresh: () async {
-          refrescarPerfil(ref);
-          try {
-            await Future.wait([
-              ref.refresh(miPerfilProvider.future),
-              ref.refresh(misPreviasProvider.future),
-            ]);
-          } catch (_) {
-            // El fallo ya lo pinta cada seccion con su propio mensaje.
-          }
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(EspaciadoPrevia.l),
-          children: [
-            perfil.when(
-              loading: () => Center(
-                child: CircularProgressIndicator(
-                  color: context.colores.primarioTexto,
-                ),
-              ),
-              error: (e, _) => Text(
-                'No se ha podido cargar tu perfil.',
-                style: textos.bodyMedium,
-              ),
-              data: (p) => CabeceraPerfil(perfil: p),
-            ),
+      body: perfil.when(
+        loading: () => const Cargando(),
+        error: (e, _) => EstadoVacio(
+          icono: Icons.cloud_off_rounded,
+          titulo: 'Sin conexión',
+          detalle: 'No hemos podido cargar tu perfil.',
+          accion: 'Reintentar',
+          onAccion: () => refrescarPerfil(ref),
+        ),
+        data: (p) {
+          if (p == null) return const SizedBox.shrink();
+          final ficha = ref.watch(miFichaProvider(p.id)).valueOrNull;
+          final mias = ref.watch(misPublicacionesProvider);
+          final misPrevias = ref.watch(misPreviasProvider).valueOrNull ?? [];
+          void editar() => context.push(Rutas.editarPerfil);
 
-            const SizedBox(height: EspaciadoPrevia.m),
-            const PestanasPerfil(),
-
-            const SizedBox(height: EspaciadoPrevia.xl),
-            Row(
-              children: [
-                Text('Mis previas', style: textos.titleLarge),
-                const Spacer(),
-                TextButton.icon(
-                  onPressed: () => context.push(Rutas.crearPrevia),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Abrir'),
-                ),
-              ],
-            ),
-            const SizedBox(height: EspaciadoPrevia.s),
-
-            misPrevias.when(
-              loading: () => Padding(
-                padding: const EdgeInsets.all(EspaciadoPrevia.l),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: context.colores.primarioTexto,
+          return RefreshIndicator(
+            color: context.colores.primarioTexto,
+            backgroundColor: context.colores.superficie,
+            // Se espera a que vuelvan los datos: si no, la ruleta se va al
+            // instante y parece que no ha hecho nada.
+            onRefresh: () async {
+              refrescarPerfil(ref);
+              ref.invalidate(misPreviasProvider);
+              try {
+                await ref.read(miPerfilProvider.future);
+              } catch (_) {
+                // El fallo ya lo pinta la propia pantalla.
+              }
+            },
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: CabeceraDePerfil(
+                    ficha: FichaDeCabecera(
+                      nombre: p.nombre,
+                      usuario: p.username,
+                      avatar: p.avatarUrl,
+                      bio: p.bio,
+                      ciudad: p.ciudad,
+                      reputacion: p.tieneReputacion ? p.reputacion : null,
+                      instagram: p.instagram,
+                      tiktok: p.tiktok,
+                      xUsuario: p.xUsuario,
+                      seguidores: ficha?.seguidores,
+                      siguiendo: ficha?.siguiendo,
+                      publicaciones: mias.valueOrNull?.length,
+                    ),
+                    insignia: const InsigniaDeRacha(),
+                    onAnadirFoto: editar,
+                    onAnadirRedes: editar,
+                    encima: SafeArea(
+                      child: Align(
+                        alignment: Alignment.topRight,
+                        child: Padding(
+                          padding: const EdgeInsets.all(EspaciadoPrevia.m),
+                          child: BotonCristal(
+                            icono: Icons.settings_rounded,
+                            etiqueta: 'Ajustes',
+                            onTap: () => context.push(Rutas.ajustes),
+                          ),
+                        ),
+                      ),
+                    ),
+                    acciones: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: editar,
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(46),
+                            ),
+                            child: const Text('Editar perfil'),
+                          ),
+                        ),
+                        const SizedBox(width: EspaciadoPrevia.s),
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => context.push(Rutas.buscar),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(46),
+                            ),
+                            child: const Text('Añadir gente'),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              error: (e, _) => Text(
-                'No se han podido cargar tus previas.',
-                style: textos.bodyMedium,
-              ),
-              data: (lista) => lista.isEmpty
-                  ? Container(
-                      padding: const EdgeInsets.all(EspaciadoPrevia.l),
-                      decoration: BoxDecoration(
-                        color: context.colores.superficie,
-                        borderRadius: BorderRadius.circular(
-                          EspaciadoPrevia.radio,
-                        ),
-                        border: Border.all(color: context.colores.borde),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    EspaciadoPrevia.m,
+                    EspaciadoPrevia.l,
+                    EspaciadoPrevia.m,
+                    0,
+                  ),
+                  sliver: SliverList.list(
+                    children: [
+                      TarjetaCompletarPerfil(
+                        faltaFoto: p.avatarUrl == null || p.avatarUrl!.isEmpty,
+                        faltanRedes: !p.tieneRedes,
+                        faltaBio: p.bio == null || p.bio!.trim().isEmpty,
+                        onTap: editar,
                       ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.grid_off,
-                            size: 32,
-                            color: context.colores.textoTenue,
-                          ),
-                          const SizedBox(height: EspaciadoPrevia.s),
-                          Text(
-                            'Todavía no has abierto ninguna previa.',
-                            style: textos.bodyMedium,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        for (final p in lista)
+                      if (p.avatarUrl == null ||
+                          !p.tieneRedes ||
+                          (p.bio ?? '').trim().isEmpty)
+                        const SizedBox(height: EspaciadoPrevia.l),
+                      CalendarioSocial(perfilId: p.id, esMio: true),
+                      if (misPrevias.isNotEmpty) ...[
+                        const SizedBox(height: EspaciadoPrevia.xl),
+                        const Titular('Tus previas', tamano: 24),
+                        const SizedBox(height: EspaciadoPrevia.m),
+                        for (final previa in misPrevias)
                           Padding(
                             padding: const EdgeInsets.only(
                               bottom: EspaciadoPrevia.s,
                             ),
                             child: TarjetaPrevia(
-                              previa: p,
+                              previa: previa,
                               compacta: true,
                               onTap: () =>
-                                  context.push('${Rutas.previa}/${p.id}'),
+                                  context.push('${Rutas.previa}/${previa.id}'),
                             ),
                           ),
                       ],
-                    ),
-            ),
-
-            const SizedBox(height: EspaciadoPrevia.l),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_month_outlined),
-              title: const Text('Mis noches'),
-              subtitle: const Text('El calendario de cuándo has salido'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Rutas.misNoches),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.people_alt_outlined),
-              title: const Text('Gente'),
-              subtitle: const Text('Busca, sigue y comparte tu código'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Rutas.buscar),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.inbox_outlined),
-              title: const Text('Mis solicitudes'),
-              subtitle: const Text('Las plazas que has pedido'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Rutas.misSolicitudes),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.star_outline_rounded),
-              title: const Text('Previas a las que fui'),
-              subtitle: const Text('Valora a la gente que conociste'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Rutas.porValorar),
-            ),
-            if (perfil.valueOrNull?.esModerador ?? false)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  Icons.gavel_rounded,
-                  color: context.colores.error,
-                ),
-                title: const Text('Moderación'),
-                subtitle: const Text('Lo que ha reportado la gente'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(Rutas.moderacion),
-              ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.shield_outlined),
-              title: const Text('Privacidad y convivencia'),
-              subtitle: const Text('Qué guardamos y cómo funciona'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(Rutas.ajustes),
-            ),
-
-            const SizedBox(height: EspaciadoPrevia.m),
-            const Divider(),
-            const SizedBox(height: EspaciadoPrevia.m),
-
-            Text('Tus datos', style: textos.titleLarge),
-            const SizedBox(height: EspaciadoPrevia.s),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.download_outlined),
-              title: const Text('Descargar mis datos'),
-              subtitle: const Text(
-                'Todo lo que guardamos de ti, en un fichero',
-              ),
-              onTap: _exportar,
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.delete_outline,
-                color: context.colores.error,
-              ),
-              title: Text(
-                'Eliminar mi cuenta',
-                style: TextStyle(color: context.colores.error),
-              ),
-              subtitle: const Text('Se borra todo y no hay vuelta atrás'),
-              trailing: _eliminando
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: context.colores.error,
+                      const SizedBox(height: EspaciadoPrevia.xl),
+                      Conmutador(
+                        opciones: const ['Tus fotos', 'De esas noches'],
+                        elegida: _seccion,
+                        onElegir: (i) => setState(() => _seccion = i),
                       ),
-                    )
-                  : null,
-              onTap: _eliminando ? null : _eliminarCuenta,
+                      const SizedBox(height: EspaciadoPrevia.m),
+                    ],
+                  ),
+                ),
+                if (_seccion == 0)
+                  SliverRejillaDeFotos(
+                    publicaciones: mias,
+                    borrables: true,
+                    vacio: const EstadoVacio(
+                      compacto: true,
+                      pegatina: '📷',
+                      titulo: 'Tu primera foto',
+                      detalle:
+                          'Sube algo de la última noche con el + de Inicio. '
+                          'Mantén pulsada una foto para borrarla.',
+                    ),
+                  )
+                else
+                  const SliverDeEsasNoches(),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: context.holguraInferior + EspaciadoPrevia.l,
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: EspaciadoPrevia.l),
-            OutlinedButton.icon(
-              onPressed: () => ref.read(repositorioAuthProvider).salir(),
-              icon: const Icon(Icons.logout, size: 18),
-              label: const Text('Cerrar sesión'),
-            ),
-            const SizedBox(height: EspaciadoPrevia.l),
-          ],
-        ),
+          );
+        },
       ),
     );
-  }
-
-  Future<void> _exportar() async {
-    final mensajero = ScaffoldMessenger.of(context);
-    try {
-      final datos = await ref.read(repositorioAuthProvider).exportarMisDatos();
-      mensajero.showSnackBar(
-        SnackBar(
-          content: Text('Datos preparados: ${datos.keys.length} secciones.'),
-        ),
-      );
-    } catch (_) {
-      mensajero.showSnackBar(
-        const SnackBar(content: Text('No se han podido exportar tus datos.')),
-      );
-    }
-  }
-
-  Future<void> _eliminarCuenta() async {
-    final confirmado = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: context.colores.superficieAlta,
-        title: const Text('¿Eliminar tu cuenta?'),
-        content: const Text(
-          'Se borrarán tu perfil, tus previas, tus mensajes y tus '
-          'valoraciones. Esto no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: context.colores.error,
-              minimumSize: const Size(0, 44),
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmado != true || _eliminando || !mounted) return;
-    final mensajero = ScaffoldMessenger.of(context);
-    setState(() => _eliminando = true);
-    try {
-      await ref.read(repositorioAuthProvider).eliminarMiCuenta();
-    } catch (_) {
-      mensajero.showSnackBar(
-        const SnackBar(
-          content: Text('No se ha podido eliminar la cuenta. Inténtalo otra vez.'),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _eliminando = false);
-    }
   }
 }

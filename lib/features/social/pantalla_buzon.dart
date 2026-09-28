@@ -65,11 +65,11 @@ class _PantallaBuzonState extends ConsumerState<PantallaBuzon> {
               EspaciadoPrevia.m,
               EspaciadoPrevia.s,
             ),
-            child: _Conmutador(
-              avisos: _avisos,
-              onCambiar: _cambiar,
-              sinLeerMensajes: mensajesSinLeer,
-              sinLeerAvisos: sinLeer,
+            child: Conmutador(
+              opciones: const ['Mensajes', 'Avisos'],
+              elegida: _avisos ? 1 : 0,
+              onElegir: (i) => _cambiar(i == 1),
+              pendientes: [mensajesSinLeer, sinLeer],
             ),
           ),
           Expanded(
@@ -80,119 +80,6 @@ class _PantallaBuzonState extends ConsumerState<PantallaBuzon> {
                   ? const ListaAvisos(key: ValueKey('avisos'))
                   : const ListaConversaciones(key: ValueKey('mensajes')),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Dos pastillas con un fondo que se desliza a la elegida.
-///
-/// El fondo se mueve en vez de aparecer: asi se ve de donde viene y a donde
-/// va, que es lo que dice "esto es un interruptor" sin tener que leerlo.
-class _Conmutador extends StatelessWidget {
-  const _Conmutador({
-    required this.avisos,
-    required this.onCambiar,
-    required this.sinLeerMensajes,
-    required this.sinLeerAvisos,
-  });
-
-  final bool avisos;
-  final ValueChanged<bool> onCambiar;
-  final int sinLeerMensajes;
-  final int sinLeerAvisos;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colores;
-    final reducido = MovimientoPrevia.reducido(context);
-
-    Widget opcion(String texto, bool esAvisos, int pendientes) {
-      final activa = avisos == esAvisos;
-      return Expanded(
-        child: Semantics(
-          button: true,
-          selected: activa,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => onCambiar(esAvisos),
-            child: SizedBox(
-              height: 44,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedDefaultTextStyle(
-                    duration: MovimientoPrevia.rapido,
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                      fontFamily: LetraPrevia.titular,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                      color: activa ? c.sobrePrimario : c.textoSuave,
-                    ),
-                    child: Text(texto.toUpperCase()),
-                  ),
-                  if (pendientes > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: activa ? c.sobrePrimario : c.error,
-                        borderRadius: BorderRadius.circular(
-                          EspaciadoPrevia.pastilla,
-                        ),
-                      ),
-                      child: Text(
-                        pendientes > 9 ? '9+' : '$pendientes',
-                        style: TextStyle(
-                          color: activa ? c.primario : Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          fontFeatures: const [FontFeature.tabularFigures()],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: c.superficieAlta,
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-      ),
-      child: Stack(
-        children: [
-          AnimatedAlign(
-            alignment: avisos ? Alignment.centerRight : Alignment.centerLeft,
-            duration: reducido ? Duration.zero : MovimientoPrevia.normal,
-            curve: MovimientoPrevia.curva,
-            child: FractionallySizedBox(
-              widthFactor: 0.5,
-              child: Container(
-                height: 44,
-                decoration: BoxDecoration(
-                  color: c.primario,
-                  borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-                ),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              opcion('Mensajes', false, sinLeerMensajes),
-              opcion('Avisos', true, sinLeerAvisos),
-            ],
           ),
         ],
       ),

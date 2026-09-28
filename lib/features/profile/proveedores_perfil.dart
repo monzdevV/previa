@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/noche.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../../data/repositories/repositorio_calendario.dart';
 import '../../data/repositories/repositorio_social.dart';
 
 /// Todo lo que alimenta la pantalla de perfil, junto.
@@ -38,6 +39,25 @@ final resumenProvider = FutureProvider.family<ResumenDeNoche, DateTime>(
   (ref, noche) => ref.watch(repositorioSocialProvider).resumenDeNoche(noche),
 );
 
+/// Las noches de una persona en un mes, para el calendario social.
+///
+/// La clave es el mes y no un rango: al deslizar de mes en mes cada pagina
+/// se pide una vez y se queda en memoria mientras el perfil siga abierto.
+final calendarioProvider =
+    FutureProvider.family<List<NocheDelCalendario>, (String, DateTime)>((
+      ref,
+      clave,
+    ) {
+      final (perfilId, mes) = clave;
+      return ref
+          .watch(repositorioCalendarioProvider)
+          .nochesDe(
+            perfilId,
+            desde: DateTime(mes.year, mes.month),
+            hasta: DateTime(mes.year, mes.month + 1, 0),
+          );
+    });
+
 /// Vuelve a pedirlo todo. Se llama al guardar el perfil, al subir una foto y
 /// al tirar hacia abajo.
 void refrescarPerfil(WidgetRef ref) {
@@ -47,4 +67,5 @@ void refrescarPerfil(WidgetRef ref) {
   ref.invalidate(misSalidasProvider);
   ref.invalidate(deEsasNochesProvider);
   ref.invalidate(rachaProvider);
+  ref.invalidate(calendarioProvider);
 }

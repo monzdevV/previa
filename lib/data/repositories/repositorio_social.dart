@@ -604,14 +604,8 @@ class RepositorioSocial {
 
   /// Ficha publica de alguien, con sus contadores y si le sigues.
   Future<PerfilPublico> perfilPublico(String perfilId) async {
-    final fila = await _cliente
-        .from('profiles')
-        .select(
-          'id, username, display_name, avatar_url, bio, city, instagram, '
-          'reputation, ratings_count, is_demo',
-        )
-        .eq('id', perfilId)
-        .single();
+    final fila = await leerPerfil(_cliente, perfilId);
+    if (fila == null) throw const ErrorPrevia('Ese perfil no existe.');
 
     // A la vez y no en fila: awaitarlas una tras otra multiplicaba por tres
     // la espera de abrir un perfil sin ganar nada, porque no dependen entre si.
@@ -634,6 +628,8 @@ class RepositorioSocial {
       bio: fila['bio'] as String?,
       ciudad: fila['city'] as String?,
       instagram: fila['instagram'] as String?,
+      tiktok: fila['tiktok'] as String?,
+      xUsuario: fila['x_handle'] as String?,
       esDemo: fila['is_demo'] as bool? ?? false,
       seguidores: resultados[0] as int,
       siguiendo: resultados[1] as int,

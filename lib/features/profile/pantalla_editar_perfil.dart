@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -22,6 +24,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _nombre = TextEditingController();
   final _bio = TextEditingController();
   final _instagram = TextEditingController();
+  final _tiktok = TextEditingController();
+  final _x = TextEditingController();
+  final _usuario = TextEditingController();
   final _ciudad = TextEditingController();
 
   DateTime? _fechaNacimiento;
@@ -71,6 +76,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       _nombre.text = perfil?.nombre ?? '';
       _bio.text = perfil?.bio ?? '';
       _instagram.text = perfil?.instagram ?? '';
+      _tiktok.text = perfil?.tiktok ?? '';
+      _x.text = perfil?.xUsuario ?? '';
+      _usuario.text = perfil?.username ?? '';
       _ciudad.text = perfil?.ciudad ?? '';
       _avatar = perfil?.avatarUrl;
       _fechaNacimiento = fecha;
@@ -83,6 +91,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     _nombre.dispose();
     _bio.dispose();
     _instagram.dispose();
+    _tiktok.dispose();
+    _x.dispose();
+    _usuario.dispose();
     _ciudad.dispose();
     super.dispose();
   }
@@ -160,6 +171,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
             bio: _bio.text,
             fechaNacimiento: _fechaNacimiento,
             instagram: _instagram.text,
+            tiktok: _tiktok.text,
+            xUsuario: _x.text,
+            username: _usuario.text,
             ciudad: _ciudad.text,
           );
       refrescarPerfil(ref);
@@ -231,6 +245,66 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
           child: ListView(
             padding: const EdgeInsets.all(EspaciadoPrevia.l),
             children: [
+              // La foto primero y grande: es lo que mas cambia como te ven.
+              Center(
+                child: Semantics(
+                  button: true,
+                  label: 'Cambiar foto de perfil',
+                  child: Pulsable(
+                    onTap: _subiendoAvatar ? null : _cambiarFoto,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AvatarPerfil(
+                          url: _avatar,
+                          inicial: _nombre.text.isEmpty ? '?' : _nombre.text,
+                          lado: 132,
+                          anillo: context.colores.primario,
+                        ),
+                        Positioned(
+                          right: 2,
+                          bottom: 2,
+                          child: Container(
+                            width: 42,
+                            height: 42,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: context.colores.primario,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: context.colores.fondo,
+                                width: 3,
+                              ),
+                            ),
+                            child: _subiendoAvatar
+                                ? SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: context.colores.sobrePrimario,
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 20,
+                                    color: context.colores.sobrePrimario,
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
+              Center(
+                child: TextButton(
+                  onPressed: _subiendoAvatar ? null : _cambiarFoto,
+                  child: Text(_avatar == null ? 'Añadir foto' : 'Cambiar foto'),
+                ),
+              ),
+              const SizedBox(height: EspaciadoPrevia.m),
+
               TextFormField(
                 controller: _nombre,
                 textCapitalization: TextCapitalization.words,
@@ -243,50 +317,54 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                     ? 'Escribe al menos 2 caracteres'
                     : null,
               ),
-
-              const SizedBox(height: EspaciadoPrevia.m),
-              Center(
-                child: Stack(
-                  children: [
-                    AvatarPerfil(
-                      url: _avatar,
-                      inicial: _nombre.text.isEmpty ? '?' : _nombre.text,
-                      lado: 104,
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Material(
-                        color: context.colores.primario,
-                        shape: const CircleBorder(),
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: _subiendoAvatar ? null : _cambiarFoto,
-                          child: Padding(
-                            padding: const EdgeInsets.all(EspaciadoPrevia.s),
-                            child: _subiendoAvatar
-                                ? SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: context.colores.sobrePrimario,
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.photo_camera_rounded,
-                                    size: 18,
-                                    color: context.colores.sobrePrimario,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              TextFormField(
+                controller: _usuario,
+                autocorrect: false,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
+                  LengthLimitingTextInputFormatter(20),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Nombre de usuario',
+                  prefixText: '@',
+                  prefixIcon: Icon(Icons.alternate_email_rounded),
+                  helperText: 'Minúsculas, números y _. Así te encuentran.',
                 ),
+                validator: (v) =>
+                    (v == null || !RegExp(r'^[a-z0-9_]{3,20}$').hasMatch(v))
+                    ? 'Entre 3 y 20: minúsculas, números o _'
+                    : null,
               ),
-              const SizedBox(height: EspaciadoPrevia.l),
 
+              const SizedBox(height: EspaciadoPrevia.xl),
+              const Titular('Tus redes', tamano: 22),
+              const SizedBox(height: EspaciadoPrevia.xs),
+              Text(
+                'Salen en tu perfil a la vista. Todas opcionales.',
+                style: textos.bodyMedium,
+              ),
+              const SizedBox(height: EspaciadoPrevia.m),
+              _CampoRed(
+                controlador: _instagram,
+                etiqueta: 'Instagram',
+                icono: FontAwesomeIcons.instagram,
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
+              _CampoRed(
+                controlador: _tiktok,
+                etiqueta: 'TikTok',
+                icono: FontAwesomeIcons.tiktok,
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
+              _CampoRed(
+                controlador: _x,
+                etiqueta: 'X',
+                icono: FontAwesomeIcons.xTwitter,
+              ),
+
+              const SizedBox(height: EspaciadoPrevia.xl),
+              const Titular('Más sobre ti', tamano: 22),
+              const SizedBox(height: EspaciadoPrevia.m),
               TextFormField(
                 controller: _bio,
                 maxLines: 3,
@@ -298,7 +376,6 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                   alignLabelWithHint: true,
                 ),
               ),
-
               TextFormField(
                 controller: _ciudad,
                 textCapitalization: TextCapitalization.words,
@@ -308,19 +385,6 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                   prefixIcon: Icon(Icons.location_city_outlined),
                 ),
               ),
-
-              const SizedBox(height: EspaciadoPrevia.m),
-              TextFormField(
-                controller: _instagram,
-                autocorrect: false,
-                decoration: const InputDecoration(
-                  labelText: 'Instagram',
-                  prefixText: '@',
-                  prefixIcon: Icon(Icons.alternate_email_rounded),
-                  helperText: 'Opcional. Lo verá quien visite tu perfil.',
-                ),
-              ),
-
               const SizedBox(height: EspaciadoPrevia.m),
               InkWell(
                 onTap: _elegirFecha,
@@ -345,7 +409,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               ),
               const SizedBox(height: EspaciadoPrevia.xs),
               Text(
-                'Nadie más puede verla. Solo se publica tu edad.',
+                'Nadie más puede verla. Solo se publica tu edad, y sin ella '
+                'no puedes abrir previas.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
                   color: context.colores.textoTenue,
@@ -390,4 +455,32 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       ),
     );
   }
+}
+
+/// Un campo de usuario de una red, con su logo delante.
+class _CampoRed extends StatelessWidget {
+  const _CampoRed({
+    required this.controlador,
+    required this.etiqueta,
+    required this.icono,
+  });
+
+  final TextEditingController controlador;
+  final String etiqueta;
+  final FaIconData icono;
+
+  @override
+  Widget build(BuildContext context) => TextFormField(
+    controller: controlador,
+    autocorrect: false,
+    keyboardType: TextInputType.url,
+    decoration: InputDecoration(
+      labelText: etiqueta,
+      prefixText: '@',
+      prefixIcon: Padding(
+        padding: const EdgeInsets.all(14),
+        child: FaIcon(icono, size: 18, color: context.colores.textoSuave),
+      ),
+    ),
+  );
 }

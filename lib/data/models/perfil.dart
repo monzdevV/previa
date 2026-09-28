@@ -14,6 +14,8 @@ class Perfil {
     this.reputacion,
     this.numeroValoraciones = 0,
     this.instagram,
+    this.tiktok,
+    this.xUsuario,
     this.ciudad,
     this.esModerador = false,
   });
@@ -29,6 +31,10 @@ class Perfil {
 
   /// Usuario de Instagram, sin arroba. Es opcional y publico.
   final String? instagram;
+  final String? tiktok;
+
+  /// Usuario de X (antes Twitter), sin arroba.
+  final String? xUsuario;
 
   final String? ciudad;
 
@@ -45,6 +51,11 @@ class Perfil {
 
   bool get tieneReputacion => numeroValoraciones > 0 && reputacion != null;
 
+  bool get tieneRedes =>
+      (instagram?.isNotEmpty ?? false) ||
+      (tiktok?.isNotEmpty ?? false) ||
+      (xUsuario?.isNotEmpty ?? false);
+
   factory Perfil.desdeJson(Map<String, dynamic> json) => Perfil(
     id: json['id'] as String,
     username: json['username'] as String,
@@ -55,6 +66,8 @@ class Perfil {
     reputacion: (json['reputation'] as num?)?.toDouble(),
     numeroValoraciones: json['ratings_count'] as int? ?? 0,
     instagram: json['instagram'] as String?,
+    tiktok: json['tiktok'] as String?,
+    xUsuario: json['x_handle'] as String?,
     ciudad: json['city'] as String?,
     esModerador: json['is_moderator'] as bool? ?? false,
   );
@@ -65,6 +78,8 @@ class Perfil {
     'avatar_url': avatarUrl,
     'bio': bio,
     'instagram': instagram,
+    'tiktok': tiktok,
+    'x_handle': xUsuario,
     'city': ciudad,
   };
 
@@ -74,6 +89,8 @@ class Perfil {
     String? avatarUrl,
     String? bio,
     String? instagram,
+    String? tiktok,
+    String? xUsuario,
     String? ciudad,
   }) => Perfil(
     id: id,
@@ -85,6 +102,9 @@ class Perfil {
     reputacion: reputacion,
     numeroValoraciones: numeroValoraciones,
     instagram: instagram ?? this.instagram,
+    tiktok: tiktok ?? this.tiktok,
+    xUsuario: xUsuario ?? this.xUsuario,
     ciudad: ciudad ?? this.ciudad,
+    esModerador: esModerador,
   );
 }

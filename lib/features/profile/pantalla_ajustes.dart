@@ -6,23 +6,302 @@ import '../../app/modo_de_tema.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
+import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_retos.dart';
 import '../juego/no_hay_huevos.dart' show nombreDelJuego;
 
-/// Ajustes, con los textos legales.
+/// Ajustes: todo lo que se usa de vez en cuando.
+///
+/// Aqui acaba lo que antes llenaba el perfil (solicitudes, valorar, datos,
+/// borrar la cuenta). Agrupado como en los ajustes del movil: cuenta,
+/// preferencias, privacidad y datos, y al final salir. Se encuentra porque
+/// esta donde cualquiera lo buscaria, no porque este siempre a la vista.
+class PantallaAjustes extends ConsumerStatefulWidget {
+  const PantallaAjustes({super.key});
+
+  @override
+  ConsumerState<PantallaAjustes> createState() => _PantallaAjustesState();
+}
+
+class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
+  /// Borrar la cuenta tarda y no se puede repetir: un segundo toque mientras
+  /// va el primero lanzaria otra peticion contra una cuenta a medio borrar.
+  bool _eliminando = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final moderador =
+        ref.watch(miPerfilProvider).valueOrNull?.esModerador ?? false;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ajustes')),
+      body: ListView(
+        padding: EdgeInsets.fromLTRB(
+          EspaciadoPrevia.m,
+          EspaciadoPrevia.s,
+          EspaciadoPrevia.m,
+          EspaciadoPrevia.xl + MediaQuery.paddingOf(context).bottom,
+        ),
+        children: [
+          _Grupo(
+            titulo: 'Tu cuenta',
+            filas: [
+              _Fila(
+                icono: Icons.edit_outlined,
+                titulo: 'Editar perfil',
+                detalle: 'Foto, usuario, redes y más',
+                onTap: () => context.push(Rutas.editarPerfil),
+              ),
+              _Fila(
+                icono: Icons.inbox_outlined,
+                titulo: 'Mis solicitudes',
+                detalle: 'Las plazas que has pedido',
+                onTap: () => context.push(Rutas.misSolicitudes),
+              ),
+              _Fila(
+                icono: Icons.star_outline_rounded,
+                titulo: 'Previas a las que fui',
+                detalle: 'Valora a la gente que conociste',
+                onTap: () => context.push(Rutas.porValorar),
+              ),
+              if (moderador)
+                _Fila(
+                  icono: Icons.gavel_rounded,
+                  titulo: 'Moderación',
+                  detalle: 'Lo que ha reportado la gente',
+                  onTap: () => context.push(Rutas.moderacion),
+                ),
+            ],
+          ),
+          const _Grupo(
+            titulo: 'Preferencias',
+            filas: [_ElectorDeTema(), _InterruptorDelJuego()],
+          ),
+          _Grupo(
+            titulo: 'Privacidad',
+            filas: [
+              _Fila(
+                icono: Icons.shield_outlined,
+                titulo: 'Cómo cuidamos tu privacidad',
+                detalle: 'Ubicación, direcciones y convivencia',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const _ComoFunciona()),
+                ),
+              ),
+              _Fila(
+                icono: Icons.policy_outlined,
+                titulo: 'Política de privacidad',
+                onTap: () => context.push(Rutas.privacidad),
+              ),
+              _Fila(
+                icono: Icons.description_outlined,
+                titulo: 'Condiciones de uso',
+                onTap: () => context.push(Rutas.condiciones),
+              ),
+            ],
+          ),
+          _Grupo(
+            titulo: 'Tus datos',
+            filas: [
+              _Fila(
+                icono: Icons.download_outlined,
+                titulo: 'Descargar mis datos',
+                detalle: 'Todo lo que guardamos de ti, en un fichero',
+                onTap: _exportar,
+              ),
+              _Fila(
+                icono: Icons.delete_outline,
+                titulo: 'Eliminar mi cuenta',
+                detalle: 'Se borra todo y no hay vuelta atrás',
+                peligro: true,
+                cargando: _eliminando,
+                onTap: _eliminando ? null : _eliminarCuenta,
+              ),
+            ],
+          ),
+          const SizedBox(height: EspaciadoPrevia.s),
+          OutlinedButton.icon(
+            onPressed: () => ref.read(repositorioAuthProvider).salir(),
+            icon: const Icon(Icons.logout, size: 18),
+            label: const Text('Cerrar sesión'),
+          ),
+          const SizedBox(height: EspaciadoPrevia.l),
+          Center(
+            child: Text(
+              'Previa · versión 1.0.0\n'
+              'Trabajo de Fin de Grado · 2º DAM',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontSize: 12, color: context.colores.textoTenue),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportar() async {
+    final mensajero = ScaffoldMessenger.of(context);
+    try {
+      final datos = await ref.read(repositorioAuthProvider).exportarMisDatos();
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text('Datos preparados: ${datos.keys.length} secciones.'),
+        ),
+      );
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('No se han podido exportar tus datos.')),
+      );
+    }
+  }
+
+  Future<void> _eliminarCuenta() async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        backgroundColor: context.colores.superficieAlta,
+        title: const Text('¿Eliminar tu cuenta?'),
+        content: const Text(
+          'Se borrarán tu perfil, tus previas, tus mensajes y tus '
+          'valoraciones. Esto no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(contexto).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: context.colores.error,
+              minimumSize: const Size(0, 44),
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true || _eliminando || !mounted) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    setState(() => _eliminando = true);
+    try {
+      await ref.read(repositorioAuthProvider).eliminarMiCuenta();
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se ha podido eliminar la cuenta. Inténtalo otra vez.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _eliminando = false);
+    }
+  }
+}
+
+/// Un grupo de ajustes en su bloque redondeado, con su rotulo encima.
+class _Grupo extends StatelessWidget {
+  const _Grupo({required this.titulo, required this.filas});
+
+  final String titulo;
+  final List<Widget> filas;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: EspaciadoPrevia.l),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(
+            left: EspaciadoPrevia.xs,
+            bottom: EspaciadoPrevia.s,
+          ),
+          child: Titular(titulo, tamano: 18),
+        ),
+        Material(
+          color: context.colores.superficie,
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var i = 0; i < filas.length; i++) ...[
+                if (i > 0) const Divider(indent: 56, height: 1),
+                filas[i],
+              ],
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _Fila extends StatelessWidget {
+  const _Fila({
+    required this.icono,
+    required this.titulo,
+    required this.onTap,
+    this.detalle,
+    this.peligro = false,
+    this.cargando = false,
+  });
+
+  final IconData icono;
+  final String titulo;
+  final String? detalle;
+  final VoidCallback? onTap;
+  final bool peligro;
+  final bool cargando;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    return ListTile(
+      minTileHeight: 56,
+      leading: Icon(icono, color: peligro ? c.error : c.textoSuave),
+      title: Text(
+        titulo,
+        style: TextStyle(
+          color: peligro ? c.error : c.texto,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: detalle == null ? null : Text(detalle!),
+      trailing: cargando
+          ? SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: c.error),
+            )
+          : Icon(Icons.chevron_right, color: c.textoTenue),
+      onTap: onTap,
+    );
+  }
+}
+
+/// Como se trata tu ubicacion y tus datos, contado como se habla.
 ///
 /// El RGPD exige que la información sea inteligible y en lenguaje claro
 /// (art. 12). Por eso está redactado como se habla, no como un contrato:
-/// una política que nadie entiende no informa a nadie.
-class PantallaAjustes extends StatelessWidget {
-  const PantallaAjustes({super.key});
+/// una política que nadie entiende no informa a nadie. Antes ocupaba la
+/// pantalla de ajustes entera y tapaba los ajustes de verdad.
+class _ComoFunciona extends StatelessWidget {
+  const _ComoFunciona();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajustes')),
+      appBar: AppBar(title: const Text('Tu privacidad')),
       body: ListView(
-        padding: const EdgeInsets.all(EspaciadoPrevia.l),
+        padding: EdgeInsets.fromLTRB(
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.s,
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.l + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           _Apartado(
             titulo: 'Tu ubicación',
@@ -108,38 +387,6 @@ class PantallaAjustes extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: EspaciadoPrevia.s),
-          const Divider(),
-          const _ElectorDeTema(),
-          const Divider(),
-          const _InterruptorDelJuego(),
-          const Divider(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.shield_outlined),
-            title: const Text('Política de privacidad'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Rutas.privacidad),
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.description_outlined),
-            title: const Text('Condiciones de uso'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(Rutas.condiciones),
-          ),
-
-          const SizedBox(height: EspaciadoPrevia.l),
-          Center(
-            child: Text(
-              'Previa · versión 1.0.0\n'
-              'Trabajo de Fin de Grado · 2º DAM',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(fontSize: 12, color: context.colores.textoTenue),
-            ),
-          ),
-          const SizedBox(height: EspaciadoPrevia.l),
         ],
       ),
     );
@@ -194,11 +441,11 @@ class _ElectorDeTema extends ConsumerWidget {
     final modo = ref.watch(modoDeTemaProvider);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: EspaciadoPrevia.s),
+      padding: const EdgeInsets.all(EspaciadoPrevia.m),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Aspecto', style: Theme.of(context).textTheme.titleLarge),
+          Text('Aspecto', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: EspaciadoPrevia.s),
           SegmentedButton<ThemeMode>(
             segments: [
@@ -269,7 +516,6 @@ class _InterruptorDelJuegoState extends ConsumerState<_InterruptorDelJuego> {
 
   @override
   Widget build(BuildContext context) => SwitchListTile(
-    contentPadding: EdgeInsets.zero,
     secondary: const Icon(Icons.egg_outlined),
     title: Text('Salir en retos de $nombreDelJuego'),
     subtitle: const Text(

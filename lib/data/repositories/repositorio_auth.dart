@@ -45,6 +45,39 @@ class ErrorPrevia implements Exception {
   String toString() => mensaje;
 }
 
+/// Codigo de Postgres para "esa columna no existe".
+const _columnaInexistente = '42703';
+
+const _columnasDePerfil =
+    'id, username, display_name, avatar_url, bio, onboarded, '
+    'reputation, ratings_count, instagram, city, is_moderator, is_demo';
+
+/// Lee un perfil pidiendo tambien sus redes.
+///
+/// Las columnas `tiktok` y `x_handle` llegan con la migracion `vas_y_redes`.
+/// Si el servidor aun no la tiene, se repite la lectura sin ellas en lugar de
+/// dejar la app sin perfil: es la unica diferencia entre un servidor y otro,
+/// y vive solo aqui.
+Future<Map<String, dynamic>?> leerPerfil(
+  SupabaseClient cliente,
+  String id,
+) async {
+  try {
+    return await cliente
+        .from('profiles')
+        .select('$_columnasDePerfil, tiktok, x_handle')
+        .eq('id', id)
+        .maybeSingle();
+  } on PostgrestException catch (e) {
+    if (e.code != _columnaInexistente) rethrow;
+    return cliente
+        .from('profiles')
+        .select(_columnasDePerfil)
+        .eq('id', id)
+        .maybeSingle();
+  }
+}
+
 class RepositorioAuth {
   RepositorioAuth(this._cliente);
 
@@ -201,28 +234,13 @@ class RepositorioAuth {
   Future<Perfil?> miPerfil() async {
     final id = usuarioActual?.id;
     if (id == null) return null;
-
-    final fila = await _cliente
-        .from('profiles')
-        .select(
-          'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count, instagram, city, is_moderator',
-        )
-        .eq('id', id)
-        .maybeSingle();
-
+    final fila = await leerPerfil(_cliente, id);
     return fila == null ? null : Perfil.desdeJson(fila);
   }
 
   Future<Perfil> perfilDe(String id) async {
-    final fila = await _cliente
-        .from('profiles')
-        .select(
-          'id, username, display_name, avatar_url, bio, onboarded, '
-          'reputation, ratings_count, instagram, city, is_moderator',
-        )
-        .eq('id', id)
-        .single();
+    final fila = await leerPerfil(_cliente, id);
+    if (fila == null) throw const ErrorPrevia('Ese perfil no existe.');
     return Perfil.desdeJson(fila);
   }
 
@@ -245,7 +263,10 @@ class RepositorioAuth {
     String? avatarUrl,
     DateTime? fechaNacimiento,
     String? instagram,
+    String? tiktok,
+    String? xUsuario,
     String? ciudad,
+    String? username,
   }) async {
     final id = usuarioActual?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');

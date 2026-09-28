@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'tema.dart';
 
@@ -269,4 +270,125 @@ class Cargando extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Pastillas con un fondo que se desliza a la elegida.
+///
+/// El fondo se mueve en vez de aparecer: asi se ve de donde viene y a donde
+/// va, que es lo que dice "esto es un interruptor" sin tener que leerlo.
+class Conmutador extends StatelessWidget {
+  const Conmutador({
+    super.key,
+    required this.opciones,
+    required this.elegida,
+    required this.onElegir,
+    this.pendientes,
+  });
+
+  final List<String> opciones;
+  final int elegida;
+  final ValueChanged<int> onElegir;
+
+  /// Un contador por opcion; cero no se pinta.
+  final List<int>? pendientes;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    final reducido = MovimientoPrevia.reducido(context);
+    final n = opciones.length;
+
+    Widget opcion(int i) {
+      final activa = i == elegida;
+      final cuantos = pendientes == null ? 0 : pendientes![i];
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: activa,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              if (i == elegida) return;
+              HapticFeedback.selectionClick();
+              onElegir(i);
+            },
+            child: SizedBox(
+              height: 44,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: AnimatedDefaultTextStyle(
+                      duration: MovimientoPrevia.rapido,
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                        fontSize: 14,
+                        color: activa ? c.sobrePrimario : c.textoSuave,
+                      ),
+                      child: Text(
+                        opciones[i].toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  if (cuantos > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: activa ? c.sobrePrimario : c.error,
+                        borderRadius: BorderRadius.circular(
+                          EspaciadoPrevia.pastilla,
+                        ),
+                      ),
+                      child: Text(
+                        cuantos > 9 ? '9+' : '$cuantos',
+                        style: TextStyle(
+                          color: activa ? c.primario : Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: c.superficieAlta,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+      ),
+      child: Stack(
+        children: [
+          AnimatedAlign(
+            alignment: Alignment(n == 1 ? 0 : -1 + 2 * elegida / (n - 1), 0),
+            duration: reducido ? Duration.zero : MovimientoPrevia.normal,
+            curve: MovimientoPrevia.curva,
+            child: FractionallySizedBox(
+              widthFactor: 1 / n,
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: c.primario,
+                  borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+                ),
+              ),
+            ),
+          ),
+          Row(children: [for (var i = 0; i < n; i++) opcion(i)]),
+        ],
+      ),
+    );
+  }
 }

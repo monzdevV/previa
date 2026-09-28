@@ -131,6 +131,8 @@ class PerfilPublico {
     this.bio,
     this.ciudad,
     this.instagram,
+    this.tiktok,
+    this.xUsuario,
     this.esDemo = false,
     this.seguidores = 0,
     this.siguiendo = 0,
@@ -140,6 +142,8 @@ class PerfilPublico {
   final String? bio;
   final String? ciudad;
   final String? instagram;
+  final String? tiktok;
+  final String? xUsuario;
 
   /// Perfil sembrado para la demostracion. Se avisa en pantalla para que
   /// nadie confunda un ejemplo con una persona real.
