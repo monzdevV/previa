@@ -128,8 +128,32 @@ del nombre. Fuera del juego, los emojis los pone la gente, no la interfaz.
 - **Ficha del objetivo de un reto.** Avatar de 120 px con anillo amarillo,
   nombre, usuario y biografía. En un local lleno el nombre solo no sirve
   para encontrar a nadie.
-- **Barra inferior.** Cuatro iconos sin etiqueta; la pestaña activa se
-  rellena y lleva un punto amarillo debajo.
+- **Barra inferior.** Cápsula de vidrio flotante con cinco pestañas con
+  etiqueta corta. En el centro, un disco amarillo con la pregunta escrita,
+  "¿VAS?": es el único amarillo de la barra. La pestaña "Tú" lleva tu cara.
+- **Una acción arriba.** Cada pestaña tiene como mucho un control en la
+  cabecera: el "+" de crear, buscar gente, el engranaje, la ciudad o la
+  pastilla de filtros del mapa.
+- **Vidrio** (`Cristal`, `BotonCristal`, `PastillaCristal` en
+  `lib/app/cristal.dart`). Solo para lo que flota sobre foto o mapa: la
+  barra, los controles del mapa y sus tarjetas. Sobre el fondo negro no
+  aporta nada. Con "más contraste" en el sistema se vuelve opaco.
+- **Hojas.** Todas se abren con `mostrarHoja`: mismo asa, misma forma, zona
+  segura respetada.
+- **Caras.** `AvatarPerfil` sin foto toma el bloque de color de esa persona
+  con la inicial en Rubik; `PilaDeCaras` solapa caras para decir "va gente"
+  antes de leer un número.
+- **¿Vas?** Cada local es un cartel de color con el nombre enorme, las caras
+  de quien va y la pastilla "¿VAS?". Al apuntarte salta una pegatina y tu
+  cara entra en la pila; en los locales a los que vas se pega el sticker de
+  No hay 🥚, como un sello.
+- **Calendario social.** Mes en rejilla que empieza en lunes; cada noche es
+  su foto (o el bloque del sitio con su inicial). Se desliza de mes en mes y
+  cada día abre su noche en una hoja.
+- **Conmutador.** Pastillas con un fondo amarillo que se desliza a la
+  elegida (buzón, fotos del perfil).
+- **Estados vacíos.** `EstadoVacio`: pegatina, titular y, si hay algo que
+  hacer, el botón que lo hace. `Cargando` para cuando no se sabe la forma.
 - **Avisos flotantes.** `SnackBar` flotante con borde y radio 16, separado del filo.
 
 ## Privacidad visible

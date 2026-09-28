@@ -8,12 +8,24 @@ que releer medio proyecto para entenderlo.
 Red social de proximidad para salir de fiesta. TFG de 2º de DAM, entrega en
 junio de 2026. La idea: que la gente deje de salir siempre con los mismos.
 
-Cuatro pestañas:
+Cinco pestañas en una barra de vidrio que flota sobre el contenido
+(`lib/features/map/pantalla_inicio.dart`), y **una sola acción arriba** por
+pantalla:
 
-1. **Feed** — la noche contada en fotos y vídeos. Es la pantalla de entrada.
-2. **Mapa** — previas con plazas libres cerca de ti, pides plaza y te aceptan.
-3. **Noche** — a qué discoteca va la gente esta noche, y su entrada.
-4. **Perfil** — el tuyo, tus noches, tus solicitudes y los ajustes.
+1. **Inicio** — el feed, la noche contada en fotos y vídeos. Arriba, el "+"
+   abre la hoja de crear (subir foto o abrir previa).
+2. **Mapa** — previas cerca: una pastilla arriba (resumen y filtros) y un
+   carrusel de tarjetas atado al mapa.
+3. **¿Vas?** — en el centro. Quién va esta noche a cada local; un toque es
+   "voy", toque largo para quizá, más tarde o estoy aquí.
+4. **Buzón** — mensajes y avisos juntos. Arriba, buscar gente.
+5. **Tú** — tu perfil: foto, redes, calendario social y fotos. Arriba, el
+   engranaje de Ajustes, donde vive todo lo secundario (solicitudes, valorar,
+   moderación, tema, juego, privacidad, datos, borrar cuenta y salir).
+
+El registro pide solo nombre, fecha de nacimiento y correo con contraseña;
+el nombre de usuario se genera solo y se cambia en Editar perfil. El perfil
+recuerda lo que falta con la tarjeta "Completa tu perfil".
 
 Alrededor: perfiles públicos, seguir gente, código QR, buscador y mensajes
 directos.
@@ -135,6 +147,14 @@ amarillo.
 
 ## Pendiente, por orden
 
+00. **Aplicar la migración `supabase/migrations/20260928120000_vas_y_redes.sql`**
+   (no se pudo aplicar desde la sesión que la escribió). Añade los estados de
+   "¿Vas?" (`venue_plans.status`, tabla `venue_maybes`, RPC `decir_si_voy`,
+   caras en `locales_de_la_noche`) y las columnas `tiktok` y `x_handle` del
+   perfil. **La app funciona sin ella**: "quizá" avisa de que falta y TikTok/X
+   no se guardan. Tras aplicarla, conviene añadir sus pruebas a
+   `supabase/tests/`.
+
 0. **Poner la clave de la IA**: `npx supabase secrets set ANTHROPIC_API_KEY=...
    --project-ref bfqzabpgtehncnbxtslg`. Sin ella los retos salen de la lista
    de reserva de `reto.ts`.
@@ -150,6 +170,22 @@ amarillo.
 5. Login con Google y caducidad automática de previas.
 
 ## Cosas que te van a morder
+
+- **"Quizá" no es ir.** Vive en `venue_maybes`, no en `venue_plans`, a
+  propósito: el juego, la sala y el calendario leen `venue_plans` como "va" y
+  no tienen que acordarse de descontar nada. Se escribe siempre con
+  `decir_si_voy`, que cambia de tabla en una transacción.
+- El cliente tolera el servidor con y sin la migración `vas_y_redes`: la
+  lectura del perfil (`leerPerfil` en `repositorio_auth.dart`) reintenta sin
+  `tiktok`/`x_handle` si Postgres responde 42703, y `decirSiVoy` cae al
+  insert/delete de antes si no existe la RPC (PGRST202). Cuando la migración
+  esté aplicada en todas partes, esos dos atajos se pueden quitar.
+- El calendario social (`repositorio_calendario.dart`) se arma con lecturas
+  normales de `venue_plans` y `posts`: hereda los bloqueos de sus políticas.
+  No hagas una función `security definer` para él sin repetir esa regla.
+- Las pestañas principales tienen la barra flotando encima: lo que desplaza
+  en ellas termina con `context.holguraInferior` o el último elemento queda
+  tapado.
 
 - Las migraciones de la parte social **se aplicaron directamente al proyecto
   remoto** y no están en `supabase/migrations/`. Para bajarlas:

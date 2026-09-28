@@ -370,4 +370,21 @@ void main() {
       matchesGoldenFile('goldens/locales.png'),
     );
   });
+
+  testWidgets('las cinco pestañas caben en un movil pequeño sin desbordar', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(_app(const PantallaInicio(), margen: margenAndroid));
+    await _asentar(tester);
+
+    for (final pestana in ['Mapa', '¿Vas? Quién sale esta noche', 'Buzón', 'Tú', 'Inicio']) {
+      await tester.tap(find.bySemanticsLabel(pestana));
+      await _asentar(tester);
+      expect(tester.takeException(), isNull, reason: 'Desborda en $pestana');
+    }
+  });
 }
