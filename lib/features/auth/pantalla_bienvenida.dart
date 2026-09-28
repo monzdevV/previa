@@ -5,12 +5,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
+import 'piezas_acceso.dart';
 
 /// La entrada: un cartel amarillo a sangre.
 ///
 /// Es la unica pantalla donde el amarillo es el fondo entero. Aqui aun no hay
 /// contenido de nadie que pueda perder protagonismo, y el primer golpe de
 /// vista tiene que decir "esto es la noche", no "esto es un formulario".
+///
+/// Un titular, una frase y un boton. Todo lo que se explicaba aqui antes se
+/// entiende mejor dentro de la app que leido en la puerta.
 class PantallaBienvenida extends StatelessWidget {
   const PantallaBienvenida({super.key});
 
@@ -28,6 +32,20 @@ class PantallaBienvenida extends StatelessWidget {
               .fadeIn(duration: MovimientoPrevia.normal)
               .moveY(begin: 24, end: 0, curve: MovimientoPrevia.curva);
 
+    // Las pegatinas caen despues del titular y con un pequeño rebote: es lo
+    // unico de la pantalla que se permite jugar.
+    Widget pegar(Widget hijo, int orden) => reducido
+        ? hijo
+        : hijo
+              .animate(delay: MovimientoPrevia.escalon * (orden * 2))
+              .fadeIn(duration: MovimientoPrevia.rapido)
+              .scaleXY(
+                begin: 0.6,
+                end: 1,
+                duration: MovimientoPrevia.normal,
+                curve: Curves.easeOutBack,
+              );
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       // Iconos de la barra de estado en negro sobre el amarillo.
       value: SystemUiOverlayStyle.dark,
@@ -44,13 +62,7 @@ class PantallaBienvenida extends StatelessWidget {
                   EspaciadoPrevia.l,
                   0,
                 ),
-                child: Row(
-                  children: [
-                    Titular('Previa', tamano: 26, color: _tinta),
-                    Spacer(),
-                    Titular('¿Salimos?', tamano: 16, color: _tinta),
-                  ],
-                ),
+                child: Titular('Previa', tamano: 26, color: _tinta),
               ),
 
               Expanded(
@@ -66,36 +78,31 @@ class PantallaBienvenida extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: entrar(
-                            const Titular(
-                              'La noche\nempieza\nantes',
-                              tamano: 76,
-                              color: _tinta,
+                            Semantics(
+                              header: true,
+                              child: const Titular(
+                                'La noche\nempieza\nantes',
+                                tamano: 80,
+                                color: _tinta,
+                              ),
                             ),
                             1,
                           ),
                         ),
                       ),
                       Positioned(
-                        top: EspaciadoPrevia.xl,
+                        top: EspaciadoPrevia.l,
                         right: 0,
-                        child: entrar(
+                        child: pegar(
                           const Pegatina('🌙', tamano: 64, giro: 0.3),
-                          2,
-                        ),
-                      ),
-                      Positioned(
-                        bottom: EspaciadoPrevia.xl,
-                        right: EspaciadoPrevia.l,
-                        child: entrar(
-                          const Pegatina('🥚', tamano: 56, giro: -0.25),
                           3,
                         ),
                       ),
                       Positioned(
-                        bottom: EspaciadoPrevia.s,
-                        left: 0,
-                        child: entrar(
-                          const Pegatina('✨', tamano: 40, giro: 0.1),
+                        bottom: EspaciadoPrevia.l,
+                        right: EspaciadoPrevia.m,
+                        child: pegar(
+                          const Pegatina('🥚', tamano: 56, giro: -0.25),
                           4,
                         ),
                       ),
@@ -119,41 +126,44 @@ class PantallaBienvenida extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Encuentra previas con sitio cerca, di a qué local vas '
-                      'y conoce gente antes de salir.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: _tinta,
-                        fontWeight: FontWeight.w500,
+                    entrar(
+                      Text(
+                        'Previas con sitio y gente con la que salir, '
+                        'esta misma noche.',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: _tinta,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          height: 1.35,
+                        ),
                       ),
+                      2,
                     ),
                     const SizedBox(height: EspaciadoPrevia.l),
-                    FilledButton(
+                    BotonAcceso(
+                      texto: 'Empezar',
+                      fondo: _tinta,
+                      tinta: _amarillo,
                       onPressed: () => context.push(Rutas.registro),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _tinta,
-                        foregroundColor: _amarillo,
-                      ),
-                      child: const Text('CREAR CUENTA'),
                     ),
-                    const SizedBox(
-                      height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-                    ),
-                    OutlinedButton(
+                    const SizedBox(height: EspaciadoPrevia.xs),
+                    TextButton(
                       onPressed: () => context.push(Rutas.entrar),
-                      style: OutlinedButton.styleFrom(
+                      style: TextButton.styleFrom(
                         foregroundColor: _tinta,
-                        side: const BorderSide(color: _tinta, width: 2),
+                        minimumSize: const Size.fromHeight(48),
+                        textStyle: Theme.of(context).textTheme.labelLarge,
                       ),
-                      child: const Text('YA TENGO CUENTA'),
+                      child: const Text('Ya tengo cuenta'),
                     ),
-                    const SizedBox(height: EspaciadoPrevia.m),
+                    const SizedBox(height: EspaciadoPrevia.xs),
                     Text(
-                      'Solo para mayores de 18 · Tu ubicación exacta nunca es pública',
+                      'Solo para mayores de 18',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: _tinta.withValues(alpha: .7),
+                        fontWeight: FontWeight.w500,
+                        color: _tinta.withValues(alpha: .65),
                       ),
                     ),
                     const SizedBox(height: EspaciadoPrevia.m),

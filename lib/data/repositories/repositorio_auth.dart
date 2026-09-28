@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -56,10 +59,18 @@ class RepositorioAuth {
   /// `handle_new_user` crea el perfil con ella, y otro disparador rechaza
   /// a los menores de 18. La comprobacion de aqui solo sirve para dar un
   /// mensaje inmediato; la que manda es la del servidor.
-  Future<void> registrar({
+  ///
+  /// Devuelve si ya hay sesion. Con la confirmacion por correo activada en
+  /// Supabase no la hay hasta pulsar el enlace, y la pantalla tiene que
+  /// decirlo en vez de mandar a un inicio que rebota al login sin explicar.
+  ///
+  /// El nombre de usuario ya no se pide: es la pregunta que mas gente
+  /// abandona en un registro ("ese ya esta cogido") y no hace falta para
+  /// entrar. Se inventa a partir del nombre y se cambia luego en el perfil.
+  /// Si choca con uno existente se reintenta con otro sufijo sin molestar.
+  Future<bool> registrar({
     required String correo,
     required String contrasena,
-    required String username,
     required String nombre,
     required DateTime fechaNacimiento,
   }) async {
@@ -67,19 +78,94 @@ class RepositorioAuth {
       throw const ErrorPrevia('Previa es solo para mayores de 18 años.');
     }
 
+    const intentos = 3;
+    for (var intento = 1; ; intento++) {
+      try {
+        final respuesta = await _cliente.auth.signUp(
+          email: correo.trim(),
+          password: contrasena,
+          data: {
+            'username': usernameDesde(nombre),
+            'display_name': nombre.trim(),
+            'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
+          },
+        );
+        return respuesta.session != null;
+      } on AuthException catch (e) {
+        if (intento < intentos && _esUsernameCogido(e.message)) continue;
+        throw ErrorPrevia(_traducir(e.message));
+      }
+    }
+  }
+
+  /// Vuelve a mandar el enlace de confirmacion del registro.
+  Future<void> reenviarConfirmacion(String correo) async {
     try {
-      await _cliente.auth.signUp(
-        email: correo.trim(),
-        password: contrasena,
-        data: {
-          'username': username.trim().toLowerCase(),
-          'display_name': nombre.trim(),
-          'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
-        },
-      );
+      await _cliente.auth.resend(type: OtpType.signup, email: correo.trim());
     } on AuthException catch (e) {
       throw ErrorPrevia(_traducir(e.message));
     }
+  }
+
+  /// Un nombre de usuario valido para la restriccion de `profiles`
+  /// (`^[a-z0-9_]+$`, de 3 a 20) sacado del nombre que ha escrito la persona.
+  ///
+  /// El sufijo de cuatro cifras hace que el choque sea raro sin tener que
+  /// preguntar antes al servidor, que obligaria a abrir la tabla de perfiles
+  /// a quien aun no tiene cuenta.
+  @visibleForTesting
+  static String usernameDesde(String nombre, {Random? azar}) {
+    const tildes = {
+      'á': 'a',
+      'à': 'a',
+      'ä': 'a',
+      'â': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ë': 'e',
+      'ê': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'ï': 'i',
+      'î': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ö': 'o',
+      'ô': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'ü': 'u',
+      'û': 'u',
+      'ñ': 'n',
+      'ç': 'c',
+    };
+    final limpio = nombre
+        .trim()
+        .toLowerCase()
+        .split('')
+        .map((letra) => tildes[letra] ?? letra)
+        .join()
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    // Sin nada aprovechable (un nombre solo de emojis, por ejemplo) se usa
+    // la marca en lugar de dejar un usuario que sea solo numeros.
+    final base = limpio.isEmpty ? 'previa' : limpio;
+    final sufijo = 1000 + (azar ?? Random()).nextInt(9000);
+    final corte = base.length > 16 ? base.substring(0, 16) : base;
+    return '$corte$sufijo';
+  }
+
+  /// Supabase no deja pasar el texto de los disparadores: un choque en el
+  /// `unique` de `username` llega como "Database error saving new user".
+  /// El de menores de edad llega igual, pero la edad ya se ha comprobado
+  /// antes de llamar, asi que aqui solo puede ser el usuario repetido.
+  static bool _esUsernameCogido(String mensaje) {
+    final m = mensaje.toLowerCase();
+    return m.contains('duplicate') ||
+        m.contains('username') ||
+        m.contains('database error saving new user');
   }
 
   Future<void> entrar({
@@ -180,8 +266,7 @@ class RepositorioAuth {
         'instagram': instagram.trim().replaceAll('@', '').isEmpty
             ? null
             : instagram.trim().replaceAll('@', ''),
-      if (ciudad != null)
-        'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
+      if (ciudad != null) 'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
     };
     if (cambios.isEmpty) return;
 
@@ -216,6 +301,10 @@ class RepositorioAuth {
     final m = mensaje.toLowerCase();
     if (m.contains('invalid login')) {
       return 'Correo o contraseña incorrectos.';
+    }
+    if (m.contains('email not confirmed')) {
+      return 'Aún no has confirmado tu correo. Busca el enlace en tu bandeja '
+          '(mira también en spam).';
     }
     if (m.contains('already registered') ||
         m.contains('already been registered')) {
