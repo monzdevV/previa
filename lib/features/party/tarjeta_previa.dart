@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../profile/avatar_previa.dart';
 
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
@@ -90,19 +91,12 @@ class TarjetaPrevia extends StatelessWidget {
               const SizedBox(height: EspaciadoPrevia.m),
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor: ColoresPrevia.superficieAlta,
-                    child: Text(
-                      previa.anfitrionNombre.isNotEmpty
-                          ? previa.anfitrionNombre[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: ColoresPrevia.texto,
-                      ),
-                    ),
+                  AvatarPrevia(
+                    iniciales: previa.anfitrionNombre.isNotEmpty
+                        ? previa.anfitrionNombre[0].toUpperCase()
+                        : '?',
+                    url: previa.anfitrionAvatar,
+                    radio: 12,
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
                   Expanded(

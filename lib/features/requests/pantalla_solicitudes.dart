@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../profile/avatar_previa.dart';
 
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
@@ -175,16 +176,10 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
-                  child: Text(
-                    s.inicialSolicitante,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
-                    ),
-                  ),
+                AvatarPrevia(
+                  iniciales: s.inicialSolicitante,
+                  url: s.avatarSolicitante,
+                  radio: 20,
                 ),
                 const SizedBox(width: EspaciadoPrevia.m),
                 Expanded(

@@ -7,6 +7,7 @@ import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
 import '../party/tarjeta_previa.dart';
+import 'avatar_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
   const PantallaPerfil({super.key});
@@ -42,17 +43,10 @@ class PantallaPerfil extends ConsumerWidget {
                   style: textos.bodyMedium),
               data: (p) => Row(
                 children: [
-                  CircleAvatar(
-                    radius: 32,
-                    backgroundColor: ColoresPrevia.primario,
-                    child: Text(
-                      p?.iniciales ?? '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 22,
-                      ),
-                    ),
+                  AvatarPrevia(
+                    iniciales: p?.iniciales ?? '?',
+                    url: p?.avatarUrl,
+                    radio: 32,
                   ),
                   const SizedBox(width: EspaciadoPrevia.m),
                   Expanded(

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -132,6 +134,7 @@ class RepositorioAuth {
     String? nombre,
     String? bio,
     String? avatarUrl,
+    bool quitarAvatar = false,
     DateTime? fechaNacimiento,
   }) async {
     final id = usuarioActual?.id;
@@ -144,13 +147,48 @@ class RepositorioAuth {
     final cambios = <String, dynamic>{
       if (nombre != null) 'display_name': nombre.trim(),
       if (bio != null) 'bio': bio.trim(),
-      'avatar_url': ?avatarUrl,
+      // null en un campo opcional significa "no tocar"; para borrar la foto
+      // hace falta pedirlo de forma explicita.
+      if (quitarAvatar) 'avatar_url': null else 'avatar_url': ?avatarUrl,
       if (fechaNacimiento != null)
         'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
     };
     if (cambios.isEmpty) return;
 
     await _cliente.from('profiles').update(cambios).eq('id', id);
+  }
+
+  /// Sube la foto de perfil y devuelve su URL publica.
+  ///
+  /// Siempre se escribe en la misma ruta (`<uid>/foto`): asi cada persona
+  /// ocupa un unico fichero y no quedan fotos antiguas huerfanas. Como la
+  /// URL no cambia, se le anade la hora para saltarse la cache del
+  /// dispositivo y de la CDN cuando se sube una foto nueva.
+  Future<String> subirAvatar(Uint8List bytes, String tipoMime) async {
+    final id = usuarioActual?.id;
+    if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
+
+    final ruta = '$id/foto';
+    try {
+      await _cliente.storage.from('avatars').uploadBinary(
+            ruta,
+            bytes,
+            fileOptions: FileOptions(contentType: tipoMime, upsert: true),
+          );
+    } on StorageException catch (e) {
+      throw ErrorPrevia(e.statusCode == '413'
+          ? 'La foto pesa demasiado. Elige una de menos de 2 MB.'
+          : 'No se ha podido subir la foto. Inténtalo de nuevo.');
+    }
+
+    final url = _cliente.storage.from('avatars').getPublicUrl(ruta);
+    return '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+  }
+
+  Future<void> borrarAvatar() async {
+    final id = usuarioActual?.id;
+    if (id == null) return;
+    await _cliente.storage.from('avatars').remove(['$id/foto']);
   }
 
   /// RGPD, articulos 15 y 20: derecho de acceso y portabilidad.

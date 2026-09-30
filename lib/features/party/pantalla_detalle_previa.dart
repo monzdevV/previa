@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import '../profile/avatar_previa.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
@@ -180,18 +181,12 @@ class _Contenido extends ConsumerWidget {
         const SizedBox(height: EspaciadoPrevia.m),
         Row(
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: ColoresPrevia.superficieAlta,
-              child: Text(
-                previa.anfitrionNombre.isNotEmpty
-                    ? previa.anfitrionNombre[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: ColoresPrevia.texto,
-                ),
-              ),
+            AvatarPrevia(
+              iniciales: previa.anfitrionNombre.isNotEmpty
+                  ? previa.anfitrionNombre[0].toUpperCase()
+                  : '?',
+              url: previa.anfitrionAvatar,
+              radio: 22,
             ),
             const SizedBox(width: EspaciadoPrevia.m),
             Expanded(

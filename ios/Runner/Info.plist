@@ -68,6 +68,8 @@
 	</array>
 	<!-- Este texto es lo que iOS enseña al pedir el permiso.
 	     Conviene que explique el para qué, no solo el qué. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Previa necesita acceder a tus fotos solo para que elijas tu foto de perfil.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Previa usa tu ubicación para enseñarte previas cerca de ti. Nunca la compartimos con nadie ni la guardamos.</string>
 </dict>
