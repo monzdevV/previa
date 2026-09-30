@@ -7,6 +7,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../party/estados_pantalla.dart';
 
 final misSolicitudesProvider = FutureProvider<List<Solicitud>>(
   (ref) => ref.watch(repositorioPreviasProvider).misSolicitudes(),
@@ -19,41 +20,31 @@ class PantallaMisSolicitudes extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final solicitudes = ref.watch(misSolicitudesProvider);
-    final textos = Theme.of(context).textTheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mis solicitudes')),
       body: solicitudes.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se han podido cargar tus solicitudes.',
-                style: textos.bodyMedium),
-          ),
+        loading: () => const IndicadorCarga(),
+        error: (e, _) => EstadoError(
+          mensaje: 'No se han podido cargar tus solicitudes',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () => ref.invalidate(misSolicitudesProvider),
         ),
         data: (lista) {
           if (lista.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(EspaciadoPrevia.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.waving_hand_outlined,
-                        size: 40, color: ColoresPrevia.textoTenue),
-                    const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Todavía no has pedido plaza',
-                        style: textos.titleLarge, textAlign: TextAlign.center),
-                    const SizedBox(height: EspaciadoPrevia.xs),
-                    Text(
-                      'Busca una previa en el mapa y pide sitio para tu grupo.',
-                      textAlign: TextAlign.center,
-                      style: textos.bodyMedium,
-                    ),
-                  ],
+            return EstadoVacio(
+              icono: Icons.waving_hand_outlined,
+              titulo: 'Todavía no has pedido plaza',
+              detalle: 'Busca una previa en el mapa y pide sitio para tu grupo.',
+              acciones: [
+                FilledButton.icon(
+                  // La pantalla se abre con push desde el perfil: go a la raíz
+                  // lleva al mapa, que es donde se encuentra una previa.
+                  onPressed: () => context.go(Rutas.inicio),
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('Buscar previas en el mapa'),
                 ),
-              ),
+              ],
             );
           }
 
@@ -139,7 +130,7 @@ class _Tarjeta extends ConsumerWidget {
                       etiqueta,
                       style: TextStyle(
                         color: color,
-                        fontSize: 11,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -148,17 +139,26 @@ class _Tarjeta extends ConsumerWidget {
               ),
 
               const SizedBox(height: EspaciadoPrevia.xs),
+              // Iconos en lugar de emojis: un lector de pantalla leería
+              // "chincheta roja", "reloj", "personas" en medio de la frase.
               Wrap(
                 spacing: EspaciadoPrevia.m,
+                runSpacing: EspaciadoPrevia.xs,
                 children: [
                   if (solicitud.zonaPrevia != null)
-                    Text('📍 ${solicitud.zonaPrevia}', style: textos.bodyMedium),
+                    _Dato(Icons.place_outlined, solicitud.zonaPrevia!),
                   if (empieza != null)
-                    Text(
-                      '🕐 ${DateFormat("d MMM · HH:mm", "es_ES").format(empieza)}',
-                      style: textos.bodyMedium,
+                    _Dato(
+                      Icons.schedule,
+                      DateFormat("d MMM · HH:mm", "es_ES").format(empieza),
                     ),
-                  Text('👥 ${solicitud.tamanoGrupo}', style: textos.bodyMedium),
+                  _Dato(
+                    Icons.group_outlined,
+                    '${solicitud.tamanoGrupo}',
+                    leer: solicitud.tamanoGrupo == 1
+                        ? 'Grupo de 1 persona'
+                        : 'Grupo de ${solicitud.tamanoGrupo} personas',
+                  ),
                 ],
               ),
 
@@ -172,9 +172,23 @@ class _Tarjeta extends ConsumerWidget {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () async {
-                      await ref
-                          .read(repositorioPreviasProvider)
-                          .cancelarSolicitud(solicitud.id);
+                      final mensajero = ScaffoldMessenger.of(context);
+                      try {
+                        await ref
+                            .read(repositorioPreviasProvider)
+                            .cancelarSolicitud(solicitud.id);
+                      } catch (_) {
+                        // Antes una excepción aquí no se veía: el usuario
+                        // creía haber cancelado y la solicitud seguía viva.
+                        mensajero.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No se ha podido cancelar. Inténtalo de nuevo.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
                       ref.invalidate(misSolicitudesProvider);
                     },
                     child: const Text('Cancelar solicitud'),
@@ -185,6 +199,37 @@ class _Tarjeta extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Dato breve con icono (zona, hora, tamaño del grupo).
+class _Dato extends StatelessWidget {
+  const _Dato(this.icono, this.texto, {this.leer});
+
+  final IconData icono;
+  final String texto;
+
+  /// Frase alternativa para el lector cuando el texto solo ("3") no basta.
+  final String? leer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ExcludeSemantics(
+          child: Icon(icono, size: 14, color: ColoresPrevia.textoSuave),
+        ),
+        const SizedBox(width: EspaciadoPrevia.xs),
+        Flexible(
+          child: Text(
+            texto,
+            semanticsLabel: leer,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 }

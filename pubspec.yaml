@@ -42,12 +42,18 @@ dependencies:
   # Imagenes de perfil con cache.
   cached_network_image: ^3.4.1
   image_picker: ^1.2.3
-
+  share_plus: ^13.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^6.0.0
+
+  # Iconos de la app y pantalla de arranque (config al final del fichero;
+  # regenerar con `dart run flutter_launcher_icons` y
+  # `dart run flutter_native_splash:create`).
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.6
 
 flutter:
   uses-material-design: true
@@ -56,3 +62,28 @@ flutter:
     - .env
     - assets/images/
     - assets/icons/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#0B0B12"
+  adaptive_icon_foreground: "assets/images/icon_foreground.png"
+  adaptive_icon_monochrome: "assets/images/icon_foreground.png"
+  web:
+    generate: true
+    image_path: "assets/images/icon.png"
+    background_color: "#0B0B12"
+    theme_color: "#0B0B12"
+
+flutter_native_splash:
+  color: "#0B0B12"
+  image: assets/images/splash.png
+  color_dark: "#0B0B12"
+  image_dark: assets/images/splash.png
+  android_12:
+    color: "#0B0B12"
+    image: assets/images/icon_foreground.png
+    icon_background_color: "#0B0B12"
+  web: false

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../party/estados_pantalla.dart';
 
 final companerosProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>(
@@ -36,25 +37,18 @@ class PantallaValorar extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(titulo ?? 'Valorar')),
       body: companeros.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se ha podido cargar quién fue.',
-                style: textos.bodyMedium),
-          ),
+        loading: () => const IndicadorCarga(),
+        error: (e, _) => EstadoError(
+          mensaje: 'No se ha podido cargar quién fue',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () => ref.invalidate(companerosProvider(previaId)),
         ),
         data: (lista) {
           if (lista.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(EspaciadoPrevia.xl),
-                child: Text(
-                  'No hay nadie más a quien valorar en esta previa.',
-                  textAlign: TextAlign.center,
-                  style: textos.bodyMedium,
-                ),
-              ),
+            return const EstadoVacio(
+              icono: Icons.group_outlined,
+              titulo: 'Nadie más a quien valorar',
+              detalle: 'No hay nadie más a quien valorar en esta previa.',
             );
           }
 
@@ -149,6 +143,12 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
       );
     } on ErrorPrevia catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } catch (_) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido guardar. Inténtalo de nuevo.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _guardando = false);
     }
@@ -166,16 +166,20 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: ColoresPrevia.superficieAlta,
-                  child: Text(
-                    widget.nombre.isNotEmpty
-                        ? widget.nombre[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: ColoresPrevia.texto,
+                // Decorativo: el nombre está justo al lado, leer también la
+                // inicial sería redundante.
+                ExcludeSemantics(
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundColor: ColoresPrevia.superficieAlta,
+                    child: Text(
+                      widget.nombre.isNotEmpty
+                          ? widget.nombre[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: ColoresPrevia.texto,
+                      ),
                     ),
                   ),
                 ),
@@ -201,8 +205,14 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
               children: [
                 for (var i = 1; i <= 5; i++)
                   IconButton(
+                    // Una estrella sin etiqueta es un botón mudo; el tooltip
+                    // es además su nombre para el lector. 48 dp de objetivo.
+                    tooltip: i == 1
+                        ? '1 estrella para ${widget.nombre}'
+                        : '$i estrellas para ${widget.nombre}',
+                    isSelected: (_puntuacion ?? 0) >= i,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
                     onPressed: () => setState(() {
                       _puntuacion = i;
                       _guardada = false;
@@ -235,7 +245,7 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
               const SizedBox(height: EspaciadoPrevia.s),
               FilledButton(
                 onPressed: _guardando ? null : _guardar,
-                style: FilledButton.styleFrom(minimumSize: const Size(0, 46)),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                 child: _guardando
                     ? const SizedBox(
                         width: 20,
@@ -243,6 +253,7 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
                           color: Colors.white,
+                          semanticsLabel: 'Guardando',
                         ),
                       )
                     : const Text('Guardar valoración'),

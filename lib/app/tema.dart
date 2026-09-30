@@ -28,9 +28,20 @@ abstract final class ColoresPrevia {
   /// Texto.
   static const texto = Color(0xFFF2F2F7);
   static const textoSuave = Color(0xFFA0A0B2);
-  static const textoTenue = Color(0xFF6C6C80);
 
+  /// Texto secundario (pistas, notas al pie). Antes era #6C6C80 (~3,5:1 sobre
+  /// las superficies, suspende AA); #8A8AA0 da >=4,5:1 sobre fondo, superficie
+  /// y superficieAlta y sigue leyéndose como "apagado" frente a textoSuave.
+  static const textoTenue = Color(0xFF8A8AA0);
+
+  /// Bordes DECORATIVOS (tarjetas, separadores): casi invisibles a propósito.
+  /// No usar en controles interactivos, para eso está [bordeCampo].
   static const borde = Color(0xFF2A2A38);
+
+  /// Borde de componentes de interfaz (campos de texto, chips, botones con
+  /// contorno). WCAG 1.4.11 exige >=3:1 frente al fondo contiguo; #6C6C80
+  /// lo cumple sobre fondo y sobre superficie sin romper lo oscuro del tema.
+  static const bordeCampo = Color(0xFF6C6C80);
 }
 
 abstract final class EspaciadoPrevia {
@@ -65,6 +76,10 @@ ThemeData construirTemaPrevia() {
     colorScheme: esquema,
     scaffoldBackgroundColor: ColoresPrevia.fondo,
     fontFamily: fuente,
+    // Explícitos para que un cambio futuro del tema no encoja los objetivos
+    // táctiles sin darnos cuenta.
+    materialTapTargetSize: MaterialTapTargetSize.padded,
+    visualDensity: VisualDensity.standard,
 
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
@@ -128,7 +143,7 @@ ThemeData construirTemaPrevia() {
       style: OutlinedButton.styleFrom(
         foregroundColor: ColoresPrevia.texto,
         minimumSize: const Size.fromHeight(54),
-        side: const BorderSide(color: ColoresPrevia.borde),
+        side: const BorderSide(color: ColoresPrevia.bordeCampo),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
         ),
@@ -137,7 +152,21 @@ ThemeData construirTemaPrevia() {
     ),
 
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: ColoresPrevia.primarioSuave),
+      style: TextButton.styleFrom(
+        foregroundColor: ColoresPrevia.primarioSuave,
+        // Objetivo táctil mínimo de 48 dp (WCAG 2.5.5 / guía de Material).
+        minimumSize: const Size(64, 48),
+      ),
+    ),
+
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+    ),
+
+    // El FAB pequeño de Material mide 40 dp; se sube a 48 para el botón
+    // "Mi posición" sin cambiar su aspecto de botón secundario.
+    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      smallSizeConstraints: BoxConstraints.tightFor(width: 48, height: 48),
     ),
 
     inputDecorationTheme: InputDecorationTheme(
@@ -149,13 +178,15 @@ ThemeData construirTemaPrevia() {
       ),
       hintStyle: const TextStyle(color: ColoresPrevia.textoTenue),
       labelStyle: const TextStyle(color: ColoresPrevia.textoSuave),
+      // Borde con contraste >=3:1 (WCAG 1.4.11): sin él el campo vacío no
+      // se distingue del fondo para quien tiene baja visión.
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.borde),
+        borderSide: const BorderSide(color: ColoresPrevia.bordeCampo),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.borde),
+        borderSide: const BorderSide(color: ColoresPrevia.bordeCampo),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
@@ -174,7 +205,7 @@ ThemeData construirTemaPrevia() {
         fontSize: 13,
         fontWeight: FontWeight.w600,
       ),
-      side: const BorderSide(color: ColoresPrevia.borde),
+      side: const BorderSide(color: ColoresPrevia.bordeCampo),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
       ),

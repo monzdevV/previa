@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../party/estados_pantalla.dart';
+import 'validadores.dart';
 
 class PantallaEntrar extends ConsumerStatefulWidget {
   const PantallaEntrar({super.key});
@@ -64,7 +66,10 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Bienvenida de vuelta', style: textos.headlineMedium),
+                Semantics(
+                  header: true,
+                  child: Text('Bienvenida de vuelta', style: textos.headlineMedium),
+                ),
                 const SizedBox(height: EspaciadoPrevia.s),
                 Text(
                   'Entra para ver qué se cuece cerca de ti.',
@@ -77,13 +82,13 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
                   autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
                     labelText: 'Correo electrónico',
                     prefixIcon: Icon(Icons.mail_outline),
                   ),
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Escribe un correo válido'
-                      : null,
+                  validator: (v) =>
+                      esCorreoValido(v) ? null : 'Escribe un correo válido',
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
@@ -91,10 +96,13 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                   controller: _contrasena,
                   obscureText: _oculta,
                   autofillHints: const [AutofillHints.password],
+                  textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
+                      tooltip:
+                          _oculta ? 'Mostrar contraseña' : 'Ocultar contraseña',
                       icon: Icon(
                         _oculta ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                       ),
@@ -108,7 +116,7 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
 
                 if (_error != null) ...[
                   const SizedBox(height: EspaciadoPrevia.m),
-                  _AvisoError(_error!),
+                  AvisoError(_error!),
                 ],
 
                 const SizedBox(height: EspaciadoPrevia.l),
@@ -121,6 +129,7 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
                             color: Colors.white,
+                            semanticsLabel: 'Entrando',
                           ),
                         )
                       : const Text('Entrar'),
@@ -139,31 +148,3 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
   }
 }
 
-class _AvisoError extends StatelessWidget {
-  const _AvisoError(this.mensaje);
-  final String mensaje;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(EspaciadoPrevia.m),
-      decoration: BoxDecoration(
-        color: ColoresPrevia.error.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.error.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: ColoresPrevia.error, size: 20),
-          const SizedBox(width: EspaciadoPrevia.s),
-          Expanded(
-            child: Text(
-              mensaje,
-              style: const TextStyle(color: ColoresPrevia.error, fontSize: 14),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

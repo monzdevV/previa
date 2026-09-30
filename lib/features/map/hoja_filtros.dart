@@ -28,8 +28,10 @@ class _HojaFiltros extends ConsumerWidget {
     final notificador = ref.read(filtrosProvider.notifier);
     final textos = Theme.of(context).textTheme;
 
+    // Con scroll: con el tamaño de letra del sistema al máximo el contenido
+    // no cabe en pantalla y sin esto se cortaría sin remedio.
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(EspaciadoPrevia.l),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -37,7 +39,10 @@ class _HojaFiltros extends ConsumerWidget {
           children: [
             Row(
               children: [
-                Text('Filtros', style: textos.headlineMedium),
+                Semantics(
+                  header: true,
+                  child: Text('Filtros', style: textos.headlineMedium),
+                ),
                 const Spacer(),
                 if (!filtros.sonLosPorDefecto)
                   TextButton(
@@ -49,10 +54,14 @@ class _HojaFiltros extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.l),
 
             _Etiqueta('Distancia', filtros.radioLegible),
+            // semanticFormatterCallback: sin él el lector dice "25 %" en vez de
+            // "5 km", que es lo que el usuario necesita oír.
             Slider(
+              semanticFormatterCallback: (v) =>
+                  'Distancia máxima: ${Filtros(radioMetros: v.round()).radioLegible}',
               value: filtros.radioMetros.toDouble(),
-              min: 500,
-              max: 20000,
+              min: Filtros.radioMinimoMetros.toDouble(),
+              max: Filtros.radioMaximoMetros.toDouble(),
               divisions: 39,
               activeColor: ColoresPrevia.primario,
               onChanged: (v) => notificador.fijarRadio(v.round()),
@@ -64,6 +73,9 @@ class _HojaFiltros extends ConsumerWidget {
               filtros.horas == 1 ? '1 hora' : '${filtros.horas} horas',
             ),
             Slider(
+              semanticFormatterCallback: (v) => v.round() == 1
+                  ? 'Empieza en la próxima hora'
+                  : 'Empieza en las próximas ${v.round()} horas',
               value: filtros.horas.toDouble(),
               min: 1,
               max: 24,
@@ -73,7 +85,7 @@ class _HojaFiltros extends ConsumerWidget {
             ),
 
             const SizedBox(height: EspaciadoPrevia.m),
-            Text('Somos', style: textos.titleLarge),
+            Semantics(header: true, child: Text('Somos', style: textos.titleLarge)),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               'Solo verás previas con sitio para todo el grupo.',
@@ -84,17 +96,25 @@ class _HojaFiltros extends ConsumerWidget {
               spacing: EspaciadoPrevia.s,
               children: [
                 for (final n in [1, 2, 3, 4, 5, 6])
-                  ChoiceChip(
-                    label: Text('$n'),
+                  // El número solo ("3") no dice de qué es: se lee "Somos 3".
+                  Semantics(
+                    label: n == 1 ? 'Somos 1 persona' : 'Somos $n personas',
+                    excludeSemantics: true,
                     selected: filtros.plazasMinimas == n,
-                    selectedColor: ColoresPrevia.primario,
-                    onSelected: (_) => notificador.fijarPlazas(n),
+                    button: true,
+                    onTap: () => notificador.fijarPlazas(n),
+                    child: ChoiceChip(
+                      label: Text('$n'),
+                      selected: filtros.plazasMinimas == n,
+                      selectedColor: ColoresPrevia.primario,
+                      onSelected: (_) => notificador.fijarPlazas(n),
+                    ),
                   ),
               ],
             ),
 
             const SizedBox(height: EspaciadoPrevia.l),
-            Text('Ambiente', style: textos.titleLarge),
+            Semantics(header: true, child: Text('Ambiente', style: textos.titleLarge)),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               filtros.ambiente.isEmpty

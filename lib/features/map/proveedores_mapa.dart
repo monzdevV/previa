@@ -26,6 +26,10 @@ final posicionDispositivoProvider = FutureProvider<LatLng>((ref) async {
 
 /// Criterios de filtrado que el usuario maneja desde la hoja de filtros.
 class Filtros {
+  /// Límites del control de distancia de la hoja de filtros.
+  static const int radioMinimoMetros = 500;
+  static const int radioMaximoMetros = 20000;
+
   const Filtros({
     this.radioMetros = Entorno.radioBusquedaPorDefecto,
     this.horas = Entorno.horasPorDefecto,
@@ -53,6 +57,10 @@ class Filtros {
         ambiente: ambiente ?? this.ambiente,
       );
 
+  /// Hay algo filtrado aparte de la distancia (horas, plazas o ambiente).
+  bool get hayFiltrosAparteDelRadio =>
+      horas != Entorno.horasPorDefecto || plazasMinimas != 1 || ambiente.isNotEmpty;
+
   bool get sonLosPorDefecto =>
       radioMetros == Entorno.radioBusquedaPorDefecto &&
       horas == Entorno.horasPorDefecto &&
@@ -78,6 +86,11 @@ class FiltrosNotifier extends Notifier<Filtros> {
   void fijarHoras(int horas) => state = state.copiarCon(horas: horas);
   void fijarPlazas(int plazas) => state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
+
+  /// Quita horas, plazas y ambiente pero respeta la distancia que el usuario
+  /// ya haya ampliado: devolverla a 5 km deshace justo lo que buscaba.
+  void quitarFiltrosSalvoRadio() =>
+      state = Filtros(radioMetros: state.radioMetros);
 
   void alternarAmbiente(String etiqueta) {
     final nuevo = Set<String>.from(state.ambiente);

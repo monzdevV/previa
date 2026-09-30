@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+
 import '../profile/avatar_previa.dart';
 
 import '../../app/rutas.dart';
@@ -14,6 +15,7 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
 import '../requests/pantalla_solicitudes.dart';
+import 'estados_pantalla.dart';
 import 'hoja_solicitar_plaza.dart';
 
 final _detalleProvider = FutureProvider.family<Previa, String>(
@@ -42,26 +44,28 @@ class PantallaDetallePrevia extends ConsumerWidget {
         title: const Text('Previa'),
         actions: [
           PopupMenuButton<String>(
+            // Sin tooltip el lector solo dice "menú": así dice qué hay dentro.
+            tooltip: 'Reportar o bloquear',
             icon: const Icon(Icons.more_vert),
             color: ColoresPrevia.superficieAlta,
-            onSelected: (opcion) => _menu(context, ref, opcion, detalle.valueOrNull),
+            onSelected: (opcion) =>
+                _menu(context, ref, opcion, detalle.valueOrNull),
             itemBuilder: (_) => const [
               PopupMenuItem(value: 'reportar', child: Text('Reportar')),
-              PopupMenuItem(value: 'bloquear', child: Text('Bloquear al anfitrión')),
+              PopupMenuItem(
+                value: 'bloquear',
+                child: Text('Bloquear al anfitrión'),
+              ),
             ],
           ),
         ],
       ),
       body: detalle.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text(
-              'No se ha podido cargar la previa.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
+        loading: () => const IndicadorCarga(),
+        error: (e, _) => EstadoError(
+          mensaje: 'No se ha podido cargar la previa',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () => ref.invalidate(_detalleProvider(previaId)),
         ),
         data: (previa) => _Contenido(previa: previa),
       ),
@@ -82,13 +86,21 @@ class PantallaDetallePrevia extends ConsumerWidget {
       final confirmado = await _confirmar(
         context,
         titulo: '¿Bloquear a ${previa.anfitrionNombre}?',
-        detalle: 'Dejaréis de veros por completo: sus previas desaparecerán '
+        detalle:
+            'Dejaréis de veros por completo: sus previas desaparecerán '
             'de tu mapa y no podrá escribirte.',
         accion: 'Bloquear',
       );
       if (confirmado != true) return;
 
-      await repo.bloquear(previa.anfitrionId);
+      // Sin try/catch, un fallo de red dejaba al usuario sin respuesta en una
+      // acción de seguridad. Ahora siempre se le dice qué ha pasado.
+      try {
+        await repo.bloquear(previa.anfitrionId);
+      } catch (e) {
+        mensajero.showSnackBar(SnackBar(content: Text(_mensajeDeFallo(e))));
+        return;
+      }
       ref.invalidate(previasCercaProvider);
       if (!context.mounted) return;
       Navigator.of(context).pop();
@@ -102,11 +114,24 @@ class PantallaDetallePrevia extends ConsumerWidget {
     final motivo = await _elegirMotivo(context);
     if (motivo == null) return;
 
-    await repo.reportar(motivo: motivo, previaId: previa.id, perfilId: previa.anfitrionId);
+    try {
+      await repo.reportar(
+        motivo: motivo,
+        previaId: previa.id,
+        perfilId: previa.anfitrionId,
+      );
+    } catch (e) {
+      mensajero.showSnackBar(SnackBar(content: Text(_mensajeDeFallo(e))));
+      return;
+    }
     mensajero.showSnackBar(
       const SnackBar(content: Text('Reporte enviado. Gracias por avisar.')),
     );
   }
+
+  String _mensajeDeFallo(Object e) => e is ErrorPrevia
+      ? e.mensaje
+      : 'No se ha podido completar la acción. Inténtalo de nuevo.';
 }
 
 class _Contenido extends ConsumerWidget {
@@ -117,20 +142,27 @@ class _Contenido extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textos = Theme.of(context).textTheme;
-    final soyMiembro = ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
+    final soyMiembro =
+        ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
     final miSolicitud = ref.watch(_miSolicitudProvider(previa.id)).valueOrNull;
     final yoSoyElAnfitrion =
-        ref.watch(repositorioAuthProvider).usuarioActual?.id == previa.anfitrionId;
+        ref.watch(repositorioAuthProvider).usuarioActual?.id ==
+        previa.anfitrionId;
 
-    final cuando = DateFormat("EEEE d 'de' MMMM 'a las' HH:mm", 'es_ES')
-        .format(previa.empiezaEn);
+    final cuando = DateFormat(
+      "EEEE d 'de' MMMM 'a las' HH:mm",
+      'es_ES',
+    ).format(previa.empiezaEn);
 
     return ListView(
       padding: const EdgeInsets.all(EspaciadoPrevia.l),
       children: [
         Text(previa.titulo, style: textos.headlineMedium),
         const SizedBox(height: EspaciadoPrevia.s),
-        Text(cuando, style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave)),
+        Text(
+          cuando,
+          style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave),
+        ),
 
         const SizedBox(height: EspaciadoPrevia.l),
 
@@ -142,7 +174,9 @@ class _Contenido extends ConsumerWidget {
                 valor: previa.plazasLibres == 0
                     ? 'Completa'
                     : '${previa.plazasLibres}',
-                etiqueta: previa.plazasLibres == 1 ? 'plaza libre' : 'plazas libres',
+                etiqueta: previa.plazasLibres == 1
+                    ? 'plaza libre'
+                    : 'plazas libres',
                 destacado: previa.quedanPlazas,
               ),
             ),
@@ -177,7 +211,10 @@ class _Contenido extends ConsumerWidget {
         const Divider(),
         const SizedBox(height: EspaciadoPrevia.m),
 
-        Text('Organiza', style: textos.titleLarge),
+        Semantics(
+          header: true,
+          child: Text('Organiza', style: textos.titleLarge),
+        ),
         const SizedBox(height: EspaciadoPrevia.m),
         Row(
           children: [
@@ -197,8 +234,11 @@ class _Contenido extends ConsumerWidget {
                   if (previa.anfitrionReputacion != null)
                     Row(
                       children: [
-                        const Icon(Icons.star_rounded,
-                            size: 15, color: ColoresPrevia.aviso),
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 15,
+                          color: ColoresPrevia.aviso,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           previa.anfitrionReputacion!.toStringAsFixed(1),
@@ -245,42 +285,56 @@ class _MapaZona extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Dónde', style: Theme.of(context).textTheme.titleLarge),
+        Semantics(
+          header: true,
+          child: Text('Dónde', style: Theme.of(context).textTheme.titleLarge),
+        ),
         const SizedBox(height: EspaciadoPrevia.m),
 
-        ClipRRect(
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-          child: SizedBox(
-            height: 180,
-            child: FlutterMap(
-              options: MapOptions(
-                initialCenter: previa.ubicacion,
-                initialZoom: soyMiembro ? 16 : 14,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.none,
-                ),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/dark_all/'
-                      '{z}/{x}/{y}{r}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  retinaMode: RetinaMode.isHighDensity(context),
-                  userAgentPackageName: 'com.previa.previa',
-                ),
-                CircleLayer(
-                  circles: [
-                    CircleMarker(
-                      point: previa.ubicacion,
-                      radius: Entorno.metrosDeDifuminado.toDouble(),
-                      useRadiusInMeter: true,
-                      color: ColoresPrevia.primario.withValues(alpha: 0.22),
-                      borderColor: ColoresPrevia.primarioSuave,
-                      borderStrokeWidth: 2,
+        // Mapa no interactivo: se describe con una frase y se oculta el
+        // lienzo, que para un lector de pantalla no aporta nada.
+        Semantics(
+          image: true,
+          label:
+              'Mapa con la zona aproximada de la previa, en ${previa.zona}. '
+              'El círculo cubre unos ${Entorno.metrosDeDifuminado} metros.',
+          child: ExcludeSemantics(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+              child: SizedBox(
+                height: 180,
+                child: FlutterMap(
+                  options: MapOptions(
+                    initialCenter: previa.ubicacion,
+                    initialZoom: soyMiembro ? 16 : 14,
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.none,
+                    ),
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.basemaps.cartocdn.com/dark_all/'
+                          '{z}/{x}/{y}{r}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                      retinaMode: RetinaMode.isHighDensity(context),
+                      userAgentPackageName: 'com.previa.previa',
+                    ),
+                    CircleLayer(
+                      circles: [
+                        CircleMarker(
+                          point: previa.ubicacion,
+                          radius: Entorno.metrosDeDifuminado.toDouble(),
+                          useRadiusInMeter: true,
+                          color: ColoresPrevia.primario.withValues(alpha: 0.22),
+                          borderColor: ColoresPrevia.primarioSuave,
+                          borderStrokeWidth: 2,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -293,15 +347,17 @@ class _MapaZona extends ConsumerWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lock_outline, size: 15, color: ColoresPrevia.textoTenue),
+              const Icon(
+                Icons.lock_outline,
+                size: 15,
+                color: ColoresPrevia.textoTenue,
+              ),
               const SizedBox(width: EspaciadoPrevia.xs),
               Expanded(
                 child: Text(
                   'La dirección exacta se ve solo si el anfitrión te acepta.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                        color: ColoresPrevia.textoTenue,
-                      ),
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(fontSize: 12, color: ColoresPrevia.textoTenue),
                 ),
               ),
             ],
@@ -327,8 +383,9 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
   Future<void> _pedir() async {
     setState(() => _cargando = true);
     try {
-      final punto =
-          await ref.read(repositorioPreviasProvider).ubicacionExacta(widget.previaId);
+      final punto = await ref
+          .read(repositorioPreviasProvider)
+          .ubicacionExacta(widget.previaId);
       if (mounted) setState(() => _punto = punto);
     } on ErrorPrevia catch (e) {
       if (mounted) {
@@ -348,11 +405,17 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
         decoration: BoxDecoration(
           color: ColoresPrevia.acento.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-          border: Border.all(color: ColoresPrevia.acento.withValues(alpha: 0.4)),
+          border: Border.all(
+            color: ColoresPrevia.acento.withValues(alpha: 0.4),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.where_to_vote, color: ColoresPrevia.acento, size: 20),
+            const Icon(
+              Icons.where_to_vote,
+              color: ColoresPrevia.acento,
+              size: 20,
+            ),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
@@ -393,11 +456,13 @@ class _Accion extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rutaChat = '${Rutas.previa}/${previa.id}/chat'
+    final rutaChat =
+        '${Rutas.previa}/${previa.id}/chat'
         '?titulo=${Uri.encodeQueryComponent(previa.titulo)}';
 
     if (yoSoyElAnfitrion) {
-      final pendientes = ref
+      final pendientes =
+          ref
               .watch(solicitudesDeProvider(previa.id))
               .valueOrNull
               ?.where((s) => s.estaPendiente)
@@ -414,7 +479,7 @@ class _Accion extends ConsumerWidget {
               pendientes == 0
                   ? 'Ver solicitudes'
                   : '$pendientes ${pendientes == 1 ? "solicitud" : "solicitudes"} '
-                      'por responder',
+                        'por responder',
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.s),
@@ -583,7 +648,10 @@ class _Dato extends StatelessWidget {
           ),
           Text(
             etiqueta,
-            style: const TextStyle(color: ColoresPrevia.textoSuave, fontSize: 12),
+            style: const TextStyle(
+              color: ColoresPrevia.textoSuave,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
@@ -612,7 +680,7 @@ Future<bool?> _confirmar(
           onPressed: () => Navigator.of(context).pop(true),
           style: FilledButton.styleFrom(
             backgroundColor: ColoresPrevia.error,
-            minimumSize: const Size(0, 44),
+            minimumSize: const Size(0, 48),
           ),
           child: Text(accion),
         ),
@@ -644,7 +712,10 @@ Future<String?> _elegirMotivo(BuildContext context) {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: EspaciadoPrevia.l),
-          Text('¿Qué ha pasado?', style: Theme.of(contexto).textTheme.titleLarge),
+          Text(
+            '¿Qué ha pasado?',
+            style: Theme.of(contexto).textTheme.titleLarge,
+          ),
           const SizedBox(height: EspaciadoPrevia.m),
           for (final entrada in motivos.entries)
             ListTile(

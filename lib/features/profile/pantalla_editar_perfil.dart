@@ -22,6 +22,11 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _bio = TextEditingController();
 
   DateTime? _fechaNacimiento;
+
+  /// El servidor no deja cambiar la fecha una vez fijada (es lo que impide
+  /// "rejuvenecerse" para burlar el filtro de mayoria de edad). Solo se puede
+  /// rellenar si estaba vacia, p. ej. en un alta con Google.
+  bool _fechaBloqueada = false;
   Perfil? _perfil;
   bool _subiendoFoto = false;
   bool _cargandoDatos = true;
@@ -47,6 +52,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       _nombre.text = perfil?.nombre ?? '';
       _bio.text = perfil?.bio ?? '';
       _fechaNacimiento = fecha;
+      _fechaBloqueada = fecha != null;
       _cargandoDatos = false;
     });
   }
@@ -147,7 +153,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       await ref.read(repositorioAuthProvider).actualizarPerfil(
             nombre: _nombre.text,
             bio: _bio.text,
-            fechaNacimiento: _fechaNacimiento,
+            fechaNacimiento: _fechaBloqueada ? null : _fechaNacimiento,
           );
       ref.invalidate(miPerfilProvider);
 
@@ -247,7 +253,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
 
               const SizedBox(height: EspaciadoPrevia.m),
               InkWell(
-                onTap: _elegirFecha,
+                onTap: _fechaBloqueada ? null : _elegirFecha,
                 borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                 child: InputDecorator(
                   decoration: const InputDecoration(
@@ -269,7 +275,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               ),
               const SizedBox(height: EspaciadoPrevia.xs),
               Text(
-                'Nadie más puede verla. Solo se publica tu edad.',
+                _fechaBloqueada
+                    ? 'No se puede cambiar. Nadie más la ve; solo se publica tu edad.'
+                    : 'Nadie más puede verla. Solo se publica tu edad.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
                   color: ColoresPrevia.textoTenue,

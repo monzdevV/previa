@@ -6,6 +6,8 @@ import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../../data/repositories/repositorio_seguridad.dart';
+import '../safety/acciones_seguridad.dart';
 
 /// Mensajes en vivo. Supabase Realtime empuja cada insercion por WebSocket,
 /// asi que no hay que refrescar ni sondear.
@@ -24,6 +26,11 @@ final miembrosProvider =
           (f['profiles'] as Map?)?['display_name'] as String? ?? 'Alguien',
   };
 });
+
+/// Si soy el anfitrion: el anfitrion no puede "salir", solo cancelar.
+final _soyAnfitrionProvider = FutureProvider.autoDispose
+    .family<bool, String>((ref, previaId) =>
+        ref.watch(repositorioSeguridadProvider).soyAnfitrion(previaId));
 
 class PantallaChat extends ConsumerStatefulWidget {
   const PantallaChat({super.key, required this.previaId, this.titulo});
@@ -73,6 +80,76 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
     }
   }
 
+  /// Menu de seguridad del chat: todo lo importante a un toque desde la
+  /// cabecera, sin tener que buscar en los ajustes.
+  Future<void> _abrirSeguridad(Map<String, String> nombres, String? yo) async {
+    final esAnfitrion =
+        ref.read(_soyAnfitrionProvider(widget.previaId)).valueOrNull ?? false;
+    final otros = nombres.entries.where((e) => e.key != yo).toList();
+    final contextoPantalla = context;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: ColoresPrevia.fondo,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(EspaciadoPrevia.radioGrande),
+        ),
+      ),
+      builder: (contexto) => SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: EspaciadoPrevia.l),
+              Text('Seguridad', style: Theme.of(contexto).textTheme.titleLarge),
+              const SizedBox(height: EspaciadoPrevia.s),
+              ListTile(
+                leading: const Icon(Icons.flag_outlined),
+                title: const Text('Reportar esta previa'),
+                onTap: () {
+                  Navigator.of(contexto).pop();
+                  flujoReportar(contextoPantalla, ref,
+                      previaId: widget.previaId);
+                },
+              ),
+              for (final o in otros)
+                ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: Text('Reportar o bloquear a ${o.value}'),
+                  onTap: () {
+                    Navigator.of(contexto).pop();
+                    mostrarHojaPersona(
+                      contextoPantalla,
+                      ref,
+                      perfilId: o.key,
+                      nombre: o.value,
+                      previaId: widget.previaId,
+                    );
+                  },
+                ),
+              if (!esAnfitrion)
+                ListTile(
+                  leading: const Icon(Icons.logout, color: ColoresPrevia.error),
+                  title: const Text('Salir de la previa',
+                      style: TextStyle(color: ColoresPrevia.error)),
+                  onTap: () async {
+                    Navigator.of(contexto).pop();
+                    final salio = await flujoSalir(contextoPantalla, ref,
+                        previaId: widget.previaId);
+                    // Ya no eres miembro: el chat no tiene sentido abierto.
+                    if (salio && contextoPantalla.mounted) Navigator.of(contextoPantalla).pop();
+                  },
+                ),
+              const SizedBox(height: EspaciadoPrevia.s),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _alFinal() {
     if (!_scroll.hasClients) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -96,6 +173,13 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
 
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+            tooltip: 'Seguridad',
+            icon: const Icon(Icons.shield_outlined),
+            onPressed: () => _abrirSeguridad(nombres, yo),
+          ),
+        ],
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -143,6 +227,18 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                           // El nombre solo se repite cuando cambia de persona:
                           // menos ruido en rafagas de mensajes seguidos.
                           muestraNombre: anterior?.autorId != m.autorId,
+                          // Pulsacion larga en un mensaje ajeno: reportarlo
+                          // o bloquear a su autor (exigido por las tiendas).
+                          onLongPress: m.autorId == yo
+                              ? null
+                              : () => mostrarHojaPersona(
+                                    context,
+                                    ref,
+                                    perfilId: m.autorId,
+                                    nombre: nombres[m.autorId] ?? 'Alguien',
+                                    previaId: widget.previaId,
+                                    mensajeId: m.id,
+                                  ),
                         );
                       },
                     ),
@@ -180,6 +276,7 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
                   IconButton.filled(
+                    tooltip: 'Enviar mensaje',
                     onPressed: _enviando ? null : _enviar,
                     style: IconButton.styleFrom(
                       backgroundColor: ColoresPrevia.primario,
@@ -203,7 +300,10 @@ class _Burbuja extends StatelessWidget {
     required this.esMio,
     required this.nombre,
     required this.muestraNombre,
+    this.onLongPress,
   });
+
+  final VoidCallback? onLongPress;
 
   final Mensaje mensaje;
   final bool esMio;
@@ -238,7 +338,9 @@ class _Burbuja extends StatelessWidget {
                 ),
               ),
             ),
-          Container(
+          GestureDetector(
+            onLongPress: onLongPress,
+            child: Container(
             constraints: BoxConstraints(
               maxWidth: MediaQuery.of(context).size.width * 0.75,
             ),
@@ -278,6 +380,7 @@ class _Burbuja extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

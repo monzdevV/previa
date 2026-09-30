@@ -8,6 +8,7 @@ import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
+import '../party/estados_pantalla.dart';
 
 final solicitudesDeProvider = FutureProvider.family<List<Solicitud>, String>(
   (ref, previaId) =>
@@ -33,42 +34,29 @@ class PantallaSolicitudes extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Solicitudes')),
       body: solicitudes.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text(
-              'No se han podido cargar las solicitudes.',
-              style: textos.bodyMedium,
-            ),
-          ),
+        loading: () => const IndicadorCarga(),
+        error: (e, _) => EstadoError(
+          mensaje: 'No se han podido cargar las solicitudes',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () => ref.invalidate(solicitudesDeProvider(previaId)),
         ),
         data: (lista) {
           final pendientes = lista.where((s) => s.estaPendiente).toList();
           final resueltas = lista.where((s) => !s.estaPendiente).toList();
 
           if (lista.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(EspaciadoPrevia.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.inbox_outlined,
-                        size: 40, color: ColoresPrevia.textoTenue),
-                    const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Nadie ha pedido plaza todavía',
-                        style: textos.titleLarge),
-                    const SizedBox(height: EspaciadoPrevia.xs),
-                    Text(
-                      'Dale tiempo. Y si tarda, prueba a añadir una '
-                      'descripción y etiquetas de ambiente.',
-                      textAlign: TextAlign.center,
-                      style: textos.bodyMedium,
-                    ),
-                  ],
+            return EstadoVacio(
+              icono: Icons.inbox_outlined,
+              titulo: 'Nadie ha pedido plaza todavía',
+              detalle: 'Dale tiempo. Y si tarda, prueba a añadir una '
+                  'descripción y etiquetas de ambiente.',
+              acciones: [
+                OutlinedButton.icon(
+                  onPressed: () => ref.invalidate(solicitudesDeProvider(previaId)),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Comprobar de nuevo'),
                 ),
-              ),
+              ],
             );
           }
 
@@ -157,6 +145,14 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
       );
     } on ErrorPrevia catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } catch (_) {
+      // Un fallo de red u otro no previsto no puede dejar el botón sin
+      // respuesta: se avisa y se puede volver a intentar.
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('No se ha podido responder. Inténtalo de nuevo.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -252,9 +248,14 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                       onPressed:
                           _procesando ? null : () => _responder(aceptar: false),
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 46),
+                        minimumSize: const Size(0, 48),
                       ),
-                      child: const Text('Rechazar'),
+                      // Con varias tarjetas, "Rechazar" a secas no dice a
+                      // quién: se añade el nombre solo para el lector.
+                      child: Text(
+                        'Rechazar',
+                        semanticsLabel: 'Rechazar a ${s.nombreSolicitante}',
+                      ),
                     ),
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
@@ -264,7 +265,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                       onPressed:
                           _procesando ? null : () => _responder(aceptar: true),
                       style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 46),
+                        minimumSize: const Size(0, 48),
                       ),
                       child: _procesando
                           ? const SizedBox(
@@ -273,11 +274,18 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2.5,
                                 color: Colors.white,
+                                semanticsLabel: 'Enviando respuesta',
                               ),
                             )
-                          : Text(s.tamanoGrupo == 1
-                              ? 'Aceptar'
-                              : 'Aceptar a ${s.tamanoGrupo}'),
+                          : Text(
+                              s.tamanoGrupo == 1
+                                  ? 'Aceptar'
+                                  : 'Aceptar a ${s.tamanoGrupo}',
+                              semanticsLabel: s.tamanoGrupo == 1
+                                  ? 'Aceptar a ${s.nombreSolicitante}'
+                                  : 'Aceptar a ${s.nombreSolicitante} '
+                                      'y su grupo de ${s.tamanoGrupo}',
+                            ),
                     ),
                   ),
                 ],
@@ -286,7 +294,7 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
               Text(
                 'Si aceptas, verá la dirección exacta.',
                 style: textos.bodyMedium?.copyWith(
-                  fontSize: 11,
+                  fontSize: 12,
                   color: ColoresPrevia.textoTenue,
                 ),
               ),
@@ -320,7 +328,7 @@ class _Insignia extends StatelessWidget {
       ),
       child: Text(
         texto,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
+        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700),
       ),
     );
   }

@@ -4,7 +4,7 @@
 -- seguridad desde el punto de vista de cada uno y borra los datos al terminar.
 --
 -- Como ejecutarla: pegar el contenido en el editor SQL de Supabase.
--- Resultado esperado: 16 filas, todas con resultado PASA.
+-- Resultado esperado: 38 filas, todas con resultado PASA (1-16 originales, 17-38 nuevas).
 --
 -- Que demuestra cada prueba:
 --   1      el disparador de alta de perfil funciona
@@ -181,6 +181,333 @@ begin
   delete from auth.users where id in (v_ana, v_bea, v_carlos);
 end;
 $test$;
+
+-- =============================================================================
+-- Pruebas 17-38: fecha de nacimiento, limitacion de frecuencia, cautela por
+-- reportes, permisos, caducidad programada y eliminar_mi_cuenta.
+--
+--   17-21  birth_date: no NULL, no cambiar, mismo valor OK, onboarding OK,
+--          cambio controlado (service role / SQL) OK
+--   22-25  limites de frecuencia: chat, reportes, previas, solicitudes
+--   26-29  3 reportes distintos ocultan la previa y bloquean a la persona
+--   30-32  la revision de reportes y la moderacion son solo service role
+--   33     levantar la cautela devuelve la visibilidad
+--   34     pg_cron tiene el job programado
+--   35-38  eliminar_mi_cuenta: libera plazas, borra foto, no toca datos ajenos
+-- =============================================================================
+do $test2$
+declare
+  v_dani  uuid := '44444444-4444-4444-4444-444444444444';
+  v_eva   uuid := '55555555-5555-5555-5555-555555555555';
+  v_fran  uuid := '66666666-6666-6666-6666-666666666666';
+  v_gus   uuid := '77777777-7777-7777-7777-777777777777';
+  v_hugo  uuid := '88888888-8888-8888-8888-888888888888';
+  v_ivan  uuid := '99999999-9999-9999-9999-999999999999';
+  v_jose  uuid := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  v_kira  uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  v_p     uuid[] := '{}';
+  v_id    uuid;
+  v_int   int;
+  v_int2  int;
+  v_bool  boolean;
+  v_txt   text;
+  i       int;
+  v_fallo int;
+begin
+  -- Sin sesion de usuario: auth.uid() nulo (como service role o SQL editor).
+  perform set_config('request.jwt.claims', '', true);
+
+  insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                          email_confirmed_at, created_at, updated_at, raw_user_meta_data)
+  select u.id, '00000000-0000-0000-0000-000000000000','authenticated','authenticated',
+         u.nombre||'@previa.test','x', now(), now(), now(),
+         jsonb_build_object('username', u.nombre||'_t2', 'display_name', u.nombre)
+         || case when u.nac is null then '{}'::jsonb else jsonb_build_object('birth_date', u.nac) end
+    from (values (v_dani,'dani','1990-01-01'), (v_eva,'eva','1995-02-02'),
+                 (v_fran,'fran','1996-03-03'), (v_gus,'gus','1997-04-04'),
+                 (v_hugo,'hugo','1992-05-05'), (v_ivan,'ivan','1993-06-06'),
+                 (v_jose,'jose','1994-07-07'), (v_kira,'kira',null)) as u(id, nombre, nac);
+
+  -- Dani es anfitrion de 22 previas (insertadas sin sesion: sin limite).
+  for i in 1..22 loop
+    insert into public.parties (host_id, title, area_label, location, location_fuzzed,
+                                starts_at, spots_total)
+    values (v_dani, 'Previa de prueba '||i, 'Centro',
+            extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+            extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+            now() + interval '5 hours', 5)
+    returning id into v_id;
+    v_p := v_p || v_id;
+  end loop;
+
+  -- 17. birth_date no se puede poner a NULL ------------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  begin
+    update public.profiles set birth_date = null where id = v_dani;
+    execute 'reset role';
+    insert into resultados values (17,'birth_date no puede ponerse a NULL','error','sin error', false);
+  exception when insufficient_privilege then
+    execute 'reset role';
+    insert into resultados values (17,'birth_date no puede ponerse a NULL','error','error', true);
+  end;
+
+  -- 18. ni cambiarse a otra fecha valida -----------------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  begin
+    update public.profiles set birth_date = '1985-01-01' where id = v_dani;
+    execute 'reset role';
+    insert into resultados values (18,'birth_date no puede cambiarse a otra fecha','error','sin error', false);
+  exception when insufficient_privilege then
+    execute 'reset role';
+    insert into resultados values (18,'birth_date no puede cambiarse a otra fecha','error','error', true);
+  end;
+
+  -- 19. reescribir el mismo valor es inocuo ----------------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  begin
+    update public.profiles set birth_date = '1990-01-01' where id = v_dani;
+    execute 'reset role';
+    insert into resultados values (19,'Reenviar la misma fecha se admite','sin error','sin error', true);
+  exception when others then
+    execute 'reset role';
+    insert into resultados values (19,'Reenviar la misma fecha se admite','sin error','error '||sqlstate, false);
+  end;
+
+  -- 20. onboarding: NULL -> fecha permitido una vez -----------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_kira,'role','authenticated')::text, true);
+  update public.profiles set birth_date = '1998-08-08' where id = v_kira;
+  execute 'reset role';
+  select onboarded into v_bool from public.profiles where id = v_kira;
+  insert into resultados values (20,'Completar la fecha por primera vez (onboarding) funciona','onboarded=true', v_bool::text, v_bool);
+
+  -- 21. cambio controlado: sin sesion de usuario (service role / SQL) ---------------
+  perform set_config('request.jwt.claims', '', true);
+  begin
+    update public.profiles set birth_date = '1990-01-02' where id = v_dani;
+    insert into resultados values (21,'Cambio controlado de birth_date sin sesion de usuario','permitido','permitido', true);
+  exception when others then
+    insert into resultados values (21,'Cambio controlado de birth_date sin sesion de usuario','permitido','error '||sqlstate, false);
+  end;
+
+  -- 22. limite de chat: 30 por minuto -------------------------------------------------------
+  -- Cada insercion va en su propio sub-bloque: si el limite salta, las anteriores
+  -- se conservan y se puede comprobar cuantas entraron.
+  v_fallo := 0;
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  for i in 1..31 loop
+    begin
+      insert into public.messages (party_id, sender_id, body) values (v_p[2], v_dani, 'mensaje '||i);
+    exception when program_limit_exceeded then
+      v_fallo := i; exit;
+    end;
+  end loop;
+  execute 'reset role';
+  select count(*)::int into v_int from public.messages where sender_id = v_dani;
+  insert into resultados values (22,'El mensaje 31 en un minuto se rechaza','falla el 31, 30 guardados', 'falla el '||v_fallo||', '||v_int||' guardados', v_fallo = 31 and v_int = 30);
+
+  -- 23. limite de reportes: 10 por dia --------------------------------------------------------
+  v_fallo := 0;
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_kira,'role','authenticated')::text, true);
+  for i in 1..11 loop
+    begin
+      insert into public.reports (reporter_id, reported_id, reason) values (v_kira, v_hugo, 'spam');
+    exception when program_limit_exceeded then
+      v_fallo := i; exit;
+    end;
+  end loop;
+  execute 'reset role';
+  select count(*)::int into v_int from public.reports where reporter_id = v_kira;
+  insert into resultados values (23,'El reporte 11 en un dia se rechaza','falla el 11, 10 guardados', 'falla el '||v_fallo||', '||v_int||' guardados', v_fallo = 11 and v_int = 10);
+
+  -- 24. limite de previas: 5 por dia ----------------------------------------------------------
+  v_fallo := 0;
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_hugo,'role','authenticated')::text, true);
+  for i in 1..6 loop
+    begin
+      insert into public.parties (host_id, title, area_label, location, location_fuzzed,
+                                  starts_at, spots_total)
+      values (v_hugo, 'Hugo '||i, 'Centro',
+              extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+              extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+              now() + interval '5 hours', 3);
+    exception when program_limit_exceeded then
+      v_fallo := i; exit;
+    end;
+  end loop;
+  execute 'reset role';
+  select count(*)::int into v_int from public.parties where host_id = v_hugo;
+  insert into resultados values (24,'La previa 6 en un dia se rechaza','falla la 6, 5 creadas', 'falla la '||v_fallo||', '||v_int||' creadas', v_fallo = 6 and v_int = 5);
+
+  -- 25. limite de solicitudes: 20 por hora ------------------------------------------------------
+  v_fallo := 0;
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_eva,'role','authenticated')::text, true);
+  for i in 1..21 loop
+    begin
+      insert into public.join_requests (party_id, requester_id, group_size) values (v_p[i], v_eva, 1);
+    exception when program_limit_exceeded then
+      v_fallo := i; exit;
+    end;
+  end loop;
+  execute 'reset role';
+  select count(*)::int into v_int from public.join_requests where requester_id = v_eva;
+  insert into resultados values (25,'La solicitud 21 en una hora se rechaza','falla la 21, 20 creadas', 'falla la '||v_fallo||', '||v_int||' creadas', v_fallo = 21 and v_int = 20);
+
+  -- 26. tres reportes DISTINTOS ocultan una previa ----------------------------------------------
+  -- v_p[1] es de Dani. Un mismo reportante repetido NO cuenta: Eva reporta dos veces.
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_eva,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, party_id, reason) values (v_eva, v_p[1], 'spam');
+  insert into public.reports (reporter_id, party_id, reason) values (v_eva, v_p[1], 'acoso');
+  execute 'reset role';
+  select count(*)::int into v_int from public.moderacion_cautelar where objeto_id = v_p[1] and levantado_en is null;
+  insert into resultados values (26,'Un solo reportante (aunque repita) no activa la cautela','0', v_int::text, v_int = 0);
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_fran,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, party_id, reason) values (v_fran, v_p[1], 'spam');
+  execute 'reset role';
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_gus,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, party_id, reason) values (v_gus, v_p[1], 'spam');
+  execute 'reset role';
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_hugo,'role','authenticated')::text, true);
+  select count(*)::int into v_int  from public.parties where id = v_p[1];
+  select count(*)::int into v_int2 from public.previas_cerca(37.38, -6.0, 5000, 12, 1::smallint) where id = v_p[1];
+  execute 'reset role';
+  insert into resultados values (27,'Con 3 reportantes distintos la previa se oculta a extranos','0 y 0', v_int||' y '||v_int2, v_int = 0 and v_int2 = 0);
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  select count(*)::int into v_int from public.parties where id = v_p[1];
+  execute 'reset role';
+  insert into resultados values (28,'El anfitrion sigue viendo su previa oculta','1', v_int::text, v_int = 1);
+
+  -- 29. tres reportantes distintos contra una PERSONA la bloquean cautelarmente -------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_eva,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, reported_id, reason) values (v_eva, v_ivan, 'acoso');
+  execute 'reset role';
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_fran,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, reported_id, reason) values (v_fran, v_ivan, 'acoso');
+  execute 'reset role';
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_gus,'role','authenticated')::text, true);
+  insert into public.reports (reporter_id, reported_id, reason) values (v_gus, v_ivan, 'acoso');
+  execute 'reset role';
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_ivan,'role','authenticated')::text, true);
+  begin
+    insert into public.parties (host_id, title, area_label, location, location_fuzzed,
+                                starts_at, spots_total)
+    values (v_ivan, 'Previa de Ivan', 'Centro',
+            extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+            extensions.ST_SetSRID(extensions.ST_Point(-6.0, 37.38), 4326)::extensions.geography,
+            now() + interval '5 hours', 3);
+    execute 'reset role';
+    insert into resultados values (29,'Una persona con 3 reportes distintos no puede crear previas','error','sin error', false);
+  exception when insufficient_privilege then
+    execute 'reset role';
+    insert into resultados values (29,'Una persona con 3 reportes distintos no puede crear previas','error','error', true);
+  end;
+
+  -- 30-32. revision de reportes y cautela: solo service role -----------------------------------------
+  execute 'set local role authenticated';
+  begin
+    perform 1 from public.revision_reportes limit 1;
+    execute 'reset role';
+    insert into resultados values (30,'authenticated NO puede leer revision_reportes','denegado','lo ha leido', false);
+  exception when insufficient_privilege then
+    execute 'reset role';
+    insert into resultados values (30,'authenticated NO puede leer revision_reportes','denegado','denegado', true);
+  end;
+
+  execute 'set local role service_role';
+  begin
+    select count(*)::int into v_int from public.revision_reportes where party_id = v_p[1];
+    execute 'reset role';
+    insert into resultados values (31,'service_role SI lee revision_reportes (ve 4 filas de la previa)','4', v_int::text, v_int = 4);
+  exception when others then
+    execute 'reset role';
+    insert into resultados values (31,'service_role SI lee revision_reportes (ve 4 filas de la previa)','4','error '||sqlstate, false);
+  end;
+
+  select (has_function_privilege('authenticated','public.levantar_cautela(text,uuid)','execute')
+       or has_function_privilege('authenticated','public.poner_cautela(text,uuid,text)','execute')
+       or has_function_privilege('anon','public.levantar_cautela(text,uuid)','execute')
+       or has_function_privilege('authenticated','public.caducar_previas()','execute')
+       or has_function_privilege('anon','public.eliminar_mi_cuenta()','execute'))
+    into v_bool;
+  insert into resultados values (32,'Funciones de moderacion/caducidad no ejecutables por clientes; anon no borra cuentas','false', v_bool::text, not v_bool);
+
+  -- Levantar la cautela devuelve la visibilidad y cierra los reportes.
+  perform public.levantar_cautela('previa', v_p[1]);
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_hugo,'role','authenticated')::text, true);
+  select count(*)::int into v_int from public.parties where id = v_p[1];
+  execute 'reset role';
+  insert into resultados values (33,'Levantar la cautela devuelve la previa a la vista','1', v_int::text, v_int = 1);
+
+  -- 34. el job de pg_cron existe y es horario -------------------------------------------------------------
+  select count(*)::int into v_int from cron.job
+   where jobname = 'caducar-previas' and schedule = '7 * * * *' and command ilike '%caducar_previas%';
+  insert into resultados values (34,'caducar_previas() esta programada cada hora en pg_cron','1', v_int::text, v_int = 1);
+
+  -- 35-38. eliminar_mi_cuenta -----------------------------------------------------------------------------
+  -- Jose entra en una previa de Dani, tiene foto, y existen datos de la otra app ajenos a el.
+  perform set_config('request.jwt.claims', '', true);
+  insert into public.follows (follower_id, followee_id) values (v_eva, v_dani);
+  insert into storage.objects (bucket_id, name) values ('avatars', v_jose::text||'/foto');
+  insert into storage.objects (bucket_id, name) values ('avatars', v_dani::text||'/foto');
+  insert into public.join_requests (party_id, requester_id, group_size) values (v_p[3], v_jose, 1);
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_dani,'role','authenticated')::text, true);
+  update public.join_requests set status = 'accepted' where party_id = v_p[3] and requester_id = v_jose;
+  execute 'reset role';
+  select spots_taken::int into v_int from public.parties where id = v_p[3];
+  select count(*)::int into v_int2 from public.posts;
+
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims', json_build_object('sub',v_jose,'role','authenticated')::text, true);
+  perform public.eliminar_mi_cuenta();
+  execute 'reset role';
+  perform set_config('request.jwt.claims', '', true);
+
+  select count(*)::int into v_int from public.profiles p where p.id = v_jose;
+  insert into resultados values (35,'eliminar_mi_cuenta borra perfil y cuenta','0 perfiles', v_int||' perfiles',
+    v_int = 0 and not exists (select 1 from auth.users where id = v_jose));
+
+  select count(*)::int into v_int from storage.objects where bucket_id='avatars' and name like v_jose::text||'/%';
+  select count(*)::int into v_int2 from storage.objects where bucket_id='avatars' and name like v_dani::text||'/%';
+  insert into resultados values (36,'Borra SU foto del bucket avatars y no la de otras personas','0 y 1', v_int||' y '||v_int2, v_int = 0 and v_int2 = 1);
+
+  select spots_taken::int into v_int from public.parties where id = v_p[3];
+  insert into resultados values (37,'Libera la plaza que ocupaba en la previa ajena','0', v_int::text, v_int = 0);
+
+  select count(*)::int into v_int from public.follows where follower_id = v_eva and followee_id = v_dani;
+  insert into resultados values (38,'No toca datos de otras personas (follows de la otra app)','1', v_int::text, v_int = 1);
+
+  -- Limpieza -------------------------------------------------------------------------------------------------
+  -- Storage rechaza DELETE directos salvo con este ajuste (solo esta transaccion).
+  perform set_config('storage.allow_delete_query', 'true', true);
+  delete from storage.objects where bucket_id='avatars' and name like v_dani::text||'/%';
+  perform set_config('storage.allow_delete_query', 'false', true);
+  delete from public.moderacion_cautelar where objeto_id = any(v_p) or objeto_id = v_ivan;
+  delete from auth.users where id in (v_dani, v_eva, v_fran, v_gus, v_hugo, v_ivan, v_jose, v_kira);
+end;
+$test2$;
 
 select n, prueba, esperado, obtenido,
        case when ok then 'PASA' else 'FALLA' end as resultado

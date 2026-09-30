@@ -11,6 +11,7 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../map/proveedores_mapa.dart';
+import 'estados_pantalla.dart';
 
 class PantallaCrearPrevia extends ConsumerStatefulWidget {
   const PantallaCrearPrevia({super.key});
@@ -192,18 +193,25 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
               // Cuando
               _Bloque(
                 titulo: '¿Cuándo?',
-                child: InkWell(
+                // Un InkWell suelto no se anuncia como botón ni dice su valor.
+                child: Semantics(
+                  button: true,
+                  excludeSemantics: true,
+                  label: 'Fecha y hora, ${formatoCuando.format(_empiezaEn)}',
                   onTap: _elegirCuando,
-                  borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.schedule),
-                    ),
-                    child: Text(
-                      formatoCuando.format(_empiezaEn),
-                      style: const TextStyle(
-                        color: ColoresPrevia.texto,
-                        fontSize: 16,
+                  child: InkWell(
+                    onTap: _elegirCuando,
+                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.schedule),
+                      ),
+                      child: Text(
+                        formatoCuando.format(_empiezaEn),
+                        style: const TextStyle(
+                          color: ColoresPrevia.texto,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -217,6 +225,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                 child: Row(
                   children: [
                     IconButton.filledTonal(
+                      tooltip: 'Una plaza menos',
                       onPressed: _plazas > 1
                           ? () => setState(() => _plazas--)
                           : null,
@@ -226,6 +235,9 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       child: Center(
                         child: Text(
                           '$_plazas',
+                          semanticsLabel: _plazas == 1
+                              ? '1 plaza libre'
+                              : '$_plazas plazas libres',
                           style: textos.displaySmall?.copyWith(
                             color: ColoresPrevia.acento,
                           ),
@@ -233,6 +245,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                       ),
                     ),
                     IconButton.filledTonal(
+                      tooltip: 'Una plaza más',
                       onPressed: _plazas < 30
                           ? () => setState(() => _plazas++)
                           : null,
@@ -321,20 +334,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
 
               if (_error != null) ...[
                 const SizedBox(height: EspaciadoPrevia.m),
-                Container(
-                  padding: const EdgeInsets.all(EspaciadoPrevia.m),
-                  decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                    border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
-                  ),
-                ),
+                AvisoError(_error!),
               ],
 
               const SizedBox(height: EspaciadoPrevia.l),
@@ -347,6 +347,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
                           color: Colors.white,
+                          semanticsLabel: 'Publicando',
                         ),
                       )
                     : const Text('Publicar previa'),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../app/tema.dart';
 import '../../core/entorno.dart';
+import '../safety/aviso_ubicacion_aproximada.dart';
+import '../safety/pantalla_bloqueados.dart';
 
 /// Ajustes, con los textos legales.
 ///
@@ -23,13 +25,20 @@ class PantallaAjustes extends StatelessWidget {
             icono: Icons.place_outlined,
             parrafos: [
               'Usamos tu ubicación para una sola cosa: enseñarte previas que '
-                  'tengas cerca. No la guardamos en ningún sitio. Se usa para '
-                  'hacer la búsqueda y se descarta.',
+                  'tengas cerca. No la guardamos en tu perfil ni la ve nadie más. '
+                  'Viaja a nuestro servidor solo para hacer la búsqueda; los '
+                  'registros técnicos del servidor pueden conservarla un '
+                  'tiempo breve.',
               'Pedimos únicamente precisión aproximada, no la exacta. Para un '
                   'radio de kilómetros sobra, y así gastamos menos batería.',
               'Si no nos das permiso, la app sigue funcionando: puedes mover '
                   'el mapa a mano y buscar por zona.',
             ],
+          ),
+
+          const Padding(
+            padding: EdgeInsets.only(bottom: EspaciadoPrevia.l),
+            child: AvisoUbicacionAproximada(),
           ),
 
           _Apartado(
@@ -100,6 +109,19 @@ class PantallaAjustes extends StatelessWidget {
                   'presencial. Usa la cabeza: queda con gente con reputación, '
                   'avisa a alguien de dónde vas y vete si algo no te gusta.',
             ],
+          ),
+
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.block),
+            title: const Text('Usuarios bloqueados'),
+            subtitle: const Text('Ver a quién has bloqueado y desbloquear'),
+            trailing: const Icon(Icons.chevron_right),
+            // Navigator directo: asi no hace falta tocar la tabla de rutas.
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                  builder: (_) => const PantallaBloqueados()),
+            ),
           ),
 
           const SizedBox(height: EspaciadoPrevia.l),

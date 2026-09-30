@@ -193,14 +193,45 @@ class RepositorioAuth {
 
   /// RGPD, articulos 15 y 20: derecho de acceso y portabilidad.
   Future<Map<String, dynamic>> exportarMisDatos() async {
-    final datos = await _cliente.rpc('exportar_mis_datos');
-    return Map<String, dynamic>.from(datos as Map);
+    try {
+      final datos = await _cliente.rpc('exportar_mis_datos');
+      return Map<String, dynamic>.from(datos as Map);
+    } on PostgrestException {
+      throw const ErrorPrevia(
+          'No se han podido preparar tus datos. Inténtalo de nuevo.');
+    } catch (_) {
+      throw const ErrorPrevia(
+          'No se han podido exportar tus datos. Comprueba tu conexión.');
+    }
   }
 
   /// RGPD, articulo 17: derecho de supresion.
   Future<void> eliminarMiCuenta() async {
-    await _cliente.rpc('eliminar_mi_cuenta');
-    await salir();
+    // La foto hay que quitarla desde la API de Storage: si la borrara la base
+    // de datos por SQL, desapareceria la fila pero el fichero quedaria huerfano.
+    // Si falla no bloqueamos el borrado de la cuenta: prima el derecho de
+    // supresion.
+    try {
+      await borrarAvatar();
+    } catch (_) {}
+
+    try {
+      await _cliente.rpc('eliminar_mi_cuenta');
+    } on PostgrestException {
+      throw const ErrorPrevia(
+          'No se ha podido eliminar la cuenta. Inténtalo de nuevo; si sigue '
+          'fallando, escríbenos.');
+    } catch (_) {
+      throw const ErrorPrevia(
+          'No se ha podido eliminar la cuenta. Comprueba tu conexión.');
+    }
+
+    // La cuenta ya no existe: el token del servidor es invalido y un signOut
+    // global devolveria 401. Se cierra solo la sesion local, y si aun asi
+    // falla no se le cuenta al usuario: el borrado ya se hizo.
+    try {
+      await _cliente.auth.signOut(scope: SignOutScope.local);
+    } catch (_) {}
   }
 
   static bool esMayorDeEdad(DateTime fechaNacimiento) {

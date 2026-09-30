@@ -7,6 +7,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../party/estados_pantalla.dart';
 
 final porValorarProvider = FutureProvider<List<Previa>>(
   (ref) => ref.watch(repositorioPreviasProvider).previasPorValorar(),
@@ -24,37 +25,26 @@ class PantallaPorValorar extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Previas a las que fui')),
       body: previas.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(EspaciadoPrevia.l),
-            child: Text('No se ha podido cargar tu historial.',
-                style: textos.bodyMedium),
-          ),
+        loading: () => const IndicadorCarga(),
+        error: (e, _) => EstadoError(
+          mensaje: 'No se ha podido cargar tu historial',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () => ref.invalidate(porValorarProvider),
         ),
         data: (lista) {
           if (lista.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(EspaciadoPrevia.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.history,
-                        size: 40, color: ColoresPrevia.textoTenue),
-                    const SizedBox(height: EspaciadoPrevia.m),
-                    Text('Todavía no has ido a ninguna previa',
-                        style: textos.titleLarge, textAlign: TextAlign.center),
-                    const SizedBox(height: EspaciadoPrevia.xs),
-                    Text(
-                      'Cuando vayas a una y termine, podrás valorar a la gente '
-                      'que conociste.',
-                      textAlign: TextAlign.center,
-                      style: textos.bodyMedium,
-                    ),
-                  ],
+            return EstadoVacio(
+              icono: Icons.history,
+              titulo: 'Todavía no has ido a ninguna previa',
+              detalle: 'Cuando vayas a una y termine, podrás valorar a la '
+                  'gente que conociste.',
+              acciones: [
+                FilledButton.icon(
+                  onPressed: () => context.go(Rutas.inicio),
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('Buscar previas en el mapa'),
                 ),
-              ),
+              ],
             );
           }
 

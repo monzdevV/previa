@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../party/estados_pantalla.dart';
+import 'validadores.dart';
 
 class PantallaRegistro extends ConsumerStatefulWidget {
   const PantallaRegistro({super.key});
@@ -89,6 +91,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
@@ -104,7 +107,10 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Crea tu cuenta', style: textos.headlineMedium),
+                Semantics(
+                  header: true,
+                  child: Text('Crea tu cuenta', style: textos.headlineMedium),
+                ),
                 const SizedBox(height: EspaciadoPrevia.s),
                 Text(
                   'Solo lo imprescindible. Nada de teléfono ni apellidos.',
@@ -115,6 +121,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 TextFormField(
                   controller: _nombre,
                   textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.name],
                   decoration: const InputDecoration(
                     labelText: 'Cómo te llamas',
                     hintText: 'Tu nombre o como quieras que te llamen',
@@ -129,6 +137,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 TextFormField(
                   controller: _username,
                   autocorrect: false,
+                  textInputAction: TextInputAction.next,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
                     LengthLimitingTextInputFormatter(20),
@@ -144,24 +153,35 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
-                // Fecha de nacimiento
-                InkWell(
+                // Fecha de nacimiento. Un InkWell suelto no se anuncia como
+                // botón ni dice su valor: se envuelve con una etiqueta que
+                // incluye la fecha elegida.
+                Semantics(
+                  button: true,
+                  excludeSemantics: true,
+                  label: _fechaNacimiento == null
+                      ? 'Fecha de nacimiento, sin elegir'
+                      : 'Fecha de nacimiento, '
+                          '${formatoFecha.format(_fechaNacimiento!)}',
                   onTap: _elegirFecha,
-                  borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Fecha de nacimiento',
-                      prefixIcon: Icon(Icons.cake_outlined),
-                    ),
-                    child: Text(
-                      _fechaNacimiento == null
-                          ? 'Toca para elegir'
-                          : formatoFecha.format(_fechaNacimiento!),
-                      style: TextStyle(
-                        color: _fechaNacimiento == null
-                            ? ColoresPrevia.textoTenue
-                            : ColoresPrevia.texto,
-                        fontSize: 16,
+                  child: InkWell(
+                    onTap: _elegirFecha,
+                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Fecha de nacimiento',
+                        prefixIcon: Icon(Icons.cake_outlined),
+                      ),
+                      child: Text(
+                        _fechaNacimiento == null
+                            ? 'Toca para elegir'
+                            : formatoFecha.format(_fechaNacimiento!),
+                        style: TextStyle(
+                          color: _fechaNacimiento == null
+                              ? ColoresPrevia.textoTenue
+                              : ColoresPrevia.texto,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
@@ -172,7 +192,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                   child: Text(
                     'Solo guardamos tu edad. Nadie ve tu fecha de nacimiento.',
                     style: textos.bodyMedium?.copyWith(
-                      fontSize: 12,
+                      fontSize: 13,
                       color: ColoresPrevia.textoTenue,
                     ),
                   ),
@@ -183,24 +203,29 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                   controller: _correo,
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.email],
                   decoration: const InputDecoration(
                     labelText: 'Correo electrónico',
                     prefixIcon: Icon(Icons.mail_outline),
                   ),
-                  validator: (v) => (v == null || !v.contains('@'))
-                      ? 'Escribe un correo válido'
-                      : null,
+                  validator: (v) =>
+                      esCorreoValido(v) ? null : 'Escribe un correo válido',
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 TextFormField(
                   controller: _contrasena,
                   obscureText: _oculta,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const [AutofillHints.newPassword],
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     hintText: 'mínimo 6 caracteres',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
+                      tooltip:
+                          _oculta ? 'Mostrar contraseña' : 'Ocultar contraseña',
                       icon: Icon(
                         _oculta
                             ? Icons.visibility_outlined
@@ -216,6 +241,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 // Consentimiento explicito, casilla sin premarcar (RGPD).
+                // Texto a 14 (antes 13) y fila con altura mínima de 48.
                 CheckboxListTile(
                   value: _aceptaCondiciones,
                   onChanged: (v) => setState(() => _aceptaCondiciones = v ?? false),
@@ -225,38 +251,14 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                   title: Text(
                     'Soy mayor de 18 años y acepto las condiciones de uso y la '
                     'política de privacidad.',
-                    style: textos.bodyMedium?.copyWith(fontSize: 13),
+                    style: textos.bodyMedium?.copyWith(fontSize: 14),
                   ),
                 ),
+                const MensajeResponsable(),
 
                 if (_error != null) ...[
                   const SizedBox(height: EspaciadoPrevia.s),
-                  Container(
-                    padding: const EdgeInsets.all(EspaciadoPrevia.m),
-                    decoration: BoxDecoration(
-                      color: ColoresPrevia.error.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                      border: Border.all(
-                        color: ColoresPrevia.error.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline,
-                            color: ColoresPrevia.error, size: 20),
-                        const SizedBox(width: EspaciadoPrevia.s),
-                        Expanded(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              color: ColoresPrevia.error,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  AvisoError(_error!),
                 ],
 
                 const SizedBox(height: EspaciadoPrevia.l),
@@ -269,6 +271,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                           child: CircularProgressIndicator(
                             strokeWidth: 2.5,
                             color: Colors.white,
+                            semanticsLabel: 'Creando la cuenta',
                           ),
                         )
                       : const Text('Crear cuenta'),

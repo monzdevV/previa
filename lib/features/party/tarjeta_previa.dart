@@ -5,6 +5,19 @@ import '../profile/avatar_previa.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 
+/// Texto único que leen los lectores de pantalla para una previa (tarjeta y
+/// burbuja del mapa). Una sola frase ordenada vale más que oír cada fragmento
+/// suelto ("3", "Centro", "21:30"...).
+String etiquetaAccesiblePrevia(Previa p) {
+  final hora = DateFormat('HH:mm', 'es_ES').format(p.empiezaEn);
+  final plazas = p.plazasLibres <= 0
+      ? 'completa'
+      : (p.plazasLibres == 1 ? '1 plaza libre' : '${p.plazasLibres} plazas libres');
+  final distancia =
+      p.distanciaMetros != null ? ', a ${p.distanciaLegible}' : '';
+  return '${p.titulo}, $plazas, empieza a las $hora, zona ${p.zona}$distancia';
+}
+
 /// Tarjeta de una previa en los listados.
 ///
 /// El dato que decide si alguien toca o no es cuantas plazas quedan, asi que
@@ -26,7 +39,7 @@ class TarjetaPrevia extends StatelessWidget {
     final textos = Theme.of(context).textTheme;
     final hora = DateFormat('HH:mm', 'es_ES').format(previa.empiezaEn);
 
-    return Card(
+    final tarjeta = Card(
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
@@ -126,6 +139,20 @@ class TarjetaPrevia extends StatelessWidget {
         ),
       ),
     );
+
+    // Sin onTap la tarjeta es solo informativa y se lee tal cual. Con onTap se
+    // anuncia como UN botón con la frase completa, y se silencia el contenido
+    // suelto para no leerlo dos veces.
+    if (onTap == null) return tarjeta;
+    return Semantics(
+      button: true,
+      container: true,
+      label: etiquetaAccesiblePrevia(previa),
+      hint: 'Toca para ver la previa',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: tarjeta,
+    );
   }
 }
 
@@ -172,9 +199,13 @@ class _Dato extends StatelessWidget {
       children: [
         Icon(icono, size: 14, color: ColoresPrevia.textoSuave),
         const SizedBox(width: EspaciadoPrevia.xs),
-        Text(
-          texto,
-          style: const TextStyle(fontSize: 13, color: ColoresPrevia.textoSuave),
+        // Flexible: con texto muy grande o zonas largas el dato pasa a varias
+        // líneas en vez de desbordar la fila.
+        Flexible(
+          child: Text(
+            texto,
+            style: const TextStyle(fontSize: 14, color: ColoresPrevia.textoSuave),
+          ),
         ),
       ],
     );
@@ -200,7 +231,7 @@ class _Etiqueta extends StatelessWidget {
       child: Text(
         texto,
         style: const TextStyle(
-          fontSize: 11,
+          fontSize: 12,
           color: ColoresPrevia.textoSuave,
           fontWeight: FontWeight.w600,
         ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import 'estados_pantalla.dart';
 
 /// Hoja para pedir plaza. Devuelve true si la solicitud se ha enviado.
 Future<bool?> mostrarHojaSolicitarPlaza(
@@ -104,11 +105,19 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 runSpacing: EspaciadoPrevia.s,
                 children: [
                   for (var n = 1; n <= tope; n++)
-                    ChoiceChip(
-                      label: Text('$n'),
+                    // "3" a secas no dice de qué es: se lee "3 personas".
+                    Semantics(
+                      label: n == 1 ? '1 persona' : '$n personas',
+                      excludeSemantics: true,
+                      button: true,
                       selected: _grupo == n,
-                      selectedColor: ColoresPrevia.primario,
-                      onSelected: (_) => setState(() => _grupo = n),
+                      onTap: () => setState(() => _grupo = n),
+                      child: ChoiceChip(
+                        label: Text('$n'),
+                        selected: _grupo == n,
+                        selectedColor: ColoresPrevia.primario,
+                        onSelected: (_) => setState(() => _grupo = n),
+                      ),
                     ),
                 ],
               ),
@@ -138,20 +147,7 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
 
               if (_error != null) ...[
                 const SizedBox(height: EspaciadoPrevia.m),
-                Container(
-                  padding: const EdgeInsets.all(EspaciadoPrevia.m),
-                  decoration: BoxDecoration(
-                    color: ColoresPrevia.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                    border: Border.all(
-                      color: ColoresPrevia.error.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: ColoresPrevia.error),
-                  ),
-                ),
+                AvisoError(_error!),
               ],
 
               const SizedBox(height: EspaciadoPrevia.l),

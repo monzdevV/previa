@@ -7,6 +7,7 @@ import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../map/proveedores_mapa.dart';
 import '../party/tarjeta_previa.dart';
+import '../safety/exportar_datos.dart';
 import 'avatar_previa.dart';
 
 class PantallaPerfil extends ConsumerWidget {
@@ -200,46 +201,105 @@ class PantallaPerfil extends ConsumerWidget {
     final mensajero = ScaffoldMessenger.of(context);
     try {
       final datos = await ref.read(repositorioAuthProvider).exportarMisDatos();
+      final entregado = await entregarExportacion(datos);
+      if (entregado) {
+        mensajero.showSnackBar(
+          const SnackBar(content: Text('Fichero con tus datos listo.')),
+        );
+      }
+    } catch (e) {
+      // ErrorPrevia trae mensaje propio; cualquier otro fallo (p. ej. no
+      // hay hoja de compartir) recibe un texto generico.
       mensajero.showSnackBar(
         SnackBar(
-          content: Text('Datos preparados: ${datos.keys.length} secciones.'),
+          content: Text(e is ErrorPrevia
+              ? e.mensaje
+              : 'No se ha podido guardar el fichero con tus datos.'),
         ),
-      );
-    } catch (_) {
-      mensajero.showSnackBar(
-        const SnackBar(content: Text('No se han podido exportar tus datos.')),
       );
     }
   }
 
   Future<void> _eliminarCuenta(BuildContext context, WidgetRef ref) async {
+    final mensajero = ScaffoldMessenger.of(context);
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: ColoresPrevia.superficieAlta,
-        title: const Text('¿Eliminar tu cuenta?'),
-        content: const Text(
-          'Se borrarán tu perfil, tus previas, tus mensajes y tus '
-          'valoraciones. Esto no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: ColoresPrevia.error,
-              minimumSize: const Size(0, 44),
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      builder: (_) => const _DialogoEliminarCuenta(),
     );
 
     if (confirmado != true) return;
-    await ref.read(repositorioAuthProvider).eliminarMiCuenta();
+    try {
+      await ref.read(repositorioAuthProvider).eliminarMiCuenta();
+    } catch (e) {
+      // Antes el fallo se perdia en silencio y el usuario creia que se
+      // habia borrado o que la app estaba colgada.
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(e is ErrorPrevia
+              ? e.mensaje
+              : 'No se ha podido eliminar la cuenta.'),
+        ),
+      );
+    }
+  }
+}
+
+/// Pide escribir ELIMINAR: un toque accidental no debe borrar una cuenta.
+class _DialogoEliminarCuenta extends StatefulWidget {
+  const _DialogoEliminarCuenta();
+
+  @override
+  State<_DialogoEliminarCuenta> createState() => _DialogoEliminarCuentaState();
+}
+
+class _DialogoEliminarCuentaState extends State<_DialogoEliminarCuenta> {
+  final _texto = TextEditingController();
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final listo = _texto.text.trim().toUpperCase() == 'ELIMINAR';
+    return AlertDialog(
+      backgroundColor: ColoresPrevia.superficieAlta,
+      title: const Text('¿Eliminar tu cuenta?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Se borrarán tu perfil, tus previas, tus mensajes y tus '
+            'valoraciones. Esto no se puede deshacer.',
+          ),
+          const SizedBox(height: EspaciadoPrevia.m),
+          const Text('Escribe ELIMINAR para confirmar:'),
+          const SizedBox(height: EspaciadoPrevia.s),
+          TextField(
+            controller: _texto,
+            autofocus: true,
+            textCapitalization: TextCapitalization.characters,
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: listo ? () => Navigator.of(context).pop(true) : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: ColoresPrevia.error,
+            minimumSize: const Size(0, 44),
+          ),
+          child: const Text('Eliminar'),
+        ),
+      ],
+    );
   }
 }
