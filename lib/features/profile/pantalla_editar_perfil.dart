@@ -98,8 +98,11 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     try {
       final repo = ref.read(repositorioAuthProvider);
       final bytes = await archivo.readAsBytes();
-      final tipo = archivo.mimeType ??
-          (archivo.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+      final tipo =
+          archivo.mimeType ??
+          (archivo.name.toLowerCase().endsWith('.png')
+              ? 'image/png'
+              : 'image/jpeg');
       final url = await repo.subirAvatar(bytes, tipo);
       await repo.actualizarPerfil(avatarUrl: url);
       ref.invalidate(miPerfilProvider);
@@ -124,15 +127,17 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       await repo.borrarAvatar();
       ref.invalidate(miPerfilProvider);
       if (mounted) {
-        setState(() => _perfil = Perfil(
-              id: _perfil!.id,
-              username: _perfil!.username,
-              nombre: _perfil!.nombre,
-              onboarded: _perfil!.onboarded,
-              bio: _perfil!.bio,
-              reputacion: _perfil!.reputacion,
-              numeroValoraciones: _perfil!.numeroValoraciones,
-            ));
+        setState(
+          () => _perfil = Perfil(
+            id: _perfil!.id,
+            username: _perfil!.username,
+            nombre: _perfil!.nombre,
+            onboarded: _perfil!.onboarded,
+            bio: _perfil!.bio,
+            reputacion: _perfil!.reputacion,
+            numeroValoraciones: _perfil!.numeroValoraciones,
+          ),
+        );
       }
     } catch (_) {
       if (mounted) setState(() => _error = 'No se ha podido quitar la foto.');
@@ -150,7 +155,9 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     });
 
     try {
-      await ref.read(repositorioAuthProvider).actualizarPerfil(
+      await ref
+          .read(repositorioAuthProvider)
+          .actualizarPerfil(
             nombre: _nombre.text,
             bio: _bio.text,
             fechaNacimiento: _fechaBloqueada ? null : _fechaNacimiento,
@@ -159,9 +166,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
 
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Perfil actualizado.')));
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
     } finally {
@@ -172,9 +178,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   @override
   Widget build(BuildContext context) {
     if (_cargandoDatos) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     final textos = Theme.of(context).textTheme;
@@ -211,9 +215,11 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                         TextButton.icon(
                           onPressed: _subiendoFoto ? null : _cambiarFoto,
                           icon: const Icon(Icons.photo_camera_outlined),
-                          label: Text(_perfil?.avatarUrl == null
-                              ? 'Añadir foto'
-                              : 'Cambiar foto'),
+                          label: Text(
+                            _perfil?.avatarUrl == null
+                                ? 'Añadir foto'
+                                : 'Cambiar foto',
+                          ),
                         ),
                         if (_perfil?.avatarUrl != null)
                           TextButton(
@@ -295,8 +301,10 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
                       color: ColoresPrevia.error.withValues(alpha: 0.4),
                     ),
                   ),
-                  child: Text(_error!,
-                      style: const TextStyle(color: ColoresPrevia.error)),
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: ColoresPrevia.error),
+                  ),
                 ),
               ],
 

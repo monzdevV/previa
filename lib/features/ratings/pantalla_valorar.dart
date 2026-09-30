@@ -5,14 +5,15 @@ import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../party/estados_pantalla.dart';
+import 'etiquetas_valoracion.dart';
 
 final companerosProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>(
-  (ref, previaId) => ref.watch(repositorioPreviasProvider).companerosDe(previaId),
-);
+      (ref, previaId) =>
+          ref.watch(repositorioPreviasProvider).companerosDe(previaId),
+    );
 
-final misValoracionesProvider =
-    FutureProvider.family<Map<String, int>, String>(
+final misValoracionesProvider = FutureProvider.family<Map<String, int>, String>(
   (ref, previaId) =>
       ref.watch(repositorioPreviasProvider).misValoracionesEn(previaId),
 );
@@ -31,7 +32,8 @@ class PantallaValorar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final companeros = ref.watch(companerosProvider(previaId));
-    final yaValoradas = ref.watch(misValoracionesProvider(previaId)).valueOrNull ?? {};
+    final yaValoradas =
+        ref.watch(misValoracionesProvider(previaId)).valueOrNull ?? {};
     final textos = Theme.of(context).textTheme;
 
     return Scaffold(
@@ -69,7 +71,8 @@ class PantallaValorar extends ConsumerWidget {
                   child: _FichaValoracion(
                     previaId: previaId,
                     perfilId: c['profile_id'] as String,
-                    nombre: (c['profiles'] as Map?)?['display_name'] as String? ??
+                    nombre:
+                        (c['profiles'] as Map?)?['display_name'] as String? ??
                         'Alguien',
                     esAnfitrion: c['role'] == 'host',
                     puntuacionPrevia: yaValoradas[c['profile_id']],
@@ -105,6 +108,7 @@ class _FichaValoracion extends ConsumerStatefulWidget {
 class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
   final _comentario = TextEditingController();
   int? _puntuacion;
+  final _etiquetas = <String>{};
   bool _guardando = false;
   bool _guardada = false;
 
@@ -129,11 +133,13 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
     final mensajero = ScaffoldMessenger.of(context);
 
     try {
-      await ref.read(repositorioPreviasProvider).valorar(
+      await ref
+          .read(repositorioPreviasProvider)
+          .valorar(
             previaId: widget.previaId,
             perfilId: widget.perfilId,
             puntuacion: puntuacion,
-            comentario: _comentario.text,
+            comentario: componerComentario(_etiquetas, _comentario.text),
           );
       ref.invalidate(misValoracionesProvider(widget.previaId));
       ref.invalidate(miPerfilProvider);
@@ -157,6 +163,7 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
+    final sinMovimiento = MediaQuery.disableAnimationsOf(context);
 
     return Card(
       child: Padding(
@@ -195,8 +202,11 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                   ),
                 ),
                 if (_guardada)
-                  const Icon(Icons.check_circle,
-                      color: ColoresPrevia.acento, size: 20),
+                  const Icon(
+                    Icons.check_circle,
+                    color: ColoresPrevia.acento,
+                    size: 20,
+                  ),
               ],
             ),
 
@@ -212,19 +222,33 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
                         : '$i estrellas para ${widget.nombre}',
                     isSelected: (_puntuacion ?? 0) >= i,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
                     onPressed: () => setState(() {
                       _puntuacion = i;
                       _guardada = false;
                     }),
-                    icon: Icon(
-                      (_puntuacion ?? 0) >= i
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      size: 32,
-                      color: (_puntuacion ?? 0) >= i
-                          ? ColoresPrevia.aviso
-                          : ColoresPrevia.textoTenue,
+                    // Rebote breve al rellenarse: confirma el toque sin
+                    // distraer. Con "reducir movimiento" no hay escala.
+                    icon: AnimatedScale(
+                      scale: (_puntuacion ?? 0) >= i && !sinMovimiento
+                          ? 1.15
+                          : 1,
+                      duration: sinMovimiento
+                          ? Duration.zero
+                          : const Duration(milliseconds: 180),
+                      curve: Curves.easeOutBack,
+                      child: Icon(
+                        (_puntuacion ?? 0) >= i
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        size: 32,
+                        color: (_puntuacion ?? 0) >= i
+                            ? ColoresPrevia.aviso
+                            : ColoresPrevia.textoTenue,
+                      ),
                     ),
                   ),
               ],
@@ -232,9 +256,34 @@ class _FichaValoracionState extends ConsumerState<_FichaValoracion> {
 
             if (_puntuacion != null && !_guardada) ...[
               const SizedBox(height: EspaciadoPrevia.s),
+              Text('¿Qué destacarías?', style: textos.bodyMedium),
+              const SizedBox(height: EspaciadoPrevia.s),
+              Wrap(
+                spacing: EspaciadoPrevia.s,
+                runSpacing: EspaciadoPrevia.xs,
+                children: [
+                  for (final e in etiquetasValoracion)
+                    FilterChip(
+                      avatar: Icon(e.icono, size: 18),
+                      label: Text(e.texto),
+                      selected: _etiquetas.contains(e.clave),
+                      materialTapTargetSize: MaterialTapTargetSize.padded,
+                      onSelected: (marcada) => setState(() {
+                        if (marcada) {
+                          _etiquetas.add(e.clave);
+                        } else {
+                          _etiquetas.remove(e.clave);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
               TextField(
                 controller: _comentario,
-                maxLength: 300,
+                // Deja sitio a las etiquetas dentro de los 300 caracteres
+                // que admite la columna.
+                maxLength: 240,
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(

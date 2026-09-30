@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../profile/avatar_previa.dart';
+import '../juegos/juegos.dart';
+import '../safety/aviso_ubicacion_aproximada.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
@@ -15,6 +17,7 @@ import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
 import '../requests/pantalla_solicitudes.dart';
+import 'componentes_previa.dart';
 import 'estados_pantalla.dart';
 import 'hoja_solicitar_plaza.dart';
 
@@ -69,6 +72,11 @@ class PantallaDetallePrevia extends ConsumerWidget {
         ),
         data: (previa) => _Contenido(previa: previa),
       ),
+      // El botón principal vive fijo abajo: es lo que se busca al terminar de
+      // leer, y no debe depender de cuánto haya que desplazar.
+      bottomNavigationBar: detalle.valueOrNull == null
+          ? null
+          : _BarraAccion(previa: detalle.requireValue),
     );
   }
 
@@ -144,7 +152,6 @@ class _Contenido extends ConsumerWidget {
     final textos = Theme.of(context).textTheme;
     final soyMiembro =
         ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
-    final miSolicitud = ref.watch(_miSolicitudProvider(previa.id)).valueOrNull;
     final yoSoyElAnfitrion =
         ref.watch(repositorioAuthProvider).usuarioActual?.id ==
         previa.anfitrionId;
@@ -153,119 +160,246 @@ class _Contenido extends ConsumerWidget {
       "EEEE d 'de' MMMM 'a las' HH:mm",
       'es_ES',
     ).format(previa.empiezaEn);
+    final hora = DateFormat('HH:mm', 'es_ES').format(previa.empiezaEn);
 
-    return ListView(
-      padding: const EdgeInsets.all(EspaciadoPrevia.l),
-      children: [
-        Text(previa.titulo, style: textos.headlineMedium),
-        const SizedBox(height: EspaciadoPrevia.s),
-        Text(
-          cuando,
-          style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave),
-        ),
-
-        const SizedBox(height: EspaciadoPrevia.l),
-
-        Row(
-          children: [
-            Expanded(
-              child: _Dato(
-                icono: Icons.event_seat,
-                valor: previa.plazasLibres == 0
-                    ? 'Completa'
-                    : '${previa.plazasLibres}',
-                etiqueta: previa.plazasLibres == 1
-                    ? 'plaza libre'
-                    : 'plazas libres',
-                destacado: previa.quedanPlazas,
+    final secciones = <Widget>[
+      // Cabecera con el ambiente. El título va SOBRE el degradado (con velo
+      // oscuro) y fuera del Hero, que no debe contener texto.
+      Stack(
+        children: [
+          Hero(
+            tag: tagCabeceraPrevia(previa.id),
+            child: CabeceraAmbiente(
+              ambiente: previa.ambiente,
+              altura: 168,
+              radio: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+            ),
+          ),
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.55),
+                    ],
+                  ),
+                ),
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(EspaciadoPrevia.m),
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        previa.titulo,
+                        style: textos.headlineMedium?.copyWith(
+                          color: Colors.white,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: EspaciadoPrevia.s),
-            Expanded(
-              child: _Dato(
-                icono: Icons.place_outlined,
-                valor: previa.zona,
-                etiqueta: previa.distanciaMetros != null
-                    ? 'a ${previa.distanciaLegible}'
-                    : 'zona',
-              ),
-            ),
-          ],
-        ),
-
-        if (previa.descripcion != null && previa.descripcion!.isNotEmpty) ...[
-          const SizedBox(height: EspaciadoPrevia.l),
-          Text(previa.descripcion!, style: textos.bodyLarge),
-        ],
-
-        if (previa.ambiente.isNotEmpty) ...[
-          const SizedBox(height: EspaciadoPrevia.l),
-          Wrap(
-            spacing: EspaciadoPrevia.s,
-            runSpacing: EspaciadoPrevia.s,
-            children: [for (final a in previa.ambiente) Chip(label: Text(a))],
           ),
         ],
+      ),
 
-        const SizedBox(height: EspaciadoPrevia.l),
-        const Divider(),
-        const SizedBox(height: EspaciadoPrevia.m),
+      const SizedBox(height: EspaciadoPrevia.m),
+      Text(
+        cuando,
+        style: textos.bodyLarge?.copyWith(color: ColoresPrevia.textoSuave),
+      ),
 
-        Semantics(
-          header: true,
-          child: Text('Organiza', style: textos.titleLarge),
-        ),
-        const SizedBox(height: EspaciadoPrevia.m),
-        Row(
-          children: [
-            AvatarPrevia(
-              iniciales: previa.anfitrionNombre.isNotEmpty
-                  ? previa.anfitrionNombre[0].toUpperCase()
-                  : '?',
-              url: previa.anfitrionAvatar,
-              radio: 22,
+      const SizedBox(height: EspaciadoPrevia.m),
+      // Chips: plazas, hora, zona y distancia de un vistazo.
+      Wrap(
+        spacing: EspaciadoPrevia.s,
+        runSpacing: EspaciadoPrevia.s,
+        children: [
+          ChipDato(
+            icono: Icons.event_seat,
+            texto: previa.plazasLibres <= 0
+                ? 'Completa'
+                : (previa.plazasLibres == 1
+                      ? '1 plaza libre'
+                      : '${previa.plazasLibres} plazas libres'),
+            color: previa.quedanPlazas ? ColoresPrevia.acento : null,
+          ),
+          ChipDato(
+            icono: Icons.schedule,
+            texto: '$hora · ${previa.cuandoEmpieza}',
+          ),
+          ChipDato(icono: Icons.place_outlined, texto: previa.zona),
+          if (previa.distanciaMetros != null)
+            ChipDato(
+              icono: Icons.directions_walk,
+              texto: 'a ${previa.distanciaLegible}',
             ),
-            const SizedBox(width: EspaciadoPrevia.m),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(previa.anfitrionNombre, style: textos.titleLarge),
-                  if (previa.anfitrionReputacion != null)
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          size: 15,
-                          color: ColoresPrevia.aviso,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          previa.anfitrionReputacion!.toStringAsFixed(1),
-                          style: textos.bodyMedium,
-                        ),
-                      ],
-                    )
-                  else
-                    Text('Sin valoraciones todavía', style: textos.bodyMedium),
-                ],
+        ],
+      ),
+      const SizedBox(height: EspaciadoPrevia.m),
+      BarraPlazas(libres: previa.plazasLibres),
+
+      if (previa.descripcion != null && previa.descripcion!.isNotEmpty) ...[
+        const SizedBox(height: EspaciadoPrevia.l),
+        Text(previa.descripcion!, style: textos.bodyLarge),
+      ],
+
+      if (previa.ambiente.isNotEmpty) ...[
+        const SizedBox(height: EspaciadoPrevia.l),
+        Wrap(
+          spacing: EspaciadoPrevia.s,
+          runSpacing: EspaciadoPrevia.s,
+          children: [for (final a in previa.ambiente) Chip(label: Text(a))],
+        ),
+      ],
+
+      const SizedBox(height: EspaciadoPrevia.l),
+      const Divider(),
+      const SizedBox(height: EspaciadoPrevia.m),
+
+      Semantics(
+        header: true,
+        child: Text('Organiza', style: textos.titleLarge),
+      ),
+      const SizedBox(height: EspaciadoPrevia.m),
+      Row(
+        children: [
+          AvatarPrevia(
+            iniciales: previa.anfitrionNombre.isNotEmpty
+                ? previa.anfitrionNombre[0].toUpperCase()
+                : '?',
+            url: previa.anfitrionAvatar,
+            radio: 22,
+          ),
+          const SizedBox(width: EspaciadoPrevia.m),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(previa.anfitrionNombre, style: textos.titleLarge),
+                if (previa.anfitrionReputacion != null)
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 15,
+                        color: ColoresPrevia.aviso,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        previa.anfitrionReputacion!.toStringAsFixed(1),
+                        style: textos.bodyMedium,
+                      ),
+                    ],
+                  )
+                else
+                  Text('Sin valoraciones todavía', style: textos.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: EspaciadoPrevia.l),
+      _MapaZona(
+        previa: previa,
+        soyMiembro: soyMiembro,
+        yoSoyElAnfitrion: yoSoyElAnfitrion,
+      ),
+      const SizedBox(height: EspaciadoPrevia.l),
+    ];
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+        EspaciadoPrevia.l,
+        EspaciadoPrevia.s,
+        EspaciadoPrevia.l,
+        EspaciadoPrevia.l,
+      ),
+      children: [
+        // Entrada escalonada de las secciones (solo las primeras).
+        for (var i = 0; i < secciones.length; i++)
+          EntradaEscalonada(indice: i, child: secciones[i]),
+      ],
+    );
+  }
+}
+
+/// Barra inferior fija con la acción principal.
+///
+/// Se anima entre estados (solicitar -> enviada -> dentro) con un
+/// [AnimatedSwitcher] para que el cambio no sea un salto brusco.
+class _BarraAccion extends ConsumerWidget {
+  const _BarraAccion({required this.previa});
+
+  final Previa previa;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final soyMiembro =
+        ref.watch(_soyMiembroProvider(previa.id)).valueOrNull ?? false;
+    final miSolicitud = ref.watch(_miSolicitudProvider(previa.id)).valueOrNull;
+    final yoSoyElAnfitrion =
+        ref.watch(repositorioAuthProvider).usuarioActual?.id ==
+        previa.anfitrionId;
+
+    // La clave del hijo identifica el "estado" de la acción: cambia la clave,
+    // se anima el cambio.
+    final estado = yoSoyElAnfitrion
+        ? 'anfitrion'
+        : soyMiembro
+        ? 'miembro'
+        : 'visitante-${miSolicitud?.estado.name}-${previa.quedanPlazas}';
+
+    return Material(
+      color: ColoresPrevia.superficie,
+      child: SafeArea(
+        top: false,
+        child: Container(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: ColoresPrevia.borde)),
+          ),
+          padding: const EdgeInsets.all(EspaciadoPrevia.m),
+          // Con textScaler grande la barra podría comerse la pantalla: se
+          // limita y permite scroll interno.
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.4,
+            ),
+            child: SingleChildScrollView(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (hijo, anim) => FadeTransition(
+                  opacity: anim,
+                  child: SizeTransition(
+                    sizeFactor: anim,
+                    alignment: Alignment.topCenter,
+                    child: hijo,
+                  ),
+                ),
+                child: KeyedSubtree(
+                  key: ValueKey(estado),
+                  child: _Accion(
+                    previa: previa,
+                    soyMiembro: soyMiembro,
+                    yoSoyElAnfitrion: yoSoyElAnfitrion,
+                    miSolicitud: miSolicitud,
+                  ),
+                ),
               ),
             ),
-          ],
+          ),
         ),
-
-        const SizedBox(height: EspaciadoPrevia.l),
-        _MapaZona(previa: previa, soyMiembro: soyMiembro),
-
-        const SizedBox(height: EspaciadoPrevia.l),
-        _Accion(
-          previa: previa,
-          soyMiembro: soyMiembro,
-          yoSoyElAnfitrion: yoSoyElAnfitrion,
-          miSolicitud: miSolicitud,
-        ),
-        const SizedBox(height: EspaciadoPrevia.l),
-      ],
+      ),
     );
   }
 }
@@ -275,10 +409,15 @@ class _Contenido extends ConsumerWidget {
 /// Si no eres asistente, se ve el circulo aproximado y un aviso que explica
 /// por que. Si lo eres, se pide la direccion exacta al servidor.
 class _MapaZona extends ConsumerWidget {
-  const _MapaZona({required this.previa, required this.soyMiembro});
+  const _MapaZona({
+    required this.previa,
+    required this.soyMiembro,
+    required this.yoSoyElAnfitrion,
+  });
 
   final Previa previa;
   final bool soyMiembro;
+  final bool yoSoyElAnfitrion;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -343,25 +482,9 @@ class _MapaZona extends ConsumerWidget {
 
         if (soyMiembro)
           _BotonDireccionExacta(previaId: previa.id)
-        else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.lock_outline,
-                size: 15,
-                color: ColoresPrevia.textoTenue,
-              ),
-              const SizedBox(width: EspaciadoPrevia.xs),
-              Expanded(
-                child: Text(
-                  'La dirección exacta se ve solo si el anfitrión te acepta.',
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(fontSize: 12, color: ColoresPrevia.textoTenue),
-                ),
-              ),
-            ],
-          ),
+        else if (!yoSoyElAnfitrion)
+          // Texto único compartido con mapa y ajustes: así no se contradicen.
+          const AvisoUbicacionAproximada(compacto: true),
       ],
     );
   }
@@ -527,6 +650,15 @@ class _Accion extends ConsumerWidget {
               icon: const Icon(Icons.forum_outlined, size: 18),
               label: const Text('Ver el chat'),
             ),
+          ] else ...[
+            // Los juegos son para la propia previa: solo tienen sentido antes
+            // de que termine.
+            const SizedBox(height: EspaciadoPrevia.s),
+            OutlinedButton.icon(
+              onPressed: () => abrirJuegos(context),
+              icon: const Icon(Icons.casino_outlined, size: 18),
+              label: const Text('Jugar en la previa'),
+            ),
           ],
         ],
       );
@@ -599,58 +731,6 @@ class _Nota extends StatelessWidget {
             child: Text(
               texto,
               style: TextStyle(color: color, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Dato extends StatelessWidget {
-  const _Dato({
-    required this.icono,
-    required this.valor,
-    required this.etiqueta,
-    this.destacado = false,
-  });
-
-  final IconData icono;
-  final String valor;
-  final String etiqueta;
-  final bool destacado;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = destacado ? ColoresPrevia.acento : ColoresPrevia.texto;
-
-    return Container(
-      padding: const EdgeInsets.all(EspaciadoPrevia.m),
-      decoration: BoxDecoration(
-        color: ColoresPrevia.superficie,
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        border: Border.all(color: ColoresPrevia.borde),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icono, size: 18, color: ColoresPrevia.textoSuave),
-          const SizedBox(height: EspaciadoPrevia.s),
-          Text(
-            valor,
-            style: TextStyle(
-              color: color,
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            etiqueta,
-            style: const TextStyle(
-              color: ColoresPrevia.textoSuave,
-              fontSize: 12,
             ),
           ),
         ],

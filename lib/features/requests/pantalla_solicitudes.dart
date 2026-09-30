@@ -8,6 +8,7 @@ import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../map/proveedores_mapa.dart';
+import '../party/componentes_previa.dart';
 import '../party/estados_pantalla.dart';
 
 final solicitudesDeProvider = FutureProvider.family<List<Solicitud>, String>(
@@ -73,10 +74,19 @@ class PantallaSolicitudes extends ConsumerWidget {
                     style: textos.titleLarge,
                   ),
                   const SizedBox(height: EspaciadoPrevia.m),
-                  for (final s in pendientes)
+                  for (var i = 0; i < pendientes.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(bottom: EspaciadoPrevia.s),
-                      child: _TarjetaSolicitud(solicitud: s, previaId: previaId),
+                      child: EntradaEscalonada(
+                        indice: i,
+                        child: _TarjetaSolicitud(
+                          // Clave por id: al resolver una, las demás conservan
+                          // su estado en vez de intercambiárselo.
+                          key: ValueKey(pendientes[i].id),
+                          solicitud: pendientes[i],
+                          previaId: previaId,
+                        ),
+                      ),
                     ),
                 ],
                 if (resueltas.isNotEmpty) ...[
@@ -87,6 +97,7 @@ class PantallaSolicitudes extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: EspaciadoPrevia.s),
                       child: _TarjetaSolicitud(
+                        key: ValueKey(s.id),
                         solicitud: s,
                         previaId: previaId,
                         soloLectura: true,
@@ -104,6 +115,7 @@ class PantallaSolicitudes extends ConsumerWidget {
 
 class _TarjetaSolicitud extends ConsumerStatefulWidget {
   const _TarjetaSolicitud({
+    super.key,
     required this.solicitud,
     required this.previaId,
     this.soloLectura = false,
@@ -119,6 +131,48 @@ class _TarjetaSolicitud extends ConsumerStatefulWidget {
 
 class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
   bool _procesando = false;
+
+  /// Aceptar y rechazar no se pueden deshacer desde la app (el servidor da de
+  /// alta al miembro, ajusta el aforo y abre el chat), así que se confirma
+  /// ANTES en lugar de ofrecer un "deshacer" que no podríamos cumplir.
+  Future<void> _pedirConfirmacion({required bool aceptar}) async {
+    final s = widget.solicitud;
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (contexto) => AlertDialog(
+        backgroundColor: ColoresPrevia.superficieAlta,
+        title: Text(
+          aceptar
+              ? '¿Aceptar a ${s.nombreSolicitante}?'
+              : '¿Rechazar a ${s.nombreSolicitante}?',
+        ),
+        content: Text(
+          aceptar
+              ? '${s.resumenGrupo} y ocuparán '
+                  '${s.tamanoGrupo == 1 ? "1 plaza" : "${s.tamanoGrupo} plazas"}. '
+                  'Verán la dirección exacta y se abrirá el chat con ellos.'
+              : 'No podrán ver la dirección ni entrar en el chat. '
+                  'Esta decisión no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(contexto).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(contexto).pop(true),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 48),
+              backgroundColor:
+                  aceptar ? ColoresPrevia.primario : ColoresPrevia.error,
+            ),
+            child: Text(aceptar ? 'Sí, aceptar' : 'Sí, rechazar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmado == true && mounted) await _responder(aceptar: aceptar);
+  }
 
   Future<void> _responder({required bool aceptar}) async {
     setState(() => _procesando = true);
@@ -246,7 +300,9 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed:
-                          _procesando ? null : () => _responder(aceptar: false),
+                          _procesando
+                          ? null
+                          : () => _pedirConfirmacion(aceptar: false),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size(0, 48),
                       ),
@@ -263,29 +319,36 @@ class _TarjetaSolicitudState extends ConsumerState<_TarjetaSolicitud> {
                     flex: 2,
                     child: FilledButton(
                       onPressed:
-                          _procesando ? null : () => _responder(aceptar: true),
+                          _procesando
+                          ? null
+                          : () => _pedirConfirmacion(aceptar: true),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(0, 48),
                       ),
-                      child: _procesando
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: Colors.white,
-                                semanticsLabel: 'Enviando respuesta',
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: _procesando
+                            ? const SizedBox(
+                                key: ValueKey('cargando'),
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                  semanticsLabel: 'Enviando respuesta',
+                                ),
+                              )
+                            : Text(
+                                s.tamanoGrupo == 1
+                                    ? 'Aceptar'
+                                    : 'Aceptar a ${s.tamanoGrupo}',
+                                key: const ValueKey('texto'),
+                                semanticsLabel: s.tamanoGrupo == 1
+                                    ? 'Aceptar a ${s.nombreSolicitante}'
+                                    : 'Aceptar a ${s.nombreSolicitante} '
+                                        'y su grupo de ${s.tamanoGrupo}',
                               ),
-                            )
-                          : Text(
-                              s.tamanoGrupo == 1
-                                  ? 'Aceptar'
-                                  : 'Aceptar a ${s.tamanoGrupo}',
-                              semanticsLabel: s.tamanoGrupo == 1
-                                  ? 'Aceptar a ${s.nombreSolicitante}'
-                                  : 'Aceptar a ${s.nombreSolicitante} '
-                                      'y su grupo de ${s.tamanoGrupo}',
-                            ),
+                      ),
                     ),
                   ),
                 ],

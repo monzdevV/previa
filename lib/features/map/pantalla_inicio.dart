@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
+import '../juegos/pantalla_hub_juegos.dart';
 import '../profile/pantalla_perfil.dart';
 import 'pantalla_mapa.dart';
 
@@ -29,6 +30,7 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
             onAbrirPrevia: (previa) =>
                 context.push('${Rutas.previa}/${previa.id}'),
           ),
+          const PantallaHubJuegos(),
           const PantallaPerfil(),
         ],
       ),
@@ -42,6 +44,11 @@ class _PantallaInicioState extends ConsumerState<PantallaInicio> {
             icon: Icon(Icons.map_outlined),
             selectedIcon: Icon(Icons.map),
             label: 'Mapa',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.casino_outlined),
+            selectedIcon: Icon(Icons.casino),
+            label: 'Juegos',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

@@ -20,6 +20,10 @@ class PantallaAjustes extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(EspaciadoPrevia.l),
         children: [
+          const _CabeceraSeccion(
+            titulo: 'Privacidad',
+            icono: Icons.privacy_tip_outlined,
+          ),
           _Apartado(
             titulo: 'Tu ubicación',
             icono: Icons.place_outlined,
@@ -72,6 +76,10 @@ class PantallaAjustes extends StatelessWidget {
             ],
           ),
 
+          const _CabeceraSeccion(
+            titulo: 'Tus datos',
+            icono: Icons.folder_open_outlined,
+          ),
           _Apartado(
             titulo: 'Tus derechos',
             icono: Icons.gavel_outlined,
@@ -85,6 +93,10 @@ class PantallaAjustes extends StatelessWidget {
             ],
           ),
 
+          const _CabeceraSeccion(
+            titulo: 'Seguridad',
+            icono: Icons.security_outlined,
+          ),
           _Apartado(
             titulo: 'Solo mayores de 18',
             icono: Icons.verified_user_outlined,
@@ -96,8 +108,12 @@ class PantallaAjustes extends StatelessWidget {
             ],
           ),
 
-          _Apartado(
+          const _CabeceraSeccion(
             titulo: 'Convivencia',
+            icono: Icons.groups_outlined,
+          ),
+          _Apartado(
+            titulo: 'Reglas de convivencia',
             icono: Icons.handshake_outlined,
             parrafos: [
               'Nadie entra en una previa sin que el anfitrión lo acepte.',
@@ -113,6 +129,7 @@ class PantallaAjustes extends StatelessWidget {
 
           ListTile(
             contentPadding: EdgeInsets.zero,
+            minTileHeight: 56,
             leading: const Icon(Icons.block),
             title: const Text('Usuarios bloqueados'),
             subtitle: const Text('Ver a quién has bloqueado y desbloquear'),
@@ -120,20 +137,24 @@ class PantallaAjustes extends StatelessWidget {
             // Navigator directo: asi no hace falta tocar la tabla de rutas.
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
-                  builder: (_) => const PantallaBloqueados()),
+                builder: (_) => const PantallaBloqueados(),
+              ),
             ),
           ),
 
+          const SizedBox(height: EspaciadoPrevia.m),
+          const _CabeceraSeccion(
+            titulo: 'Acerca de',
+            icono: Icons.info_outline,
+          ),
           const SizedBox(height: EspaciadoPrevia.l),
           Center(
             child: Text(
               'Previa · versión 1.0.0\n'
               'Trabajo de Fin de Grado · 2º DAM',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 12,
-                    color: ColoresPrevia.textoTenue,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontSize: 12, color: ColoresPrevia.textoTenue),
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),
@@ -177,6 +198,51 @@ class _Apartado extends StatelessWidget {
               child: Text(p, style: textos.bodyMedium?.copyWith(height: 1.5)),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Cabecera de seccion: agrupa los apartados para que la pantalla no sea un
+/// muro de texto y se pueda recorrer con el lector por encabezados.
+class _CabeceraSeccion extends StatelessWidget {
+  const _CabeceraSeccion({required this.titulo, required this.icono});
+
+  final String titulo;
+  final IconData icono;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: EspaciadoPrevia.m),
+        padding: const EdgeInsets.symmetric(
+          horizontal: EspaciadoPrevia.m,
+          vertical: EspaciadoPrevia.s,
+        ),
+        decoration: BoxDecoration(
+          color: ColoresPrevia.superficieAlta,
+          borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+        ),
+        child: Row(
+          children: [
+            ExcludeSemantics(
+              child: Icon(icono, size: 20, color: ColoresPrevia.acento),
+            ),
+            const SizedBox(width: EspaciadoPrevia.s),
+            Expanded(
+              child: Text(
+                titulo.toUpperCase(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                  color: ColoresPrevia.texto,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

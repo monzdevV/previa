@@ -36,7 +36,8 @@ class PantallaPorValorar extends ConsumerWidget {
             return EstadoVacio(
               icono: Icons.history,
               titulo: 'Todavía no has ido a ninguna previa',
-              detalle: 'Cuando vayas a una y termine, podrás valorar a la '
+              detalle:
+                  'Cuando vayas a una y termine, podrás valorar a la '
                   'gente que conociste.',
               acciones: [
                 FilledButton.icon(
@@ -53,11 +54,14 @@ class PantallaPorValorar extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
-              separatorBuilder: (_, _) => const SizedBox(height: EspaciadoPrevia.s),
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: EspaciadoPrevia.s),
               itemBuilder: (_, i) {
                 final p = lista[i];
-                final cuando =
-                    DateFormat("d 'de' MMMM", 'es_ES').format(p.empiezaEn);
+                final cuando = DateFormat(
+                  "d 'de' MMMM",
+                  'es_ES',
+                ).format(p.empiezaEn);
 
                 return Card(
                   child: ListTile(
@@ -66,8 +70,10 @@ class PantallaPorValorar extends ConsumerWidget {
                       vertical: EspaciadoPrevia.s,
                     ),
                     title: Text(p.titulo, style: textos.titleLarge),
-                    subtitle: Text('$cuando · ${p.zona}',
-                        style: textos.bodyMedium),
+                    subtitle: Text(
+                      '$cuando · ${p.zona}',
+                      style: textos.bodyMedium,
+                    ),
                     trailing: const Icon(Icons.star_outline_rounded),
                     onTap: () => context.push(
                       '${Rutas.previa}/${p.id}/valorar'

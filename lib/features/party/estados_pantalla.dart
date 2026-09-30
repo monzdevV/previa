@@ -11,8 +11,8 @@ class IndicadorCarga extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => const Center(
-        child: CircularProgressIndicator(semanticsLabel: 'Cargando'),
-      );
+    child: CircularProgressIndicator(semanticsLabel: 'Cargando'),
+  );
 }
 
 /// Contenedor común de los estados de error y vacío.
@@ -80,16 +80,25 @@ class EstadoError extends StatelessWidget {
           child: Column(
             children: [
               const ExcludeSemantics(
-                child: Icon(Icons.cloud_off,
-                    size: 40, color: ColoresPrevia.textoTenue),
+                child: Icon(
+                  Icons.cloud_off,
+                  size: 40,
+                  color: ColoresPrevia.textoTenue,
+                ),
               ),
               const SizedBox(height: EspaciadoPrevia.m),
-              Text(mensaje,
-                  style: textos.titleLarge, textAlign: TextAlign.center),
+              Text(
+                mensaje,
+                style: textos.titleLarge,
+                textAlign: TextAlign.center,
+              ),
               if (detalle != null) ...[
                 const SizedBox(height: EspaciadoPrevia.xs),
-                Text(detalle!,
-                    textAlign: TextAlign.center, style: textos.bodyMedium),
+                Text(
+                  detalle!,
+                  textAlign: TextAlign.center,
+                  style: textos.bodyMedium,
+                ),
               ],
             ],
           ),
@@ -147,8 +156,11 @@ class EstadoVacio extends StatelessWidget {
         ],
         Semantics(
           header: true,
-          child: Text(titulo,
-              style: textos.titleLarge, textAlign: TextAlign.center),
+          child: Text(
+            titulo,
+            style: textos.titleLarge,
+            textAlign: TextAlign.center,
+          ),
         ),
         const SizedBox(height: EspaciadoPrevia.xs),
         Text(detalle, textAlign: TextAlign.center, style: textos.bodyMedium),
@@ -185,14 +197,20 @@ class AvisoError extends StatelessWidget {
         child: Row(
           children: [
             const ExcludeSemantics(
-              child: Icon(Icons.error_outline,
-                  color: ColoresPrevia.error, size: 20),
+              child: Icon(
+                Icons.error_outline,
+                color: ColoresPrevia.error,
+                size: 20,
+              ),
             ),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
                 mensaje,
-                style: const TextStyle(color: ColoresPrevia.error, fontSize: 14),
+                style: const TextStyle(
+                  color: ColoresPrevia.error,
+                  fontSize: 14,
+                ),
               ),
             ),
           ],

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,7 +10,10 @@ import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
 import '../features/map/pantalla_inicio.dart';
+import '../features/onboarding/pantalla_onboarding.dart';
+import '../features/onboarding/servicio_onboarding.dart';
 import '../features/chat/pantalla_chat.dart';
+import '../features/juegos/pantalla_hub_juegos.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
 import '../features/profile/pantalla_ajustes.dart';
@@ -24,6 +27,7 @@ abstract final class Rutas {
   static const bienvenida = '/bienvenida';
   static const entrar = '/entrar';
   static const registro = '/registro';
+  static const onboarding = '/bienvenida-tarjetas';
   static const inicio = '/';
   static const crearPrevia = '/crear';
   static const previa = '/previa';
@@ -31,6 +35,7 @@ abstract final class Rutas {
   static const editarPerfil = '/editar-perfil';
   static const porValorar = '/por-valorar';
   static const ajustes = '/ajustes';
+  static const juegos = '/juegos';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -61,14 +66,22 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
 
     // Un guardia unico en lugar de comprobaciones repartidas por las
     // pantallas: asi es imposible que a una se le olvide.
-    redirect: (context, estado) {
+    redirect: (context, estado) async {
       final haySesion = cliente.auth.currentUser != null;
       final ruta = estado.matchedLocation;
-      final enZonaPublica = ruta == Rutas.bienvenida ||
+      final enZonaPublica =
+          ruta == Rutas.bienvenida ||
           ruta == Rutas.entrar ||
           ruta == Rutas.registro;
 
       if (!haySesion && !enZonaPublica) return Rutas.bienvenida;
+      // Primera vez en este dispositivo: onboarding antes del inicio, tanto
+      // con sesion recien creada como con una sesion ya guardada.
+      if (haySesion &&
+          (enZonaPublica || ruta == Rutas.inicio) &&
+          !await ServicioOnboarding.yaVisto()) {
+        return Rutas.onboarding;
+      }
       if (haySesion && enZonaPublica) return Rutas.inicio;
       return null;
     },
@@ -76,68 +89,127 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: Rutas.bienvenida,
-        builder: (_, _) => const PantallaBienvenida(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaBienvenida()),
       ),
       GoRoute(
         path: Rutas.entrar,
-        builder: (_, _) => const PantallaEntrar(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaEntrar()),
       ),
       GoRoute(
         path: Rutas.registro,
-        builder: (_, _) => const PantallaRegistro(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaRegistro()),
+      ),
+      GoRoute(
+        path: Rutas.onboarding,
+        pageBuilder: (_, e) => _pagina(e, const PantallaOnboarding()),
       ),
       GoRoute(
         path: Rutas.inicio,
-        builder: (_, _) => const PantallaInicio(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaInicio()),
       ),
       GoRoute(
         path: Rutas.crearPrevia,
-        builder: (_, _) => const PantallaCrearPrevia(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaCrearPrevia()),
       ),
       GoRoute(
         path: Rutas.misSolicitudes,
-        builder: (_, _) => const PantallaMisSolicitudes(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaMisSolicitudes()),
       ),
       GoRoute(
         path: Rutas.editarPerfil,
-        builder: (_, _) => const PantallaEditarPerfil(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaEditarPerfil()),
       ),
       GoRoute(
         path: '${Rutas.previa}/:id',
-        builder: (_, estado) => PantallaDetallePrevia(
-          previaId: estado.pathParameters['id']!,
+        pageBuilder: (_, estado) => _pagina(
+          estado,
+          PantallaDetallePrevia(previaId: estado.pathParameters['id']!),
         ),
         routes: [
           GoRoute(
             path: 'solicitudes',
-            builder: (_, estado) => PantallaSolicitudes(
-              previaId: estado.pathParameters['id']!,
+            pageBuilder: (_, estado) => _pagina(
+              estado,
+              PantallaSolicitudes(previaId: estado.pathParameters['id']!),
             ),
           ),
           GoRoute(
             path: 'chat',
-            builder: (_, estado) => PantallaChat(
-              previaId: estado.pathParameters['id']!,
-              titulo: estado.uri.queryParameters['titulo'],
+            pageBuilder: (_, estado) => _pagina(
+              estado,
+              PantallaChat(
+                previaId: estado.pathParameters['id']!,
+                titulo: estado.uri.queryParameters['titulo'],
+              ),
             ),
           ),
           GoRoute(
             path: 'valorar',
-            builder: (_, estado) => PantallaValorar(
-              previaId: estado.pathParameters['id']!,
-              titulo: estado.uri.queryParameters['titulo'],
+            pageBuilder: (_, estado) => _pagina(
+              estado,
+              PantallaValorar(
+                previaId: estado.pathParameters['id']!,
+                titulo: estado.uri.queryParameters['titulo'],
+              ),
             ),
           ),
         ],
       ),
       GoRoute(
         path: Rutas.porValorar,
-        builder: (_, _) => const PantallaPorValorar(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaPorValorar()),
       ),
       GoRoute(
         path: Rutas.ajustes,
-        builder: (_, _) => const PantallaAjustes(),
+        pageBuilder: (_, e) => _pagina(e, const PantallaAjustes()),
+      ),
+      GoRoute(
+        path: Rutas.juegos,
+        pageBuilder: (_, e) =>
+            _pagina(e, const PantallaHubJuegos(conAtras: true)),
       ),
     ],
   );
 });
+
+/// Pagina con transicion comun a toda la app: fundido con un ligero
+/// desplazamiento vertical (estilo "fade-through").
+///
+/// Se centraliza aqui para que todas las pantallas se muevan igual; antes
+/// cada una usaba la transicion por defecto de la plataforma. Con "reducir
+/// movimiento" del sistema la pantalla aparece sin animar.
+CustomTransitionPage<void> _pagina(GoRouterState estado, Widget hijo) {
+  return CustomTransitionPage<void>(
+    key: estado.pageKey,
+    child: hijo,
+    transitionDuration: const Duration(milliseconds: 280),
+    reverseTransitionDuration: const Duration(milliseconds: 220),
+    transitionsBuilder: (context, animacion, secundaria, child) {
+      if (MediaQuery.disableAnimationsOf(context)) return child;
+
+      final curva = CurvedAnimation(
+        parent: animacion,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      // La pantalla que queda debajo se atenua un poco para dar profundidad.
+      final atenuada = Tween<double>(
+        begin: 1,
+        end: 0.85,
+      ).animate(CurvedAnimation(parent: secundaria, curve: Curves.easeOut));
+      return FadeTransition(
+        opacity: atenuada,
+        child: FadeTransition(
+          opacity: curva,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.04),
+              end: Offset.zero,
+            ).animate(curva),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
+}

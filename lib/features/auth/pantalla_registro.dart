@@ -8,6 +8,9 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../party/estados_pantalla.dart';
+import 'aparece.dart';
+import 'cabecera_auth.dart';
+import 'fuerza_contrasena.dart';
 import 'validadores.dart';
 
 class PantallaRegistro extends ConsumerStatefulWidget {
@@ -24,6 +27,13 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
   final _correo = TextEditingController();
   final _contrasena = TextEditingController();
 
+  final _focoNombre = FocusNode();
+  final _focoUsername = FocusNode();
+  final _focoFecha = FocusNode();
+  final _focoCorreo = FocusNode();
+  final _focoContrasena = FocusNode();
+  final _focoCondiciones = FocusNode();
+
   DateTime? _fechaNacimiento;
   bool _aceptaCondiciones = false;
   bool _cargando = false;
@@ -36,7 +46,44 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     _username.dispose();
     _correo.dispose();
     _contrasena.dispose();
+    _focoNombre.dispose();
+    _focoUsername.dispose();
+    _focoFecha.dispose();
+    _focoCorreo.dispose();
+    _focoContrasena.dispose();
+    _focoCondiciones.dispose();
     super.dispose();
+  }
+
+  String? _validarNombre(String? v) => (v == null || v.trim().length < 2)
+      ? 'Escribe al menos 2 caracteres'
+      : null;
+
+  String? _validarUsername(String? v) => (v == null || v.trim().length < 3)
+      ? 'Mínimo 3 caracteres, sin espacios'
+      : null;
+
+  String? _validarCorreo(String? v) =>
+      esCorreoValido(v) ? null : 'Escribe un correo válido';
+
+  String? _validarContrasena(String? v) =>
+      (v == null || v.length < 6) ? 'Mínimo 6 caracteres' : null;
+
+  /// Lleva el foco (y la vista) a un campo. Con el teclado abierto el campo
+  /// inválido puede quedar oculto; los que no son de texto (fecha, casilla)
+  /// no se desplazan solos, por eso se pide la visibilidad explícitamente.
+  void _enfocar(FocusNode nodo) {
+    nodo.requestFocus();
+    final contexto = nodo.context;
+    if (contexto != null) {
+      Scrollable.ensureVisible(
+        contexto,
+        alignment: 0.3,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 250),
+      );
+    }
   }
 
   Future<void> _elegirFecha() async {
@@ -45,7 +92,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
       context: context,
       // Se abre directamente en el año en que se cumplen los 18: el gesto
       // por defecto no debe facilitar mentir sobre la edad.
-      initialDate: _fechaNacimiento ?? DateTime(hoy.year - 18, hoy.month, hoy.day),
+      initialDate:
+          _fechaNacimiento ?? DateTime(hoy.year - 18, hoy.month, hoy.day),
       firstDate: DateTime(hoy.year - 100),
       lastDate: hoy,
       locale: const Locale('es', 'ES'),
@@ -55,18 +103,35 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
   }
 
   Future<void> _registrar() async {
-    if (!_formulario.currentState!.validate()) return;
+    // Se valida en el orden en que aparecen los campos y el foco va al
+    // primero que falle.
+    if (!_formulario.currentState!.validate()) {
+      if (_validarNombre(_nombre.text) != null) {
+        _enfocar(_focoNombre);
+      } else if (_validarUsername(_username.text) != null) {
+        _enfocar(_focoUsername);
+      } else if (_validarCorreo(_correo.text) != null) {
+        _enfocar(_focoCorreo);
+      } else {
+        _enfocar(_focoContrasena);
+      }
+      return;
+    }
 
     if (_fechaNacimiento == null) {
       setState(() => _error = 'Necesitamos tu fecha de nacimiento.');
+      _enfocar(_focoFecha);
       return;
     }
     if (!RepositorioAuth.esMayorDeEdad(_fechaNacimiento!)) {
       setState(() => _error = 'Previa es solo para mayores de 18 años.');
+      _enfocar(_focoFecha);
       return;
     }
     if (!_aceptaCondiciones) {
-      setState(() => _error = 'Tienes que aceptar las condiciones para continuar.');
+      setState(
+          () => _error = 'Tienes que aceptar las condiciones para continuar.');
+      _enfocar(_focoCondiciones);
       return;
     }
 
@@ -91,96 +156,112 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final formatoFecha = DateFormat('d MMMM y', 'es_ES');
+    const margenTeclado = EdgeInsets.only(bottom: 160);
 
     return Scaffold(
       appBar: AppBar(leading: const BackButton()),
       body: SafeArea(
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(EspaciadoPrevia.l),
           child: Form(
             key: _formulario,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Semantics(
-                  header: true,
-                  child: Text('Crea tu cuenta', style: textos.headlineMedium),
-                ),
-                const SizedBox(height: EspaciadoPrevia.s),
-                Text(
-                  'Solo lo imprescindible. Nada de teléfono ni apellidos.',
-                  style: textos.bodyMedium,
+                const Aparece(
+                  child: CabeceraAuth(
+                    icono: Icons.celebration_outlined,
+                    titulo: 'Crea tu cuenta',
+                    subtitulo:
+                        'Solo lo imprescindible. Nada de teléfono ni apellidos.',
+                  ),
                 ),
                 const SizedBox(height: EspaciadoPrevia.xl),
 
-                TextFormField(
-                  controller: _nombre,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: const [AutofillHints.name],
-                  decoration: const InputDecoration(
-                    labelText: 'Cómo te llamas',
-                    hintText: 'Tu nombre o como quieras que te llamen',
-                    prefixIcon: Icon(Icons.person_outline),
+                const Aparece(orden: 1, child: EtiquetaSeccion('Sobre ti')),
+                const SizedBox(height: EspaciadoPrevia.m),
+
+                Aparece(
+                  orden: 1,
+                  child: TextFormField(
+                    controller: _nombre,
+                    focusNode: _focoNombre,
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.name],
+                    scrollPadding: margenTeclado,
+                    decoration: const InputDecoration(
+                      labelText: 'Cómo te llamas',
+                      hintText: 'Tu nombre o como quieras que te llamen',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: _validarNombre,
+                    onFieldSubmitted: (_) => _focoUsername.requestFocus(),
                   ),
-                  validator: (v) => (v == null || v.trim().length < 2)
-                      ? 'Escribe al menos 2 caracteres'
-                      : null,
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
-                TextFormField(
-                  controller: _username,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.next,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
-                    LengthLimitingTextInputFormatter(20),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre de usuario',
-                    hintText: 'sin espacios, en minúsculas',
-                    prefixIcon: Icon(Icons.alternate_email),
+                Aparece(
+                  orden: 2,
+                  child: TextFormField(
+                    controller: _username,
+                    focusNode: _focoUsername,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    scrollPadding: margenTeclado,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[a-z0-9_]')),
+                      LengthLimitingTextInputFormatter(20),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre de usuario',
+                      hintText: 'sin espacios, en minúsculas',
+                      prefixIcon: Icon(Icons.alternate_email),
+                    ),
+                    validator: _validarUsername,
+                    onFieldSubmitted: (_) => _focoCorreo.requestFocus(),
                   ),
-                  validator: (v) => (v == null || v.trim().length < 3)
-                      ? 'Mínimo 3 caracteres, sin espacios'
-                      : null,
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 // Fecha de nacimiento. Un InkWell suelto no se anuncia como
                 // botón ni dice su valor: se envuelve con una etiqueta que
                 // incluye la fecha elegida.
-                Semantics(
-                  button: true,
-                  excludeSemantics: true,
-                  label: _fechaNacimiento == null
-                      ? 'Fecha de nacimiento, sin elegir'
-                      : 'Fecha de nacimiento, '
-                          '${formatoFecha.format(_fechaNacimiento!)}',
-                  onTap: _elegirFecha,
-                  child: InkWell(
+                Aparece(
+                  orden: 3,
+                  child: Semantics(
+                    button: true,
+                    excludeSemantics: true,
+                    label: _fechaNacimiento == null
+                        ? 'Fecha de nacimiento, sin elegir'
+                        : 'Fecha de nacimiento, '
+                            '${formatoFecha.format(_fechaNacimiento!)}',
                     onTap: _elegirFecha,
-                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Fecha de nacimiento',
-                        prefixIcon: Icon(Icons.cake_outlined),
-                      ),
-                      child: Text(
-                        _fechaNacimiento == null
-                            ? 'Toca para elegir'
-                            : formatoFecha.format(_fechaNacimiento!),
-                        style: TextStyle(
-                          color: _fechaNacimiento == null
-                              ? ColoresPrevia.textoTenue
-                              : ColoresPrevia.texto,
-                          fontSize: 16,
+                    child: InkWell(
+                      focusNode: _focoFecha,
+                      onTap: _elegirFecha,
+                      borderRadius:
+                          BorderRadius.circular(EspaciadoPrevia.radio),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Fecha de nacimiento',
+                          prefixIcon: Icon(Icons.cake_outlined),
+                        ),
+                        child: Text(
+                          _fechaNacimiento == null
+                              ? 'Toca para elegir'
+                              : formatoFecha.format(_fechaNacimiento!),
+                          style: TextStyle(
+                            color: _fechaNacimiento == null
+                                ? ColoresPrevia.textoTenue
+                                : ColoresPrevia.texto,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -197,28 +278,35 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                     ),
                   ),
                 ),
+                const SizedBox(height: EspaciadoPrevia.l),
+
+                const EtiquetaSeccion('Tu acceso'),
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 TextFormField(
                   controller: _correo,
+                  focusNode: _focoCorreo,
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email],
+                  scrollPadding: margenTeclado,
                   decoration: const InputDecoration(
                     labelText: 'Correo electrónico',
                     prefixIcon: Icon(Icons.mail_outline),
                   ),
-                  validator: (v) =>
-                      esCorreoValido(v) ? null : 'Escribe un correo válido',
+                  validator: _validarCorreo,
+                  onFieldSubmitted: (_) => _focoContrasena.requestFocus(),
                 ),
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 TextFormField(
                   controller: _contrasena,
+                  focusNode: _focoContrasena,
                   obscureText: _oculta,
                   textInputAction: TextInputAction.done,
                   autofillHints: const [AutofillHints.newPassword],
+                  scrollPadding: margenTeclado,
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     hintText: 'mínimo 6 caracteres',
@@ -234,17 +322,19 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                       onPressed: () => setState(() => _oculta = !_oculta),
                     ),
                   ),
-                  validator: (v) => (v == null || v.length < 6)
-                      ? 'Mínimo 6 caracteres'
-                      : null,
+                  validator: _validarContrasena,
+                  onFieldSubmitted: (_) => _enfocar(_focoCondiciones),
                 ),
+                IndicadorFuerzaContrasena(controlador: _contrasena),
                 const SizedBox(height: EspaciadoPrevia.m),
 
                 // Consentimiento explicito, casilla sin premarcar (RGPD).
                 // Texto a 14 (antes 13) y fila con altura mínima de 48.
                 CheckboxListTile(
+                  focusNode: _focoCondiciones,
                   value: _aceptaCondiciones,
-                  onChanged: (v) => setState(() => _aceptaCondiciones = v ?? false),
+                  onChanged: (v) =>
+                      setState(() => _aceptaCondiciones = v ?? false),
                   controlAffinity: ListTileControlAffinity.leading,
                   contentPadding: EdgeInsets.zero,
                   activeColor: ColoresPrevia.primario,

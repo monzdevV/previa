@@ -16,8 +16,9 @@ class CentroBusqueda extends Notifier<LatLng?> {
   void fijar(LatLng punto) => state = punto;
 }
 
-final centroBusquedaProvider =
-    NotifierProvider<CentroBusqueda, LatLng?>(CentroBusqueda.new);
+final centroBusquedaProvider = NotifierProvider<CentroBusqueda, LatLng?>(
+  CentroBusqueda.new,
+);
 
 /// Posicion real del dispositivo. Se pide una vez al abrir el mapa.
 final posicionDispositivoProvider = FutureProvider<LatLng>((ref) async {
@@ -49,17 +50,18 @@ class Filtros {
     int? horas,
     int? plazasMinimas,
     Set<String>? ambiente,
-  }) =>
-      Filtros(
-        radioMetros: radioMetros ?? this.radioMetros,
-        horas: horas ?? this.horas,
-        plazasMinimas: plazasMinimas ?? this.plazasMinimas,
-        ambiente: ambiente ?? this.ambiente,
-      );
+  }) => Filtros(
+    radioMetros: radioMetros ?? this.radioMetros,
+    horas: horas ?? this.horas,
+    plazasMinimas: plazasMinimas ?? this.plazasMinimas,
+    ambiente: ambiente ?? this.ambiente,
+  );
 
   /// Hay algo filtrado aparte de la distancia (horas, plazas o ambiente).
   bool get hayFiltrosAparteDelRadio =>
-      horas != Entorno.horasPorDefecto || plazasMinimas != 1 || ambiente.isNotEmpty;
+      horas != Entorno.horasPorDefecto ||
+      plazasMinimas != 1 ||
+      ambiente.isNotEmpty;
 
   bool get sonLosPorDefecto =>
       radioMetros == Entorno.radioBusquedaPorDefecto &&
@@ -84,7 +86,8 @@ class FiltrosNotifier extends Notifier<Filtros> {
 
   void fijarRadio(int metros) => state = state.copiarCon(radioMetros: metros);
   void fijarHoras(int horas) => state = state.copiarCon(horas: horas);
-  void fijarPlazas(int plazas) => state = state.copiarCon(plazasMinimas: plazas);
+  void fijarPlazas(int plazas) =>
+      state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
 
   /// Quita horas, plazas y ambiente pero respeta la distancia que el usuario
@@ -99,8 +102,9 @@ class FiltrosNotifier extends Notifier<Filtros> {
   }
 }
 
-final filtrosProvider =
-    NotifierProvider<FiltrosNotifier, Filtros>(FiltrosNotifier.new);
+final filtrosProvider = NotifierProvider<FiltrosNotifier, Filtros>(
+  FiltrosNotifier.new,
+);
 
 /// Las previas que se pintan en el mapa.
 ///
@@ -112,7 +116,9 @@ final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
       elegido ?? await ref.watch(posicionDispositivoProvider.future);
   final filtros = ref.watch(filtrosProvider);
 
-  final encontradas = await ref.watch(repositorioPreviasProvider).buscarCerca(
+  final encontradas = await ref
+      .watch(repositorioPreviasProvider)
+      .buscarCerca(
         FiltrosBusqueda(
           centro: centro,
           radioMetros: filtros.radioMetros,

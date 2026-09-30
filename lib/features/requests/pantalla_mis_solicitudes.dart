@@ -7,6 +7,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../party/componentes_previa.dart';
 import '../party/estados_pantalla.dart';
 
 final misSolicitudesProvider = FutureProvider<List<Solicitud>>(
@@ -14,11 +15,64 @@ final misSolicitudesProvider = FutureProvider<List<Solicitud>>(
 );
 
 /// Las plazas que he pedido y en qué han quedado.
-class PantallaMisSolicitudes extends ConsumerWidget {
+class PantallaMisSolicitudes extends ConsumerStatefulWidget {
   const PantallaMisSolicitudes({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PantallaMisSolicitudes> createState() =>
+      _PantallaMisSolicitudesState();
+}
+
+class _PantallaMisSolicitudesState
+    extends ConsumerState<PantallaMisSolicitudes> {
+  /// Solicitudes "canceladas" a falta de confirmar: se ocultan al instante y
+  /// solo se cancelan de verdad cuando el SnackBar se cierra sin pulsar
+  /// "Deshacer". Cancelar es reversible en la UI porque aún no hemos llamado
+  /// al servidor; una vez llamado, la previa podría llenarse y no habría vuelta.
+  final Set<String> _ocultas = {};
+
+  void _cancelarConDeshacer(Solicitud s) {
+    final mensajero = ScaffoldMessenger.of(context);
+    // Se captura ahora: el SnackBar sobrevive a esta pantalla y al cerrarse
+    // ya no podríamos usar `ref` si la pantalla se ha destruido.
+    final repo = ref.read(repositorioPreviasProvider);
+    setState(() => _ocultas.add(s.id));
+
+    mensajero.hideCurrentSnackBar();
+    mensajero
+        .showSnackBar(
+          SnackBar(
+            content: Text('Solicitud a «${s.tituloPrevia}» cancelada.'),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Deshacer',
+              onPressed: () {
+                if (mounted) setState(() => _ocultas.remove(s.id));
+              },
+            ),
+          ),
+        )
+        .closed
+        .then((motivo) async {
+      if (motivo == SnackBarClosedReason.action) return;
+      try {
+        await repo.cancelarSolicitud(s.id);
+        if (mounted) ref.invalidate(misSolicitudesProvider);
+      } catch (_) {
+        // Antes una excepción aquí no se veía: el usuario creía haber
+        // cancelado y la solicitud seguía viva. Se repone y se avisa.
+        if (mounted) setState(() => _ocultas.remove(s.id));
+        mensajero.showSnackBar(
+          const SnackBar(
+            content: Text('No se ha podido cancelar. Inténtalo de nuevo.'),
+          ),
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final solicitudes = ref.watch(misSolicitudesProvider);
 
     return Scaffold(
@@ -30,7 +84,8 @@ class PantallaMisSolicitudes extends ConsumerWidget {
           detalle: 'Comprueba tu conexión e inténtalo otra vez.',
           onReintentar: () => ref.invalidate(misSolicitudesProvider),
         ),
-        data: (lista) {
+        data: (todas) {
+          final lista = todas.where((s) => !_ocultas.contains(s.id)).toList();
           if (lista.isEmpty) {
             return EstadoVacio(
               icono: Icons.waving_hand_outlined,
@@ -54,7 +109,14 @@ class PantallaMisSolicitudes extends ConsumerWidget {
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
               separatorBuilder: (_, _) => const SizedBox(height: EspaciadoPrevia.s),
-              itemBuilder: (_, i) => _Tarjeta(solicitud: lista[i]),
+              itemBuilder: (_, i) => EntradaEscalonada(
+                indice: i,
+                child: _Tarjeta(
+                  key: ValueKey(lista[i].id),
+                  solicitud: lista[i],
+                  onCancelar: () => _cancelarConDeshacer(lista[i]),
+                ),
+              ),
             ),
           );
         },
@@ -63,13 +125,14 @@ class PantallaMisSolicitudes extends ConsumerWidget {
   }
 }
 
-class _Tarjeta extends ConsumerWidget {
-  const _Tarjeta({required this.solicitud});
+class _Tarjeta extends StatelessWidget {
+  const _Tarjeta({super.key, required this.solicitud, required this.onCancelar});
 
   final Solicitud solicitud;
+  final VoidCallback onCancelar;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
     final empieza = solicitud.empiezaPrevia;
 
@@ -171,26 +234,7 @@ class _Tarjeta extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () async {
-                      final mensajero = ScaffoldMessenger.of(context);
-                      try {
-                        await ref
-                            .read(repositorioPreviasProvider)
-                            .cancelarSolicitud(solicitud.id);
-                      } catch (_) {
-                        // Antes una excepción aquí no se veía: el usuario
-                        // creía haber cancelado y la solicitud seguía viva.
-                        mensajero.showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'No se ha podido cancelar. Inténtalo de nuevo.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      ref.invalidate(misSolicitudesProvider);
-                    },
+                    onPressed: onCancelar,
                     child: const Text('Cancelar solicitud'),
                   ),
                 ),

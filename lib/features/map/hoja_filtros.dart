@@ -85,7 +85,10 @@ class _HojaFiltros extends ConsumerWidget {
             ),
 
             const SizedBox(height: EspaciadoPrevia.m),
-            Semantics(header: true, child: Text('Somos', style: textos.titleLarge)),
+            Semantics(
+              header: true,
+              child: Text('Somos', style: textos.titleLarge),
+            ),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               'Solo verás previas con sitio para todo el grupo.',
@@ -114,7 +117,10 @@ class _HojaFiltros extends ConsumerWidget {
             ),
 
             const SizedBox(height: EspaciadoPrevia.l),
-            Semantics(header: true, child: Text('Ambiente', style: textos.titleLarge)),
+            Semantics(
+              header: true,
+              child: Text('Ambiente', style: textos.titleLarge),
+            ),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               filtros.ambiente.isEmpty
