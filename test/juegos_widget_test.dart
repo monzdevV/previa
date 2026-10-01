@@ -44,11 +44,16 @@ void main() {
     await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
 
-    // Con menos de 2 jugadores no se puede empezar.
+    // Con menos de 2 jugadores no se puede empezar. La lista es perezosa:
+    // se baja hasta el botón para que exista en el árbol.
+    await t.scrollUntilVisible(find.text('Empezar'), 300,
+        scrollable: find.byType(Scrollable).first);
     expect(
       t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Empezar')).onPressed,
       isNull,
     );
+    await t.drag(find.byType(ListView), const Offset(0, 2000));
+    await t.pumpAndSettle();
     for (final n in ['Ana', 'Beto']) {
       await t.enterText(find.byType(TextField), n);
       await t.tap(find.byTooltip('Añadir jugador'));
@@ -61,7 +66,8 @@ void main() {
     expect(find.textContaining('Ya hay alguien'), findsOneWidget);
     expect(find.byType(InputChip), findsNWidgets(2));
 
-    await t.ensureVisible(find.text('Empezar'));
+    await t.scrollUntilVisible(find.text('Empezar'), 300,
+        scrollable: find.byType(Scrollable).first);
     await t.pumpAndSettle();
     await t.tap(find.widgetWithText(FilledButton, 'Empezar'));
     await t.pumpAndSettle();

@@ -15,3 +15,34 @@ List<Reto> retosPara(TipoJuego juego, NivelReto nivel, {List<Reto>? fuente}) {
   final res = filtrar(fuente ?? _fuente());
   return res.isNotEmpty ? res : filtrar(retosDePrueba);
 }
+
+/// Máximos de las cartas del grupo: pocas y cortas, para que sigan siendo
+/// una sorpresa dentro de la baraja y no la sustituyan.
+const int maxCartasPropias = 20;
+const int maxLongitudCartaPropia = 140;
+
+/// Convierte lo que escribió el grupo en cartas del juego. Entran en nivel
+/// suave a propósito: así salen en cualquier partida y nadie recibe por
+/// sorpresa algo más fuerte de lo que eligió. El texto se recorta y se
+/// descartan los vacíos y repetidos, igual que con los nombres.
+List<Reto> retosPropios(TipoJuego juego, Iterable<String> textos) {
+  final vistos = <String>{};
+  final salida = <Reto>[];
+  for (final crudo in textos) {
+    var t = crudo.trim();
+    if (t.length > maxLongitudCartaPropia) {
+      t = t.substring(0, maxLongitudCartaPropia);
+    }
+    if (t.isEmpty || !vistos.add(t.toLowerCase())) continue;
+    salida.add(
+      Reto(
+        id: 'propia-${juego.name}-${salida.length + 1}',
+        juego: juego,
+        nivel: NivelReto.suave,
+        texto: t,
+      ),
+    );
+    if (salida.length == maxCartasPropias) break;
+  }
+  return salida;
+}

@@ -54,6 +54,7 @@ class ConfiguracionPartida {
     this.nivel = NivelReto.suave,
     this.rondas = 10,
     this.sinAlcohol = false,
+    this.cartasPropias = const [],
   });
 
   final TipoJuego juego;
@@ -63,6 +64,10 @@ class ConfiguracionPartida {
   /// Cartas a jugar; `null` = sin límite (se para cuando el grupo quiera).
   final int? rondas;
   final bool sinAlcohol;
+
+  /// Cartas que ha escrito el grupo. Solo la parte variable, igual que el
+  /// contenido de datos/: la fórmula del juego la pone el motor.
+  final List<String> cartasPropias;
 }
 
 extension TipoJuegoPuntua on TipoJuego {

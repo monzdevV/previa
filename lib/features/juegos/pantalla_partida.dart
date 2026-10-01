@@ -43,7 +43,12 @@ class _PantallaPartidaState extends State<PantallaPartida> {
 
   Partida _nuevaPartida() => Partida(
     config: widget.config,
-    retos: widget.retos ?? retosPara(widget.config.juego, widget.config.nivel),
+    retos:
+        widget.retos ??
+        [
+          ...retosPara(widget.config.juego, widget.config.nivel),
+          ...retosPropios(widget.config.juego, widget.config.cartasPropias),
+        ],
   );
 
   @override

@@ -29,6 +29,29 @@ abstract final class AlmacenJugadores {
     }
   }
 
+  static String _claveCartas(TipoJuego j) => 'juegos_cartas_${j.name}';
+
+  static Future<List<String>> leerCartasPropias(TipoJuego juego) async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      return p.getStringList(_claveCartas(juego)) ?? const [];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  static Future<void> guardarCartasPropias(
+    TipoJuego juego,
+    List<String> cartas,
+  ) async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      await p.setStringList(_claveCartas(juego), cartas);
+    } catch (_) {
+      // Sin persistencia, las cartas valen solo para esta sesión.
+    }
+  }
+
   static Future<void> guardar(List<String> jugadores, NivelReto nivel) async {
     try {
       final p = await SharedPreferences.getInstance();

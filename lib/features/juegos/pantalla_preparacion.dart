@@ -5,6 +5,7 @@ import 'almacen_jugadores.dart';
 import 'modelo_juegos.dart';
 import 'motor/partida.dart';
 import 'pantalla_partida.dart';
+import 'repositorio_retos.dart';
 
 /// Preparación: quién juega, qué intensidad, cuántas cartas y si hay alcohol.
 class PantallaPreparacion extends StatefulWidget {
@@ -29,6 +30,8 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
   int? _rondas = 10;
   bool _sinAlcohol = false;
   String? _error;
+  final _campoCarta = TextEditingController();
+  List<String> _cartasPropias = [];
 
   @override
   void initState() {
@@ -40,16 +43,51 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
   Future<void> _cargar() async {
     final guardados = await AlmacenJugadores.leerJugadores();
     final nivel = await AlmacenJugadores.leerNivel();
+    final cartas = await AlmacenJugadores.leerCartasPropias(widget.juego);
     if (!mounted) return;
     setState(() {
       // Lo que llega de la previa manda sobre lo recordado.
       if (_jugadores.isEmpty) _jugadores = guardados;
       if (nivel != null) _nivel = nivel;
+      _cartasPropias = retosPropios(
+        widget.juego,
+        cartas,
+      ).map((r) => r.texto).toList();
     });
   }
 
+  void _anadirCarta() {
+    final nueva = retosPropios(widget.juego, [
+      ..._cartasPropias,
+      _campoCarta.text,
+    ]);
+    if (nueva.length == _cartasPropias.length) return;
+    setState(() {
+      _cartasPropias = nueva.map((r) => r.texto).toList();
+      _campoCarta.clear();
+    });
+    AlmacenJugadores.guardarCartasPropias(widget.juego, _cartasPropias);
+  }
+
+  void _quitarCarta(String texto) {
+    setState(
+      () => _cartasPropias = _cartasPropias.where((c) => c != texto).toList(),
+    );
+    AlmacenJugadores.guardarCartasPropias(widget.juego, _cartasPropias);
+  }
+
+  /// Cómo empieza la frase de cada juego: la carta solo lleva el resto.
+  String get _pistaCarta => switch (widget.juego) {
+    TipoJuego.noHayHuevos => '¿A que no hay huevos a… ',
+    TipoJuego.yoNunca => 'Yo nunca… ',
+    TipoJuego.masProbable => '¿Quién es más probable que… ',
+    TipoJuego.preferirias => '¿Prefieres… (A o B)',
+    TipoJuego.verdadOReto => 'Escribe la carta entera',
+  };
+
   @override
   void dispose() {
+    _campoCarta.dispose();
     _campo.dispose();
     _foco.dispose();
     super.dispose();
@@ -101,6 +139,7 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
             nivel: _nivel,
             rondas: _rondas,
             sinAlcohol: _sinAlcohol,
+            cartasPropias: _cartasPropias,
           ),
         ),
       ),
@@ -224,6 +263,70 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
               ],
             ),
             const SizedBox(height: EspaciadoPrevia.m),
+            ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text(
+                _cartasPropias.isEmpty
+                    ? 'Añade tus propias cartas'
+                    : 'Tus cartas (${_cartasPropias.length})',
+                style: texto.titleMedium,
+              ),
+              subtitle: const Text('Se mezclan con las de siempre.'),
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _campoCarta,
+                        maxLength: maxLongitudCartaPropia,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _anadirCarta(),
+                        decoration: InputDecoration(
+                          labelText: 'Nueva carta',
+                          hintText: _pistaCarta,
+                          counterText: '',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: EspaciadoPrevia.s),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: IconButton.filled(
+                        onPressed: _anadirCarta,
+                        tooltip: 'Añadir carta',
+                        icon: const Icon(Icons.add),
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(56, 56),
+                          backgroundColor: context.colores.primario,
+                          foregroundColor: context.colores.sobrePrimario,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: EspaciadoPrevia.s),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: EspaciadoPrevia.s,
+                    runSpacing: EspaciadoPrevia.s,
+                    children: [
+                      for (final c in _cartasPropias)
+                        InputChip(
+                          label: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 220),
+                            child: Text(c, overflow: TextOverflow.ellipsis),
+                          ),
+                          onDeleted: () => _quitarCarta(c),
+                          deleteButtonTooltipMessage: 'Quitar la carta',
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: EspaciadoPrevia.s),
+              ],
+            ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Sin alcohol'),
