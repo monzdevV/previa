@@ -277,9 +277,8 @@ class _Dato extends StatelessWidget {
           child: Text(
             texto,
             semanticsLabel: leer,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
           ),
         ),
       ],

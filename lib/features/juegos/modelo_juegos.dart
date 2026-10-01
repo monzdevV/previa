@@ -15,7 +15,8 @@ enum TipoJuego {
   noHayHuevos(nombreDelJuego, 'Cumple el reto o bebe.'),
   yoNunca('Yo nunca', 'Quien lo haya hecho, bebe.'),
   masProbable('¿Quién es más probable?', 'Señalad a la vez. Vota el grupo.'),
-  verdadOReto('Verdad o reto', 'Confiesa o cúmplelo.');
+  verdadOReto('Verdad o reto', 'Confiesa o cúmplelo.'),
+  preferirias('¿Prefieres...?', 'Elegid a la vez. La minoría bebe.');
 
   const TipoJuego(this.titulo, this.descripcion);
   final String titulo;
@@ -24,6 +25,18 @@ enum TipoJuego {
   /// El titulo para el lector de pantalla: el emoji se leeria "huevo" en
   /// singular y sin gracia.
   String get tituloLeido => titulo.replaceAll('🥚', 'huevos');
+}
+
+/// Juegos que no se juegan con cartas: tienen su propia pantalla y no pasan por
+/// el motor de [Partida]. Van aparte de [TipoJuego] para que ese motor, que
+/// asume una baraja y un turno, no tenga que saber de ellos.
+enum MiniJuego {
+  impostor('El impostor', 'Uno no sabe la palabra. Descubridlo.'),
+  ruleta('La ruleta', 'Gira y que decida el azar.');
+
+  const MiniJuego(this.titulo, this.descripcion);
+  final String titulo;
+  final String descripcion;
 }
 
 /// Intensidad del contenido. El grupo la elige al empezar y solo se mezclan

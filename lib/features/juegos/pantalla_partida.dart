@@ -388,7 +388,9 @@ class _CartaReto extends StatelessWidget {
         ? 'Si no: ${_textoCastigo(partida, sinAlcohol)}'
         : (juego == TipoJuego.yoNunca
               ? 'Quien lo haya hecho: ${_textoCastigo(partida, sinAlcohol)}'
-              : 'El más votado: ${_textoCastigo(partida, sinAlcohol)}');
+              : (juego == TipoJuego.preferirias
+                    ? 'La minoría: ${_textoCastigo(partida, sinAlcohol)}'
+                    : 'El más votado: ${_textoCastigo(partida, sinAlcohol)}'));
     return Semantics(
       container: true,
       liveRegion: true,

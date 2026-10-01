@@ -119,15 +119,26 @@ class _Pintor extends CustomPainter {
 
   void _chincheta(Canvas canvas, Offset c, double tam) {
     final pintura = Paint()
-      ..shader = LinearGradient(colors: _degradado).createShader(
-        Rect.fromCircle(center: c, radius: tam * 1.5),
-      );
+      ..shader = LinearGradient(colors: _degradado)
+          .createShader(Rect.fromCircle(center: c, radius: tam * 1.5));
     final camino = Path()
       ..moveTo(c.dx, c.dy + tam * 1.5)
-      ..cubicTo(c.dx - tam * 1.6, c.dy + tam * 0.2, c.dx - tam, c.dy - tam,
-          c.dx, c.dy - tam)
-      ..cubicTo(c.dx + tam, c.dy - tam, c.dx + tam * 1.6, c.dy + tam * 0.2,
-          c.dx, c.dy + tam * 1.5)
+      ..cubicTo(
+        c.dx - tam * 1.6,
+        c.dy + tam * 0.2,
+        c.dx - tam,
+        c.dy - tam,
+        c.dx,
+        c.dy - tam,
+      )
+      ..cubicTo(
+        c.dx + tam,
+        c.dy - tam,
+        c.dx + tam * 1.6,
+        c.dy + tam * 0.2,
+        c.dx,
+        c.dy + tam * 1.5,
+      )
       ..close();
     canvas.drawPath(camino, pintura);
     canvas.drawCircle(
@@ -157,7 +168,10 @@ class _Pintor extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndCorners(
         Rect.fromCenter(
-            center: c.translate(0, s * 0.35), width: s * 1.5, height: s * 1.1),
+          center: c.translate(0, s * 0.35),
+          width: s * 1.5,
+          height: s * 1.1,
+        ),
         topLeft: Radius.circular(s * 0.75),
         topRight: Radius.circular(s * 0.75),
         bottomLeft: Radius.circular(s * 0.2),
@@ -168,14 +182,21 @@ class _Pintor extends CustomPainter {
   }
 
   void _previa(Canvas canvas, Offset c, double r) {
-    _ondas(canvas, c.translate(0, r * 0.25), r * 0.95,
-        colores.primarioSuave);
+    _ondas(canvas, c.translate(0, r * 0.25), r * 0.95, colores.primarioSuave);
     // Tres personas alrededor de la chincheta: "gente cerca de ti".
     final flota = math.sin(t * 2 * math.pi) * 3;
-    _persona(canvas, c.translate(-r * 0.62, r * 0.35 + flota), r * 0.17,
-        colores.superficieAlta);
-    _persona(canvas, c.translate(r * 0.62, r * 0.35 - flota), r * 0.17,
-        colores.superficieAlta);
+    _persona(
+      canvas,
+      c.translate(-r * 0.62, r * 0.35 + flota),
+      r * 0.17,
+      colores.superficieAlta,
+    );
+    _persona(
+      canvas,
+      c.translate(r * 0.62, r * 0.35 - flota),
+      r * 0.17,
+      colores.superficieAlta,
+    );
     _persona(canvas, c.translate(0, r * 0.72), r * 0.2, colores.borde);
     _chincheta(canvas, c.translate(0, -r * 0.12 + flota), r * 0.36);
   }
@@ -186,10 +207,16 @@ class _Pintor extends CustomPainter {
       ..color = colores.borde
       ..strokeWidth = 2;
     for (var i = -2; i <= 2; i++) {
-      canvas.drawLine(Offset(c.dx + i * r * 0.4, c.dy - r * 0.9),
-          Offset(c.dx + i * r * 0.4 + r * 0.15, c.dy + r * 0.9), calle);
-      canvas.drawLine(Offset(c.dx - r * 1.2, c.dy + i * r * 0.36),
-          Offset(c.dx + r * 1.2, c.dy + i * r * 0.36 - r * 0.1), calle);
+      canvas.drawLine(
+        Offset(c.dx + i * r * 0.4, c.dy - r * 0.9),
+        Offset(c.dx + i * r * 0.4 + r * 0.15, c.dy + r * 0.9),
+        calle,
+      );
+      canvas.drawLine(
+        Offset(c.dx - r * 1.2, c.dy + i * r * 0.36),
+        Offset(c.dx + r * 1.2, c.dy + i * r * 0.36 - r * 0.1),
+        calle,
+      );
     }
     // Circulo aproximado: relleno + borde discontinuo que "respira".
     final rad = r * (0.55 + 0.04 * math.sin(t * 2 * math.pi));
@@ -220,14 +247,38 @@ class _Pintor extends CustomPainter {
     final s = r * 0.85;
     final escudo = Path()
       ..moveTo(c.dx, c.dy - s)
-      ..cubicTo(c.dx + s * 0.4, c.dy - s * 0.8, c.dx + s * 0.8,
-          c.dy - s * 0.75, c.dx + s * 0.85, c.dy - s * 0.7)
-      ..cubicTo(c.dx + s * 0.85, c.dy + s * 0.3, c.dx + s * 0.4,
-          c.dy + s * 0.75, c.dx, c.dy + s)
-      ..cubicTo(c.dx - s * 0.4, c.dy + s * 0.75, c.dx - s * 0.85,
-          c.dy + s * 0.3, c.dx - s * 0.85, c.dy - s * 0.7)
-      ..cubicTo(c.dx - s * 0.8, c.dy - s * 0.75, c.dx - s * 0.4,
-          c.dy - s * 0.8, c.dx, c.dy - s)
+      ..cubicTo(
+        c.dx + s * 0.4,
+        c.dy - s * 0.8,
+        c.dx + s * 0.8,
+        c.dy - s * 0.75,
+        c.dx + s * 0.85,
+        c.dy - s * 0.7,
+      )
+      ..cubicTo(
+        c.dx + s * 0.85,
+        c.dy + s * 0.3,
+        c.dx + s * 0.4,
+        c.dy + s * 0.75,
+        c.dx,
+        c.dy + s,
+      )
+      ..cubicTo(
+        c.dx - s * 0.4,
+        c.dy + s * 0.75,
+        c.dx - s * 0.85,
+        c.dy + s * 0.3,
+        c.dx - s * 0.85,
+        c.dy - s * 0.7,
+      )
+      ..cubicTo(
+        c.dx - s * 0.8,
+        c.dy - s * 0.75,
+        c.dx - s * 0.4,
+        c.dy - s * 0.8,
+        c.dx,
+        c.dy - s,
+      )
       ..close();
     canvas.drawPath(
       escudo,
@@ -292,5 +343,6 @@ class _Pintor extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_Pintor viejo) => viejo.t != t || viejo.tipo != tipo || viejo.colores != colores;
+  bool shouldRepaint(_Pintor viejo) =>
+      viejo.t != t || viejo.tipo != tipo || viejo.colores != colores;
 }

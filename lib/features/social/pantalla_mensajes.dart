@@ -223,7 +223,11 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
             ? const Text('Conversación')
             : Row(
                 children: [
-                  AvatarPerfil(url: otro.avatar, inicial: otro.nombre, lado: 34),
+                  AvatarPerfil(
+                    url: otro.avatar,
+                    inicial: otro.nombre,
+                    lado: 34,
+                  ),
                   const SizedBox(width: EspaciadoPrevia.s + EspaciadoPrevia.xs),
                   Expanded(
                     child: Text(otro.nombre, overflow: TextOverflow.ellipsis),
@@ -234,8 +238,7 @@ class _PantallaConversacionState extends ConsumerState<PantallaConversacion> {
           IconButton(
             icon: const Icon(Icons.person_outline),
             tooltip: 'Ver perfil',
-            onPressed: () =>
-                context.push('${Rutas.perfilDe}/${widget.otroId}'),
+            onPressed: () => context.push('${Rutas.perfilDe}/${widget.otroId}'),
           ),
           const SizedBox(width: EspaciadoPrevia.s),
         ],
@@ -329,7 +332,9 @@ class _Burbuja extends StatelessWidget {
           maxWidth: MediaQuery.sizeOf(context).width * 0.78,
         ),
         decoration: BoxDecoration(
-          color: mio ? context.colores.primario : context.colores.superficieAlta,
+          color: mio
+              ? context.colores.primario
+              : context.colores.superficieAlta,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(EspaciadoPrevia.radio),
             topRight: const Radius.circular(EspaciadoPrevia.radio),
@@ -343,7 +348,9 @@ class _Burbuja extends StatelessWidget {
             Text(
               mensaje.texto,
               style: TextStyle(
-                color: mio ? context.colores.sobrePrimario : context.colores.texto,
+                color: mio
+                    ? context.colores.sobrePrimario
+                    : context.colores.texto,
                 fontSize: 15,
                 height: 1.35,
               ),

@@ -8,15 +8,14 @@ import 'package:previa/features/juegos/pantalla_partida.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget app(Widget home, {double escala = 1.0}) => MaterialApp(
-      theme: construirTemaPrevia(),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: TextScaler.linear(escala),
-        ),
-        child: child!,
-      ),
-      home: home,
-    );
+  theme: construirTemaPrevia(),
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context)
+        .copyWith(textScaler: TextScaler.linear(escala)),
+    child: child!,
+  ),
+  home: home,
+);
 
 void pantallaGrande(WidgetTester t) {
   t.view.physicalSize = const Size(900, 1800);
@@ -46,7 +45,9 @@ void main() {
 
     // Con menos de 2 jugadores no se puede empezar.
     expect(
-      t.widget<FilledButton>(find.widgetWithText(FilledButton, 'Empezar')).onPressed,
+      t
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Empezar'))
+          .onPressed,
       isNull,
     );
     for (final n in ['Ana', 'Beto']) {
@@ -99,8 +100,9 @@ void main() {
     expect(find.text('Parar'), findsOneWidget);
   });
 
-  testWidgets('recuerda la ultima lista y usa jugadores iniciales si llegan',
-      (t) async {
+  testWidgets('recuerda la ultima lista y usa jugadores iniciales si llegan', (
+    t,
+  ) async {
     pantallaGrande(t);
     SharedPreferences.setMockInitialValues({
       'juegos_jugadores': ['Luz', 'Mar'],
@@ -112,9 +114,9 @@ void main() {
 
     await t.pageBack();
     await t.pumpAndSettle();
-    await t.pumpWidget(app(
-      const PantallaHubJuegos(jugadoresIniciales: ['Zoe', 'Noa', 'Zoe']),
-    ));
+    await t.pumpWidget(
+      app(const PantallaHubJuegos(jugadoresIniciales: ['Zoe', 'Noa', 'Zoe'])),
+    );
     await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
     expect(find.widgetWithText(InputChip, 'Zoe'), findsOneWidget);
@@ -123,16 +125,20 @@ void main() {
 
   testWidgets('pausa obligatoria cada 10 cartas con cuenta atras', (t) async {
     pantallaGrande(t);
-    await t.pumpWidget(app(PantallaPartida(
-      config: const ConfiguracionPartida(
-        juego: TipoJuego.yoNunca,
-        jugadores: ['Ana', 'Beto'],
-        nivel: NivelReto.atrevido,
-        rondas: null,
+    await t.pumpWidget(
+      app(
+        PantallaPartida(
+          config: const ConfiguracionPartida(
+            juego: TipoJuego.yoNunca,
+            jugadores: ['Ana', 'Beto'],
+            nivel: NivelReto.atrevido,
+            rondas: null,
+          ),
+          retos: retosDePrueba,
+          duracionPausa: const Duration(seconds: 3),
+        ),
       ),
-      retos: retosDePrueba,
-      duracionPausa: const Duration(seconds: 3),
-    )));
+    );
     await t.pumpAndSettle();
     for (var i = 0; i < 10; i++) {
       await t.tap(find.text('Siguiente carta'));
@@ -141,10 +147,7 @@ void main() {
     }
     expect(find.text('Agua y respira 1 minuto'), findsOneWidget);
     // Durante la pausa el boton esta bloqueado pero "Parar" sigue ahi.
-    expect(
-      t.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-      isNull,
-    );
+    expect(t.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
     expect(find.text('Parar'), findsOneWidget);
     await t.pump(const Duration(seconds: 3));
     await t.pump();
@@ -153,28 +156,34 @@ void main() {
     expect(find.text('Siguiente carta'), findsOneWidget);
   });
 
-  testWidgets('con texto al 200% y sin animaciones no hay desbordes', (t) async {
+  testWidgets('con texto al 200% y sin animaciones no hay desbordes', (
+    t,
+  ) async {
     pantallaGrande(t);
     t.view.physicalSize = const Size(700, 1400);
-    await t.pumpWidget(app(
-      PantallaPartida(
-        config: const ConfiguracionPartida(
-          juego: TipoJuego.noHayHuevos,
-          jugadores: ['Alexandra', 'Bartolome'],
-          nivel: NivelReto.sinFiltro,
+    await t.pumpWidget(
+      app(
+        PantallaPartida(
+          config: const ConfiguracionPartida(
+            juego: TipoJuego.noHayHuevos,
+            jugadores: ['Alexandra', 'Bartolome'],
+            nivel: NivelReto.sinFiltro,
+          ),
+          retos: retosDePrueba,
         ),
-        retos: retosDePrueba,
+        escala: 2.0,
       ),
-      escala: 2.0,
-    ));
+    );
     await t.pumpAndSettle();
     expect(find.text('Parar'), findsOneWidget);
 
     // Preparacion tambien.
-    await t.pumpWidget(app(
-      const PantallaHubJuegos(jugadoresIniciales: ['Alexandra', 'Bartolome']),
-      escala: 2.0,
-    ));
+    await t.pumpWidget(
+      app(
+        const PantallaHubJuegos(jugadoresIniciales: ['Alexandra', 'Bartolome']),
+        escala: 2.0,
+      ),
+    );
     // Al 200% la tarjeta queda por debajo y la lista aun no la ha
     // construido: hay que bajar hasta ella.
     await t.scrollUntilVisible(
@@ -189,23 +198,31 @@ void main() {
 
   testWidgets('las opciones interactivas miden al menos 48 dp', (t) async {
     pantallaGrande(t);
-    await t.pumpWidget(app(PantallaPartida(
-      config: const ConfiguracionPartida(
-        juego: TipoJuego.noHayHuevos,
-        jugadores: ['Ana', 'Beto'],
+    await t.pumpWidget(
+      app(
+        PantallaPartida(
+          config: const ConfiguracionPartida(
+            juego: TipoJuego.noHayHuevos,
+            jugadores: ['Ana', 'Beto'],
+          ),
+          retos: retosDePrueba,
+        ),
       ),
-      retos: retosDePrueba,
-    )));
+    );
     await t.pumpAndSettle();
     for (final f in [
       find.text('Parar'),
       find.text('Cumplido'),
       find.text('No hay huevos'),
     ]) {
-      final tam = t.getSize(find.ancestor(
-        of: f,
-        matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
-      ).first);
+      final tam = t.getSize(
+        find
+            .ancestor(
+              of: f,
+              matching: find.byWidgetPredicate((w) => w is ButtonStyleButton),
+            )
+            .first,
+      );
       expect(tam.height, greaterThanOrEqualTo(48));
     }
   });

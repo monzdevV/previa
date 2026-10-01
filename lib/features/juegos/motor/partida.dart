@@ -44,6 +44,7 @@ String formatearTextoCarta(TipoJuego juego, String texto) => switch (juego) {
   TipoJuego.yoNunca => 'Yo nunca $texto',
   TipoJuego.masProbable => '¿Quién es más probable que $texto?',
   TipoJuego.verdadOReto => texto,
+  TipoJuego.preferirias => '¿Prefieres $texto?',
 };
 
 class ConfiguracionPartida {

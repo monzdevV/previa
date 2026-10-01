@@ -11,7 +11,8 @@ class AvisoUbicacionAproximada extends StatelessWidget {
 
   final bool compacto;
 
-  static const texto = 'Ubicación aproximada hasta que te acepten. '
+  static const texto =
+      'Ubicación aproximada hasta que te acepten. '
       'La dirección exacta solo se muestra a quien el anfitrión acepta.';
 
   @override
@@ -19,7 +20,9 @@ class AvisoUbicacionAproximada extends StatelessWidget {
     return Semantics(
       label: texto,
       child: Container(
-        padding: EdgeInsets.all(compacto ? EspaciadoPrevia.s : EspaciadoPrevia.m),
+        padding: EdgeInsets.all(
+          compacto ? EspaciadoPrevia.s : EspaciadoPrevia.m,
+        ),
         decoration: BoxDecoration(
           color: context.colores.superficie,
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
@@ -28,15 +31,16 @@ class AvisoUbicacionAproximada extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.lock_outline,
-                size: compacto ? 16 : 20, color: context.colores.primarioTexto),
+            Icon(
+              Icons.lock_outline,
+              size: compacto ? 16 : 20,
+              color: context.colores.primarioTexto,
+            ),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
                 texto,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
+                style: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(fontSize: compacto ? 12 : 13, height: 1.4),
               ),
             ),

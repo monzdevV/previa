@@ -157,9 +157,7 @@ class _PantallaPublicarState extends ConsumerState<PantallaPublicar> {
             controller: _texto,
             maxLines: 3,
             maxLength: 300,
-            decoration: const InputDecoration(
-              hintText: '¿Qué está pasando?',
-            ),
+            decoration: const InputDecoration(hintText: '¿Qué está pasando?'),
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           TextField(
@@ -168,16 +166,14 @@ class _PantallaPublicarState extends ConsumerState<PantallaPublicar> {
             decoration: const InputDecoration(
               labelText: 'Zona',
               hintText: 'Zaragoza, Centro, Malasaña…',
-              helperText: 'Es lo que permite a otros ver la noche de su ciudad.',
+              helperText:
+                  'Es lo que permite a otros ver la noche de su ciudad.',
             ),
           ),
 
           if (_error != null) ...[
             const SizedBox(height: EspaciadoPrevia.m),
-            Text(
-              _error!,
-              style: TextStyle(color: context.colores.error),
-            ),
+            Text(_error!, style: TextStyle(color: context.colores.error)),
           ],
 
           const SizedBox(height: EspaciadoPrevia.l),

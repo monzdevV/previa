@@ -4,11 +4,7 @@
 /// se rompe el lunes: mientras la semana en curso no acabe, sigue viva aunque
 /// todavia no hayas salido, porque si no se caeria cada lunes por la mañana.
 class Racha {
-  const Racha({
-    this.semanas = 0,
-    this.mejor = 0,
-    this.saliEstaSemana = false,
-  });
+  const Racha({this.semanas = 0, this.mejor = 0, this.saliEstaSemana = false});
 
   final int semanas;
   final int mejor;

@@ -73,7 +73,9 @@ class RepositorioCalendario {
       final noche = DateTime.parse(fila['night'] as String);
       final nombre = (fila['venues'] as Map?)?['name'] as String?;
       sitios.putIfAbsent(noche, () => {}).add(nombre ?? 'Un sitio');
-      localesPorNoche.putIfAbsent(noche, () => {}).add(fila['venue_id'] as String);
+      localesPorNoche
+          .putIfAbsent(noche, () => {})
+          .add(fila['venue_id'] as String);
     }
 
     final fotos = <DateTime, int>{};

@@ -89,7 +89,8 @@ class PantallaLocales extends ConsumerWidget {
 
     // Con fotos detras, la barra de estado va en blanco en los dos temas; en
     // los estados vacios manda el tema.
-    final hayFotos = locales.isLoading || (locales.valueOrNull?.isNotEmpty ?? false);
+    final hayFotos =
+        locales.isLoading || (locales.valueOrNull?.isNotEmpty ?? false);
     final hueco = arriba + _TarjetaLocal.altoPastillaCiudad;
 
     final lista = CustomScrollView(
@@ -190,9 +191,8 @@ class PantallaLocales extends ConsumerWidget {
           // Que baje por debajo de la pastilla de la ciudad y no detras.
           edgeOffset: hueco - EspaciadoPrevia.s,
           // El fallo se traga aqui porque ya lo pinta la propia lista.
-          onRefresh: () => ref
-              .refresh(localesProvider.future)
-              .then((_) {}, onError: (_) {}),
+          onRefresh: () =>
+              ref.refresh(localesProvider.future).then((_) {}, onError: (_) {}),
           child: lista,
         ),
         // Sombra bajo la barra de estado: sin ella, la hora y la bateria se
@@ -500,10 +500,7 @@ class _TarjetaLocalState extends ConsumerState<_TarjetaLocal> {
                         ),
                         if (_l.aqui > 0 || widget.metros != null) ...[
                           const SizedBox(height: 8),
-                          _LineaDeDatos(
-                            dentro: _l.aqui,
-                            metros: widget.metros,
-                          ),
+                          _LineaDeDatos(dentro: _l.aqui, metros: widget.metros),
                         ],
                       ],
                     ),
@@ -698,9 +695,10 @@ class _LineaDeDatos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final estilo = _estiloSobreFoto(14, FontWeight.w600).copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
-    );
+    final estilo = _estiloSobreFoto(
+      14,
+      FontWeight.w600,
+    ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

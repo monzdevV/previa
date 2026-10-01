@@ -12,7 +12,10 @@ void main() {
   group('traducirErrorDeSeguridad', () {
     test('conserva los ErrorPrevia tal cual', () {
       const original = ErrorPrevia('Hola');
-      expect(traducirErrorDeSeguridad(original, accion: 'bloquear'), same(original));
+      expect(
+        traducirErrorDeSeguridad(original, accion: 'bloquear'),
+        same(original),
+      );
     });
 
     test('permiso denegado por RLS', () {
@@ -36,12 +39,17 @@ void main() {
         const PostgrestException(message: 'relation "x" blew up'),
         accion: 'enviar el reporte',
       );
-      expect(e.mensaje, 'No se ha podido enviar el reporte. Inténtalo de nuevo.');
+      expect(
+        e.mensaje,
+        'No se ha podido enviar el reporte. Inténtalo de nuevo.',
+      );
     });
 
     test('fallo de red sugiere revisar la conexion', () {
-      final e = traducirErrorDeSeguridad(Exception('SocketException'),
-          accion: 'desbloquear');
+      final e = traducirErrorDeSeguridad(
+        Exception('SocketException'),
+        accion: 'desbloquear',
+      );
       expect(e.mensaje, contains('conexión'));
       expect(e.mensaje, contains('desbloquear'));
     });
@@ -49,8 +57,10 @@ void main() {
 
   group('exportacion de datos', () {
     test('el nombre lleva la fecha con ceros', () {
-      expect(nombreFicheroExportacion(DateTime(2026, 3, 5)),
-          'previa-mis-datos-2026-03-05.json');
+      expect(
+        nombreFicheroExportacion(DateTime(2026, 3, 5)),
+        'previa-mis-datos-2026-03-05.json',
+      );
     });
 
     test('el JSON es valido, con sangria y conserva los acentos', () {
@@ -86,10 +96,12 @@ void main() {
   });
 
   testWidgets('el aviso de ubicacion aproximada se muestra', (tester) async {
-    await tester.pumpWidget(const MaterialApp(
-      home: Scaffold(body: AvisoUbicacionAproximada()),
-    ));
-    expect(find.textContaining('Ubicación aproximada hasta que te acepten'),
-        findsOneWidget);
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: AvisoUbicacionAproximada())),
+    );
+    expect(
+      find.textContaining('Ubicación aproximada hasta que te acepten'),
+      findsOneWidget,
+    );
   });
 }

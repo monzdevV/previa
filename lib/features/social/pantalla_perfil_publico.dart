@@ -174,7 +174,10 @@ class _ContenidoState extends ConsumerState<_Contenido> {
                                   style: OutlinedButton.styleFrom(
                                     minimumSize: const Size.fromHeight(46),
                                   ),
-                                  icon: const Icon(Icons.check_rounded, size: 19),
+                                  icon: const Icon(
+                                    Icons.check_rounded,
+                                    size: 19,
+                                  ),
                                   label: const Text('Siguiendo'),
                                 )
                               : FilledButton(
@@ -263,9 +266,8 @@ class _AvisoDemo extends StatelessWidget {
         Expanded(
           child: Text(
             'Perfil de ejemplo. No es una persona real.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(fontSize: 13),
           ),
         ),
       ],

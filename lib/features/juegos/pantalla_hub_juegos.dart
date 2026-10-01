@@ -4,6 +4,7 @@ import '../../app/tema.dart';
 import 'ilustraciones.dart';
 import 'modelo_juegos.dart';
 import 'pantalla_preparacion.dart';
+import 'pantalla_preparacion_mini.dart';
 
 /// Pantalla con una tarjeta grande por juego. Sirve tanto de pestaña de la
 /// navegación principal (sin botón atrás) como de pantalla independiente
@@ -48,7 +49,10 @@ class PantallaHubJuegos extends StatelessWidget {
             const SizedBox(height: EspaciadoPrevia.m),
             for (final juego in TipoJuego.values) ...[
               _TarjetaJuego(
-                juego: juego,
+                titulo: juego.titulo,
+                descripcion: juego.descripcion,
+                etiquetaLector: juego.tituloLeido,
+                ilustracion: IlustracionJuego(juego: juego),
                 principal: juego == TipoJuego.noHayHuevos,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -65,6 +69,24 @@ class PantallaHubJuegos extends StatelessWidget {
               ],
               const SizedBox(height: EspaciadoPrevia.m),
             ],
+            for (final mini in MiniJuego.values) ...[
+              _TarjetaJuego(
+                titulo: mini.titulo,
+                descripcion: mini.descripcion,
+                etiquetaLector: mini.titulo,
+                ilustracion: IlustracionMini(juego: mini),
+                principal: false,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => PantallaPreparacionMini(
+                      juego: mini,
+                      jugadoresIniciales: jugadoresIniciales,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: EspaciadoPrevia.m),
+            ],
           ],
         ),
       ),
@@ -74,12 +96,18 @@ class PantallaHubJuegos extends StatelessWidget {
 
 class _TarjetaJuego extends StatelessWidget {
   const _TarjetaJuego({
-    required this.juego,
+    required this.titulo,
+    required this.descripcion,
+    required this.etiquetaLector,
+    required this.ilustracion,
     required this.principal,
     required this.onTap,
   });
 
-  final TipoJuego juego;
+  final String titulo;
+  final String descripcion;
+  final String etiquetaLector;
+  final Widget ilustracion;
   final bool principal;
   final VoidCallback onTap;
 
@@ -91,7 +119,7 @@ class _TarjetaJuego extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${juego.tituloLeido}. ${juego.descripcion}'
+          '$etiquetaLector. $descripcion'
           '${principal ? ' Juego principal.' : ''}',
       excludeSemantics: true,
       onTap: onTap,
@@ -101,10 +129,7 @@ class _TarjetaJuego extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: altoIlustracion,
-                child: IlustracionJuego(juego: juego),
-              ),
+              SizedBox(height: altoIlustracion, child: ilustracion),
               Padding(
                 padding: const EdgeInsets.all(EspaciadoPrevia.m),
                 child: Row(
@@ -113,9 +138,9 @@ class _TarjetaJuego extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Titular(juego.titulo, tamano: principal ? 30 : 22),
+                          Titular(titulo, tamano: principal ? 30 : 22),
                           const SizedBox(height: EspaciadoPrevia.xs),
-                          Text(juego.descripcion, style: texto.bodyMedium),
+                          Text(descripcion, style: texto.bodyMedium),
                         ],
                       ),
                     ),

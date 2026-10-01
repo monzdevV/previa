@@ -26,13 +26,16 @@ class PantallaMisNoches extends ConsumerWidget {
       appBar: AppBar(title: const Text('Mis noches')),
       body: noches.when(
         loading: () => Center(
-          child: CircularProgressIndicator(color: context.colores.primarioTexto),
+          child: CircularProgressIndicator(
+            color: context.colores.primarioTexto,
+          ),
         ),
         error: (e, _) => const _Mensaje(texto: 'No se ha podido cargar.'),
         data: (mapa) {
           if (mapa.isEmpty) {
             return const _Mensaje(
-              texto: 'Todavía no has salido con Previa.\n'
+              texto:
+                  'Todavía no has salido con Previa.\n'
                   'Di que vas a algún sitio y empezará a contar.',
             );
           }
@@ -42,8 +45,7 @@ class PantallaMisNoches extends ConsumerWidget {
           for (final dia in mapa.keys) {
             meses.putIfAbsent(DateTime(dia.year, dia.month), () => []).add(dia);
           }
-          final ordenados = meses.keys.toList()
-            ..sort((a, b) => b.compareTo(a));
+          final ordenados = meses.keys.toList()..sort((a, b) => b.compareTo(a));
 
           return ListView(
             padding: const EdgeInsets.all(EspaciadoPrevia.m),
@@ -149,11 +151,7 @@ class _Mes extends StatelessWidget {
 }
 
 class _Dia extends StatelessWidget {
-  const _Dia({
-    required this.numero,
-    required this.sitios,
-    required this.fecha,
-  });
+  const _Dia({required this.numero, required this.sitios, required this.fecha});
 
   final int numero;
   final List<String>? sitios;
@@ -167,12 +165,16 @@ class _Dia extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: salio ? context.colores.primario : context.colores.superficie,
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.s + EspaciadoPrevia.xs),
+        borderRadius: BorderRadius.circular(
+          EspaciadoPrevia.s + EspaciadoPrevia.xs,
+        ),
       ),
       child: Text(
         '$numero',
         style: TextStyle(
-          color: salio ? context.colores.sobrePrimario : context.colores.textoTenue,
+          color: salio
+              ? context.colores.sobrePrimario
+              : context.colores.textoTenue,
           fontWeight: salio ? FontWeight.w800 : FontWeight.w500,
           fontSize: 13,
         ),
@@ -188,9 +190,7 @@ class _Dia extends StatelessWidget {
           EspaciadoPrevia.s + EspaciadoPrevia.xs,
         ),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => PantallaResumenNoche(noche: fecha),
-          ),
+          MaterialPageRoute(builder: (_) => PantallaResumenNoche(noche: fecha)),
         ),
         child: celda,
       ),

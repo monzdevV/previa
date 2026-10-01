@@ -12,6 +12,7 @@ List<Color> coloresJuego(TipoJuego j) => switch (j) {
   TipoJuego.yoNunca => const [Color(0xFF3FA08A), Color(0xFF1B3F5C)],
   TipoJuego.masProbable => const [Color(0xFFE8A13A), Color(0xFF8A3A2A)],
   TipoJuego.verdadOReto => const [Color(0xFF8E5BD6), Color(0xFF3B1E6B)],
+  TipoJuego.preferirias => const [Color(0xFF3F7FD6), Color(0xFF1B2F6B)],
 };
 
 /// Ilustración de cada juego dibujada con CustomPainter (la app no lleva
@@ -28,6 +29,7 @@ class IlustracionJuego extends StatelessWidget {
       TipoJuego.yoNunca => _PintorVasos(coloresJuego(juego)),
       TipoJuego.masProbable => _PintorSenalar(coloresJuego(juego)),
       TipoJuego.verdadOReto => _PintorCartas(coloresJuego(juego)),
+      TipoJuego.preferirias => _PintorDosOpciones(coloresJuego(juego)),
     };
     return ExcludeSemantics(
       child: RepaintBoundary(
@@ -270,6 +272,159 @@ class _PintorCartas extends CustomPainter {
       '!',
       const Color(0xFFB8324B),
     );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+class _PintorDosOpciones extends _PintorCartas {
+  _PintorDosOpciones(super.cols);
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    _fondo(canvas, s, cols);
+    final t = Size(s.height * 0.62, s.height * 0.78);
+    _carta(
+      canvas,
+      Offset(s.width * 0.38, s.height * 0.52),
+      t,
+      -0.1,
+      'A',
+      cols.last,
+    );
+    _carta(
+      canvas,
+      Offset(s.width * 0.62, s.height * 0.5),
+      t,
+      0.1,
+      'B',
+      cols.first,
+    );
+  }
+}
+
+/// Colores de los minijuegos que no son de cartas (ver [MiniJuego]).
+List<Color> coloresMini(MiniJuego j) => switch (j) {
+  MiniJuego.impostor => const [Color(0xFF2E8B6E), Color(0xFF123A3A)],
+  MiniJuego.ruleta => const [Color(0xFFD64F7F), Color(0xFF4A1B6B)],
+};
+
+/// Ilustración de los minijuegos; mismo criterio que [IlustracionJuego].
+class IlustracionMini extends StatelessWidget {
+  const IlustracionMini({super.key, required this.juego});
+
+  final MiniJuego juego;
+
+  @override
+  Widget build(BuildContext context) {
+    final CustomPainter pintor = switch (juego) {
+      MiniJuego.impostor => _PintorImpostor(coloresMini(juego)),
+      MiniJuego.ruleta => _PintorRuleta(coloresMini(juego)),
+    };
+    return ExcludeSemantics(
+      child: RepaintBoundary(
+        child: CustomPaint(painter: pintor, size: Size.infinite),
+      ),
+    );
+  }
+}
+
+class _PintorImpostor extends CustomPainter {
+  _PintorImpostor(this.cols);
+  final List<Color> cols;
+
+  void _persona(
+    Canvas c,
+    Offset base,
+    double alto,
+    Color col, {
+    String? marca,
+  }) {
+    final p = Paint()..color = col;
+    c.drawCircle(Offset(base.dx, base.dy - alto * 0.78), alto * 0.2, p);
+    c.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: Offset(base.dx, base.dy - alto * 0.3),
+          width: alto * 0.55,
+          height: alto * 0.6,
+        ),
+        Radius.circular(alto * 0.25),
+      ),
+      p,
+    );
+    if (marca != null) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: marca,
+          style: TextStyle(
+            color: cols.last,
+            fontSize: alto * 0.4,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(c, Offset(base.dx - tp.width / 2, base.dy - alto * 0.98));
+    }
+  }
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    _fondo(canvas, s, cols);
+    final h = s.height * 0.8;
+    final y = s.height * 0.92;
+    final claro = Colors.white.withValues(alpha: 0.85);
+    _persona(canvas, Offset(s.width * 0.3, y), h * 0.85, claro);
+    _persona(canvas, Offset(s.width * 0.7, y), h * 0.85, claro);
+    _persona(
+      canvas,
+      Offset(s.width * 0.5, y),
+      h,
+      const Color(0xFFE2524B),
+      marca: '?',
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+class _PintorRuleta extends CustomPainter {
+  _PintorRuleta(this.cols);
+  final List<Color> cols;
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    _fondo(canvas, s, cols);
+    final centro = Offset(s.width / 2, s.height * 0.55);
+    final r = s.height * 0.42;
+    const colores = [
+      Color(0xFFF6F0EA),
+      Color(0xFFE8A13A),
+      Color(0xFF3FA08A),
+      Color(0xFFE2524B),
+      Color(0xFF8E5BD6),
+      Color(0xFF3F7FD6),
+    ];
+    for (var i = 0; i < colores.length; i++) {
+      canvas.drawArc(
+        Rect.fromCircle(center: centro, radius: r),
+        -math.pi / 2 + i * 2 * math.pi / colores.length,
+        2 * math.pi / colores.length,
+        true,
+        Paint()..color = colores[i],
+      );
+    }
+    canvas.drawCircle(centro, r * 0.14, Paint()..color = cols.last);
+    // Puntero fijo arriba.
+    final flecha = Path()
+      ..moveTo(centro.dx - r * 0.1, centro.dy - r - r * 0.12)
+      ..lineTo(centro.dx + r * 0.1, centro.dy - r - r * 0.12)
+      ..lineTo(centro.dx, centro.dy - r + r * 0.12)
+      ..close();
+    canvas.drawPath(flecha, Paint()..color = Colors.white);
   }
 
   @override

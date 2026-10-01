@@ -11,13 +11,13 @@ import 'package:previa/features/profile/reputacion.dart';
 import 'package:previa/features/ratings/etiquetas_valoracion.dart';
 
 Perfil _perfil(double? media, int n) => Perfil(
-      id: 'x',
-      username: 'u',
-      nombre: 'Ana',
-      onboarded: true,
-      reputacion: media,
-      numeroValoraciones: n,
-    );
+  id: 'x',
+  username: 'u',
+  nombre: 'Ana',
+  onboarded: true,
+  reputacion: media,
+  numeroValoraciones: n,
+);
 
 void main() {
   test('las etiquetas se guardan y se recuperan del comentario', () {
@@ -36,10 +36,14 @@ void main() {
 
   test('insignias segun numero y media', () {
     expect(insigniasDe(_perfil(null, 0)).single.texto, 'Recién llegada');
-    expect(insigniasDe(_perfil(4.6, 3)).map((i) => i.texto),
-        contains('Buena compañía'));
-    expect(insigniasDe(_perfil(4.8, 10)).map((i) => i.texto),
-        contains('Anfitrión fiable'));
+    expect(
+      insigniasDe(_perfil(4.6, 3)).map((i) => i.texto),
+      contains('Buena compañía'),
+    );
+    expect(
+      insigniasDe(_perfil(4.8, 10)).map((i) => i.texto),
+      contains('Anfitrión fiable'),
+    );
     expect(insigniasDe(_perfil(5, 1)).single.texto, 'Tomando ritmo');
   });
 
@@ -51,43 +55,46 @@ void main() {
 Widget _envolver(Widget hijo, {List<Override> sobrescrituras = const []}) =>
     ProviderScope(
       overrides: sobrescrituras,
-      child: MaterialApp(
-        theme: construirTemaPrevia(),
-        home: hijo,
-      ),
+      child: MaterialApp(theme: construirTemaPrevia(), home: hijo),
     );
 
 Mensaje _msj(String autor, DateTime cuando) => Mensaje(
-      id: '$autor-${cuando.millisecondsSinceEpoch}',
-      previaId: 'p',
-      autorId: autor,
-      texto: 'hola',
-      enviadoEn: cuando,
-    );
+  id: '$autor-${cuando.millisecondsSinceEpoch}',
+  previaId: 'p',
+  autorId: autor,
+  texto: 'hola',
+  enviadoEn: cuando,
+);
 
 void mainPantallas() {
-  test('el chat agrupa rafagas del mismo autor y corta a los cinco minutos',
-      () {
-    final t = DateTime(2026, 10, 1, 22);
-    expect(mensajesAgrupados(_msj('a', t), _msj('a', t.add(_min(2)))), isTrue);
-    expect(
-      mensajesAgrupados(_msj('a', t), _msj('a', t.add(_min(6)))),
-      isFalse,
-    );
-    expect(mensajesAgrupados(_msj('a', t), _msj('b', t)), isFalse);
-    // Pasada la medianoche es otro dia aunque sean dos minutos.
-    final casiMedianoche = DateTime(2026, 10, 1, 23, 59);
-    expect(
-      mensajesAgrupados(
-        _msj('a', casiMedianoche),
-        _msj('a', casiMedianoche.add(_min(2))),
-      ),
-      isFalse,
-    );
-  });
+  test(
+    'el chat agrupa rafagas del mismo autor y corta a los cinco minutos',
+    () {
+      final t = DateTime(2026, 10, 1, 22);
+      expect(
+        mensajesAgrupados(_msj('a', t), _msj('a', t.add(_min(2)))),
+        isTrue,
+      );
+      expect(
+        mensajesAgrupados(_msj('a', t), _msj('a', t.add(_min(6)))),
+        isFalse,
+      );
+      expect(mensajesAgrupados(_msj('a', t), _msj('b', t)), isFalse);
+      // Pasada la medianoche es otro dia aunque sean dos minutos.
+      final casiMedianoche = DateTime(2026, 10, 1, 23, 59);
+      expect(
+        mensajesAgrupados(
+          _msj('a', casiMedianoche),
+          _msj('a', casiMedianoche.add(_min(2))),
+        ),
+        isFalse,
+      );
+    },
+  );
 
-  testWidgets('valorar: las etiquetas salen al puntuar y se marcan',
-      (tester) async {
+  testWidgets('valorar: las etiquetas salen al puntuar y se marcan', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _envolver(
         const PantallaValorar(previaId: 'p'),
@@ -128,16 +135,21 @@ void mainPantallas() {
       greaterThanOrEqualTo(48),
     );
     expect(
-      tester.getSize(find.ancestor(
-        of: find.text('Puntual'),
-        matching: find.byType(AnimatedContainer),
-      )).height,
+      tester
+          .getSize(
+            find.ancestor(
+              of: find.text('Puntual'),
+              matching: find.byType(AnimatedContainer),
+            ),
+          )
+          .height,
       greaterThanOrEqualTo(48),
     );
   });
 
-  testWidgets('la pastilla de estado escribe en el color del texto del tema',
-      (tester) async {
+  testWidgets('la pastilla de estado escribe en el color del texto del tema', (
+    tester,
+  ) async {
     for (final brillo in Brightness.values) {
       await tester.pumpWidget(
         MaterialApp(

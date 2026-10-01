@@ -44,15 +44,22 @@ void main() {
     expect(_cuenta(TipoJuego.yoNunca), greaterThanOrEqualTo(70));
     expect(_cuenta(TipoJuego.masProbable), greaterThanOrEqualTo(70));
     expect(_cuenta(TipoJuego.verdadOReto), greaterThanOrEqualTo(60));
+    expect(_cuenta(TipoJuego.preferirias), greaterThanOrEqualTo(60));
   });
 
   test('No hay huevos: reparto por nivel', () {
-    expect(_cuenta(TipoJuego.noHayHuevos, NivelReto.suave),
-        greaterThanOrEqualTo(55));
-    expect(_cuenta(TipoJuego.noHayHuevos, NivelReto.atrevido),
-        greaterThanOrEqualTo(60));
-    expect(_cuenta(TipoJuego.noHayHuevos, NivelReto.sinFiltro),
-        greaterThanOrEqualTo(45));
+    expect(
+      _cuenta(TipoJuego.noHayHuevos, NivelReto.suave),
+      greaterThanOrEqualTo(55),
+    );
+    expect(
+      _cuenta(TipoJuego.noHayHuevos, NivelReto.atrevido),
+      greaterThanOrEqualTo(60),
+    );
+    expect(
+      _cuenta(TipoJuego.noHayHuevos, NivelReto.sinFiltro),
+      greaterThanOrEqualTo(45),
+    );
   });
 
   test('los demas juegos mezclan los tres niveles', () {
@@ -60,10 +67,14 @@ void main() {
       TipoJuego.yoNunca,
       TipoJuego.masProbable,
       TipoJuego.verdadOReto,
+      TipoJuego.preferirias,
     ]) {
       for (final n in NivelReto.values) {
-        expect(_cuenta(j, n), greaterThanOrEqualTo(15),
-            reason: '${j.name}/${n.name}');
+        expect(
+          _cuenta(j, n),
+          greaterThanOrEqualTo(15),
+          reason: '${j.name}/${n.name}',
+        );
       }
     }
   });
@@ -76,6 +87,7 @@ void main() {
       TipoJuego.yoNunca: 'yn-',
       TipoJuego.masProbable: 'mp-',
       TipoJuego.verdadOReto: 'vr-',
+      TipoJuego.preferirias: 'pf-',
     };
     for (final r in todosLosRetos) {
       expect(r.id.startsWith(prefijos[r.juego]!), isTrue, reason: r.id);
@@ -87,8 +99,11 @@ void main() {
     for (final r in todosLosRetos) {
       expect(r.texto.trim(), isNotEmpty, reason: r.id);
       expect(r.texto.length, lessThanOrEqualTo(140), reason: r.id);
-      expect(vistos.add('${r.juego.name}|${r.texto.toLowerCase()}'), isTrue,
-          reason: 'duplicado: ${r.id}');
+      expect(
+        vistos.add('${r.juego.name}|${r.texto.toLowerCase()}'),
+        isTrue,
+        reason: 'duplicado: ${r.id}',
+      );
     }
   });
 
@@ -100,8 +115,7 @@ void main() {
 
   test('{otro} coherente con necesitaOtraPersona', () {
     for (final r in todosLosRetos) {
-      expect(r.texto.contains('{otro}'), r.necesitaOtraPersona,
-          reason: r.id);
+      expect(r.texto.contains('{otro}'), r.necesitaOtraPersona, reason: r.id);
     }
   });
 
