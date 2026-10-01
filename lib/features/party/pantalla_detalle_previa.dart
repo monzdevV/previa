@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
@@ -11,6 +12,7 @@ import '../../core/entorno.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../chat/pantalla_chat.dart' show miembrosProvider;
 import '../juegos/juegos.dart';
 import '../map/capas_del_mapa.dart';
 import '../map/proveedores_mapa.dart';
@@ -626,6 +628,21 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
     }
   }
 
+  /// Se usa el enlace https de Google Maps y no un esquema geo: abre la app
+  /// de mapas si está instalada y, si no, el navegador, en iOS y en Android.
+  Future<void> _abrirEnMapas(LatLng p) async {
+    final destino = Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': '${p.latitude},${p.longitude}',
+    });
+    final ok = await launchUrl(destino, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se ha podido abrir el mapa.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_punto != null) {
@@ -644,13 +661,18 @@ class _BotonDireccionExactaState extends ConsumerState<_BotonDireccionExacta> {
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
-                '${_punto!.latitude.toStringAsFixed(5)}, '
-                '${_punto!.longitude.toStringAsFixed(5)}',
+                'Ya puedes ir: el sitio exacto está en tu mapa.',
                 style: TextStyle(
                   color: context.colores.texto,
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
+            const SizedBox(width: EspaciadoPrevia.s),
+            FilledButton.icon(
+              onPressed: () => _abrirEnMapas(_punto!),
+              icon: const Icon(Icons.map_outlined, size: 18),
+              label: const Text('Abrir en Maps'),
             ),
           ],
         ),
@@ -763,6 +785,12 @@ class _Accion extends ConsumerWidget {
         '${Rutas.previa}/${previa.id}/chat'
         '?titulo=${Uri.encodeQueryComponent(previa.titulo)}';
 
+    // Se observa aquí y no al pulsar: el proveedor se descarta solo y, leído
+    // en frío, daría una lista vacía en lugar de los asistentes.
+    final asistentes = soyMiembro
+        ? ref.watch(miembrosProvider(previa.id)).valueOrNull ?? const {}
+        : const <String, String>{};
+
     if (yoSoyElAnfitrion) {
       final pendientes =
           ref
@@ -833,7 +861,11 @@ class _Accion extends ConsumerWidget {
             // antes de que termine.
             const SizedBox(height: EspaciadoPrevia.s),
             OutlinedButton.icon(
-              onPressed: () => abrirJuegos(context),
+              // Los asistentes ya se conocen: no hay que teclear sus nombres.
+              onPressed: () => abrirJuegos(
+                context,
+                jugadoresIniciales: asistentes.values.take(12).toList(),
+              ),
               icon: const Icon(Icons.casino_outlined, size: 18),
               label: const Text('Jugar en la previa'),
             ),

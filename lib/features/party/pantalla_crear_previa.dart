@@ -541,7 +541,7 @@ class _PantallaCrearPreviaState extends ConsumerState<PantallaCrearPrevia> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _Bloque(
-          titulo: '¿Es en casa?',
+          titulo: '¿Es en un sitio público?',
           subtitulo: _enSitioPublico
               ? 'Al ser público, cualquiera ve el sitio exacto y '
                     'puede presentarse sin pedir plaza.'
