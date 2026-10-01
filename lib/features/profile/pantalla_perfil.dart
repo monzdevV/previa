@@ -12,6 +12,7 @@ import 'cabecera_perfil.dart';
 import 'calendario_social.dart';
 import 'pestanas_perfil.dart';
 import 'proveedores_perfil.dart';
+import 'reputacion.dart';
 
 /// Tu perfil, como lo ven los demas, con lo tuyo encima.
 ///
@@ -75,7 +76,8 @@ class _PantallaPerfilState extends ConsumerState<PantallaPerfil> {
                       avatar: p.avatarUrl,
                       bio: p.bio,
                       ciudad: p.ciudad,
-                      reputacion: p.tieneReputacion ? p.reputacion : null,
+                      // La nota va en su bloque justo debajo, con las
+                      // insignias: repetirla aqui solo meteria ruido.
                       instagram: p.instagram,
                       tiktok: p.tiktok,
                       xUsuario: p.xUsuario,
@@ -133,6 +135,8 @@ class _PantallaPerfilState extends ConsumerState<PantallaPerfil> {
                   ),
                   sliver: SliverList.list(
                     children: [
+                      TarjetaReputacion(perfil: p),
+                      const SizedBox(height: EspaciadoPrevia.m),
                       TarjetaCompletarPerfil(
                         faltaFoto: p.avatarUrl == null || p.avatarUrl!.isEmpty,
                         faltanRedes: !p.tieneRedes,

@@ -230,6 +230,20 @@ class RepositorioSocial {
         .toList();
   }
 
+  /// Las ciudades que tienen algun local, para elegir con un toque en lugar
+  /// de escribir. Son pocas filas: se deduplican aqui y no en una vista.
+  Future<List<String>> ciudadesConLocales() async {
+    final filas = await _cliente.from('venues').select('city').limit(1000);
+    final ciudades = <String, String>{};
+    for (final f in filas as List) {
+      final ciudad = ((f as Map)['city'] as String?)?.trim();
+      if (ciudad == null || ciudad.isEmpty) continue;
+      // "zaragoza" y "Zaragoza" son la misma: la RPC compara con ilike.
+      ciudades.putIfAbsent(ciudad.toLowerCase(), () => ciudad);
+    }
+    return ciudades.values.toList()..sort();
+  }
+
   /// Quien va a un local, con como va. Ver caras conocidas es lo que
   /// empuja a ir.
   Future<List<Asistente>> quienVa(String localId, {DateTime? noche}) async {

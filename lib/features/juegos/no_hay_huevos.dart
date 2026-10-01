@@ -11,10 +11,22 @@ import '../../data/models/reto.dart';
 import '../../data/repositories/repositorio_retos.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../../data/services/servicio_ubicacion.dart';
+import 'juegos.dart' show abrirJuegos;
+import 'modelo_juegos.dart' show nombreDelJuego;
 
-/// Nombre del juego. El huevo es un emoji a proposito: es la gracia del
-/// nombre y lo que lo hace reconocible como sticker.
-const nombreDelJuego = 'No hay 🥚';
+export 'modelo_juegos.dart' show nombreDelJuego;
+
+// "No hay 🥚" es UN juego con dos momentos de la noche:
+//
+// - En la previa (cartas): un movil que pasa de mano en mano, sin conexion.
+//   Vive en el hub de juegos (`abrirJuegos`, ruta /juegos).
+// - En el local (este fichero): el sticker de la sala da un reto con alguien
+//   que de verdad esta alli, lo decide la funcion de borde `no-hay-huevos` y
+//   se cumple subiendo la foto a la sala.
+//
+// Los dos comparten nombre (`nombreDelJuego`), pegatina y tono, y cada uno
+// lleva al otro: el hub explica que en el local esta el sticker, y la hoja
+// del sticker ofrece las cartas a quien todavia esta en la previa.
 
 final _miRetoProvider = FutureProvider.autoDispose<Reto?>(
   (ref) => ref.watch(repositorioRetosProvider).miReto(),
@@ -432,11 +444,7 @@ class _Invitacion extends StatelessWidget {
           duration: 700.ms,
         ),
         const SizedBox(height: EspaciadoPrevia.s),
-        const Titular(
-          nombreDelJuego,
-          tamano: 40,
-          alineacion: TextAlign.center,
-        ),
+        const Titular(nombreDelJuego, tamano: 40, alineacion: TextAlign.center),
         const SizedBox(height: EspaciadoPrevia.s),
         Text(
           aviso ??
@@ -465,6 +473,16 @@ class _Invitacion extends StatelessWidget {
           'en retos, apágalo en Ajustes.',
           textAlign: TextAlign.center,
           style: textos.labelMedium?.copyWith(color: c.textoTenue),
+        ),
+        // El mismo juego, en su version de cartas: para quien todavia esta
+        // en la previa y no en el local.
+        TextButton(
+          onPressed: () {
+            final navegador = Navigator.of(context);
+            navegador.pop();
+            abrirJuegos(navegador.context);
+          },
+          child: const Text('¿Aún en la previa? Jugad con cartas'),
         ),
       ],
     );

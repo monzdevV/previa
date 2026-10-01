@@ -12,9 +12,9 @@ final reportesProvider = FutureProvider<List<Reporte>>(
   (ref) => ref.watch(repositorioSocialProvider).reportesPendientes(),
 );
 
-final soyModeradorProvider = FutureProvider<bool>((ref) async {
-  final perfil = await ref.watch(miPerfilProvider.future);
-  return perfil?.esModerador ?? false;
+final soyModeradorProvider = FutureProvider<bool>((ref) {
+  ref.watch(uidActualProvider);
+  return ref.watch(repositorioAuthProvider).soyModerador();
 });
 
 /// La bandeja de moderacion.

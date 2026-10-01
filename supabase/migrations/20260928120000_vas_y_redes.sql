@@ -216,3 +216,20 @@ alter table public.profiles
 
 grant select (tiktok, x_handle), update (tiktok, x_handle)
   on public.profiles to authenticated;
+
+-- 7. Saber si moderas ----------------------------------------------------------
+-- `is_moderator` no se concede al rol de la app, y debe seguir asi: nadie
+-- tiene por que saber quien modera. Pero la app necesita saber si TU moderas
+-- para enseñarte la entrada. `privado.soy_moderador` no es ruta de la API, asi
+-- que se envuelve aqui sin argumentos: solo responde por quien pregunta.
+
+create or replace function public.soy_moderador()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$ select privado.soy_moderador(); $$;
+
+revoke all on function public.soy_moderador() from public, anon;
+grant execute on function public.soy_moderador() to authenticated;

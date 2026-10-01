@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'cara.dart';
 
 /// Como dices que vas a un sitio esta noche.
@@ -42,6 +44,11 @@ class Local {
     this.zona,
     this.urlEntradas,
     this.instagram,
+    this.portadaUrl,
+    this.logoUrl,
+    this.eslogan,
+    this.lat,
+    this.lng,
     this.van = 0,
     this.quiza = 0,
     this.aqui = 0,
@@ -58,6 +65,21 @@ class Local {
   final String? urlEntradas;
 
   final String? instagram;
+
+  /// La foto del local por dentro. Es lo que manda en la tarjeta: ver el
+  /// sitio decide mas que leer su nombre.
+  final String? portadaUrl;
+
+  /// El logo en blanco, para ir encima de la foto. Si no hay, se escribe el
+  /// nombre en grande.
+  final String? logoUrl;
+
+  /// Una frase corta del propio local ("Tu finde empieza aqui").
+  final String? eslogan;
+
+  /// Donde esta. Nulo si el servidor no lo sabe o no lo manda todavia.
+  final double? lat;
+  final double? lng;
 
   /// Cuanta gente va esta noche, contigo incluido si vas. Quiza no cuenta.
   final int van;
@@ -76,6 +98,36 @@ class Local {
 
   bool get tieneEntradas => urlEntradas != null && urlEntradas!.isNotEmpty;
 
+  bool get tieneInstagram => instagram != null && instagram!.isNotEmpty;
+
+  /// La linea pequeña bajo el logo: su frase si la tiene; si no, su Instagram,
+  /// que es como la gente busca un sitio; y si tampoco, el barrio.
+  String? get lema {
+    if (eslogan != null && eslogan!.trim().isNotEmpty) return eslogan!.trim();
+    if (tieneInstagram) return '@$instagram';
+    if (zona != null && zona!.trim().isNotEmpty) return zona!.trim();
+    return null;
+  }
+
+  /// Metros en linea recta hasta [latitud], [longitud], o nulo si no se sabe
+  /// donde esta el local.
+  ///
+  /// Haversine y no la distancia de PostGIS porque se calcula en el
+  /// telefono: asi la posicion de quien mira no sale nunca del dispositivo.
+  double? metrosHasta(double latitud, double longitud) {
+    if (lat == null || lng == null) return null;
+    const radioTierra = 6371000.0;
+    double rad(double g) => g * math.pi / 180;
+    final dLat = rad(lat! - latitud);
+    final dLng = rad(lng! - longitud);
+    final a =
+        math.pow(math.sin(dLat / 2), 2) +
+        math.cos(rad(latitud)) *
+            math.cos(rad(lat!)) *
+            math.pow(math.sin(dLng / 2), 2);
+    return 2 * radioTierra * math.asin(math.sqrt(a.toDouble()));
+  }
+
   /// El local tras cambiar tu respuesta, sin esperar al servidor.
   ///
   /// Los contadores se recalculan aqui para que la ficha responda al toque;
@@ -90,6 +142,11 @@ class Local {
       zona: zona,
       urlEntradas: urlEntradas,
       instagram: instagram,
+      portadaUrl: portadaUrl,
+      logoUrl: logoUrl,
+      eslogan: eslogan,
+      lat: lat,
+      lng: lng,
       van: van + (ahoraVa ? 1 : 0) - (antesIba ? 1 : 0),
       quiza:
           quiza +
@@ -106,7 +163,9 @@ class Local {
 
   /// Acepta las dos formas que puede devolver `locales_de_la_noche`: la de
   /// antes (solo `van` y `voy`) y la que trae estados y caras. Asi la app
-  /// no depende de que el servidor este ya actualizado.
+  /// no depende de que el servidor este ya actualizado. Lo mismo con la foto,
+  /// el logo, el eslogan y las coordenadas: sin la migracion
+  /// `locales_con_foto` no llegan y la tarjeta tiene su version sin ellos.
   factory Local.desdeJson(Map<String, dynamic> json) {
     final estado =
         EstadoNoche.desde(json['mi_estado'] as String?) ??
@@ -118,6 +177,11 @@ class Local {
       zona: json['area_label'] as String?,
       urlEntradas: json['ticket_url'] as String?,
       instagram: json['instagram'] as String?,
+      portadaUrl: _url(json['cover_url']),
+      logoUrl: _url(json['logo_url']),
+      eslogan: json['tagline'] as String?,
+      lat: (json['lat'] as num?)?.toDouble(),
+      lng: (json['lng'] as num?)?.toDouble(),
       van: (json['van'] as num?)?.toInt() ?? 0,
       quiza: (json['quiza'] as num?)?.toInt() ?? 0,
       aqui: (json['aqui'] as num?)?.toInt() ?? 0,
@@ -132,6 +196,24 @@ class Local {
       ],
     );
   }
+}
+
+/// Una URL vacia es lo mismo que ninguna: evita pedir una imagen a "".
+String? _url(Object? valor) {
+  final texto = (valor as String?)?.trim();
+  return texto == null || texto.isEmpty ? null : texto;
+}
+
+/// "731 m" o "4 km": los metros solo cuando de verdad se va andando.
+String textoDistancia(double metros) {
+  if (metros < 950) return '${(metros / 10).round() * 10} m';
+  if (metros < 9500) {
+    final km = (metros / 100).round() / 10;
+    return km == km.roundToDouble()
+        ? '${km.toInt()} km'
+        : '${km.toStringAsFixed(1).replaceAll('.', ',')} km';
+  }
+  return '${(metros / 1000).round()} km';
 }
 
 /// Alguien en la lista de quien va a un local, con como va.

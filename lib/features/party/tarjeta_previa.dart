@@ -1,286 +1,242 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
+import 'componentes_previa.dart';
 
-/// Tarjeta de una previa en el feed.
+/// Texto único que leen los lectores de pantalla para una previa. Una sola
+/// frase ordenada vale más que oír cada fragmento suelto ("3", "Centro",
+/// "21:30"...).
+String etiquetaAccesiblePrevia(Previa p) {
+  final hora = DateFormat('HH:mm', 'es_ES').format(p.empiezaEn);
+  final plazas = p.plazasLibres <= 0
+      ? 'completa'
+      : (p.plazasLibres == 1
+            ? '1 plaza libre'
+            : '${p.plazasLibres} plazas libres');
+  final distancia = p.distanciaMetros != null
+      ? ', a ${p.distanciaLegible}'
+      : '';
+  return '${p.titulo}, $plazas, empieza a las $hora, zona ${p.zona}'
+      '$distancia, organiza ${p.anfitrionNombre}';
+}
+
+/// Tarjeta de una previa en los listados.
 ///
-/// Lleva la imagen delante porque es lo que hace que una app social se sienta
-/// como tal: primero ves el sitio y la cara de quien lo abre, y solo despues
-/// lees los datos. Mientras no haya foto subida, el hueco se rellena con el
-/// degradado de marca y la inicial del anfitrion, que es lo que hace
-/// cualquier app cuando le falta la portada.
+/// Arriba, el cartel del ambiente con la hora en grande: es lo que da
+/// identidad a algo que no tiene foto (la casa de alguien no se enseña). El
+/// dato que decide si alguien toca, las plazas, va encima en su pastilla, y
+/// abajo la cara de quien abre la puerta, porque eso decide si pides plaza.
+/// El cartel vuela hasta el detalle con un [Hero].
 class TarjetaPrevia extends StatelessWidget {
   const TarjetaPrevia({
     super.key,
     required this.previa,
     this.onTap,
     this.compacta = false,
+    this.conHero = true,
   });
 
   final Previa previa;
   final VoidCallback? onTap;
 
-  /// En la hoja del mapa el alto es oro: la imagen se encoge y la descripcion
-  /// desaparece, pero la cara y las plazas se quedan.
+  /// En la hoja del mapa y en el perfil el alto es oro: el cartel se encoge
+  /// y la descripción desaparece, pero la cara y las plazas se quedan.
   final bool compacta;
+
+  /// La vista previa del formulario no debe competir por la etiqueta del Hero.
+  final bool conHero;
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colores;
     final textos = Theme.of(context).textTheme;
     final hora = DateFormat('HH:mm', 'es_ES').format(previa.empiezaEn);
-    final ocupacion = Ocupacion.desde(previa.plazasLibres);
+    final alto = compacta ? 72.0 : 112.0;
+    final radioArriba = const BorderRadius.vertical(
+      top: Radius.circular(EspaciadoPrevia.radio),
+    );
 
-    return Material(
-      color: context.colores.superficie,
-      borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Portada(
-              previa: previa,
-              hora: hora,
-              ocupacion: ocupacion,
-              alto: compacta ? 116 : 188,
+    final cabecera = CabeceraAmbiente(
+      ambiente: previa.ambiente,
+      altura: alto,
+      radio: radioArriba,
+    );
+
+    final tarjeta = DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.superficie,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: alto,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                conHero && !MovimientoPrevia.reducido(context)
+                    ? Hero(tag: tagCabeceraPrevia(previa.id), child: cabecera)
+                    : cabecera,
+                Positioned(
+                  top: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+                  right: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+                  child: PastillaPlazas(libres: previa.plazasLibres),
+                ),
+                // La hora como en un cartel: es lo segundo que se mira despues
+                // de si queda sitio.
+                Positioned(
+                  left: EspaciadoPrevia.m,
+                  bottom: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+                  child: Titular(
+                    hora,
+                    tamano: compacta ? 26 : 38,
+                    color: BloquesPrevia.tintaSobreBloque,
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            Padding(
-              padding: const EdgeInsets.all(EspaciadoPrevia.m),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          Padding(
+            padding: const EdgeInsets.all(EspaciadoPrevia.m),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  previa.titulo,
+                  style: textos.titleLarge,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: EspaciadoPrevia.xs),
+                Text(
+                  [
+                    previa.zona,
+                    if (previa.distanciaLegible.isNotEmpty)
+                      previa.distanciaLegible,
+                    previa.cuandoEmpieza,
+                  ].join(' · '),
+                  style: textos.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+
+                if (!compacta &&
+                    previa.descripcion != null &&
+                    previa.descripcion!.isNotEmpty) ...[
+                  const SizedBox(height: EspaciadoPrevia.s),
                   Text(
-                    previa.titulo,
-                    style: textos.titleLarge,
+                    previa.descripcion!,
+                    style: textos.bodyMedium,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: EspaciadoPrevia.xs),
-                  Text(
-                    [
-                      previa.zona,
-                      if (previa.distanciaLegible.isNotEmpty)
-                        previa.distanciaLegible,
-                      previa.cuandoEmpieza,
-                    ].join(' · '),
-                    style: textos.bodyMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-
-                  if (!compacta &&
-                      previa.descripcion != null &&
-                      previa.descripcion!.isNotEmpty) ...[
-                    const SizedBox(height: EspaciadoPrevia.s),
-                    Text(
-                      previa.descripcion!,
-                      style: textos.bodyMedium,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-
-                  if (previa.ambiente.isNotEmpty) ...[
-                    const SizedBox(
-                      height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-                    ),
-                    Wrap(
-                      spacing: EspaciadoPrevia.xs + 2,
-                      runSpacing: EspaciadoPrevia.xs + 2,
-                      children: [
-                        for (final etiqueta in previa.ambiente.take(3))
-                          _Etiqueta(etiqueta),
-                      ],
-                    ),
-                  ],
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
-class _Portada extends StatelessWidget {
-  const _Portada({
-    required this.previa,
-    required this.hora,
-    required this.ocupacion,
-    required this.alto,
-  });
-
-  final Previa previa;
-  final String hora;
-  final Ocupacion ocupacion;
-  final double alto;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: alto,
-      width: double.infinity,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _Fondo(previa: previa),
-
-          // Velo inferior: sin el, el texto blanco se pierde en cuanto haya
-          // fotos reales y claras.
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Color(0xCC000000)],
-                stops: [0.45, 1],
-              ),
-            ),
-          ),
-
-          Positioned(
-            top: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-            right: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-            child: _PastillaPlazas(
-              ocupacion: ocupacion,
-              libres: previa.plazasLibres,
-            ),
-          ),
-
-          Positioned(
-            left: EspaciadoPrevia.m,
-            right: EspaciadoPrevia.m,
-            bottom: EspaciadoPrevia.s + EspaciadoPrevia.xs,
-            child: Row(
-              children: [
-                _Avatar(previa: previa),
-                const SizedBox(width: EspaciadoPrevia.s),
-                Expanded(
-                  child: Text(
-                    previa.anfitrionNombre,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                if (previa.ambiente.isNotEmpty) ...[
+                  const SizedBox(
+                    height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
                   ),
-                ),
-                Text(
-                  hora,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
+                  Wrap(
+                    spacing: EspaciadoPrevia.xs + 2,
+                    runSpacing: EspaciadoPrevia.xs + 2,
+                    children: [
+                      for (final etiqueta in previa.ambiente.take(3))
+                        _Etiqueta(etiqueta),
+                    ],
                   ),
-                ),
+                ],
+
+                const SizedBox(height: EspaciadoPrevia.s + EspaciadoPrevia.xs),
+                _Anfitrion(previa: previa),
               ],
             ),
           ),
         ],
       ),
     );
+
+    // Sin onTap la tarjeta es solo informativa y se lee tal cual. Con onTap
+    // se anuncia como UN botón con la frase completa, y se silencia el
+    // contenido suelto para no leerlo dos veces.
+    if (onTap == null) return tarjeta;
+    return Semantics(
+      button: true,
+      container: true,
+      label: etiquetaAccesiblePrevia(previa),
+      hint: 'Toca para ver la previa',
+      onTap: onTap,
+      excludeSemantics: true,
+      child: Pulsable(onTap: onTap, escala: 0.97, child: tarjeta),
+    );
   }
 }
 
-/// Foto de la previa cuando exista; mientras tanto, degradado de marca.
-class _Fondo extends StatelessWidget {
-  const _Fondo({required this.previa});
+/// Quien organiza: su cara, su nombre y lo que dicen de él.
+class _Anfitrion extends StatelessWidget {
+  const _Anfitrion({required this.previa});
 
   final Previa previa;
 
   @override
   Widget build(BuildContext context) {
-    final foto = previa.anfitrionAvatar;
-    if (foto != null && foto.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: foto,
-        fit: BoxFit.cover,
-        placeholder: (_, _) =>
-            ColoredBox(color: context.colores.superficieAlta),
-        errorWidget: (_, _, _) => const _Relleno(),
-      );
-    }
-    return const _Relleno();
-  }
-}
+    final textos = Theme.of(context).textTheme;
+    final reputacion = previa.anfitrionReputacion;
 
-class _Relleno extends StatelessWidget {
-  const _Relleno();
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(gradient: context.colores.degradado),
-  );
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.previa});
-
-  final Previa previa;
-
-  @override
-  Widget build(BuildContext context) {
-    final inicial = previa.anfitrionNombre.isNotEmpty
-        ? previa.anfitrionNombre[0].toUpperCase()
-        : '?';
-    final letra = Text(
-      inicial,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-    final foto = previa.anfitrionAvatar;
-
-    // No se reutiliza el avatar del feed porque este va sobre el velo oscuro
-    // de la portada: la inicial tiene que ir en blanco en los dos temas.
-    return Container(
-      width: 30,
-      height: 30,
-      clipBehavior: Clip.antiAlias,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.colores.superficieActiva,
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white24),
-      ),
-      // La cara y no solo la inicial: saber quien abre la puerta es lo que
-      // decide si pides plaza.
-      child: foto != null && foto.isNotEmpty
-          ? CachedNetworkImage(
-              imageUrl: foto,
-              fit: BoxFit.cover,
-              width: 30,
-              height: 30,
-              errorWidget: (_, _, _) => letra,
-            )
-          : letra,
+    return Row(
+      children: [
+        AvatarPerfil(
+          url: previa.anfitrionAvatar,
+          inicial: previa.anfitrionNombre,
+          lado: 28,
+        ),
+        const SizedBox(width: EspaciadoPrevia.s),
+        Expanded(
+          child: Text(
+            previa.anfitrionNombre,
+            style: textos.bodyMedium?.copyWith(
+              color: context.colores.texto,
+              fontWeight: FontWeight.w600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        // Sin estrella y sin ambar: la tinta viva esta reservada a las
+        // plazas libres, y "sobre cinco" ya lo dice el texto.
+        if (reputacion != null)
+          Text(
+            '${reputacion.toStringAsFixed(1).replaceAll('.', ',')}/5',
+            style: textos.labelMedium,
+          ),
+      ],
     );
   }
 }
 
-class _PastillaPlazas extends StatelessWidget {
-  const _PastillaPlazas({required this.ocupacion, required this.libres});
+/// Plazas libres en pastilla, con el color de la ocupación.
+///
+/// Pública porque el detalle la reutiliza: las plazas tienen que decirse
+/// igual en el listado y en la ficha.
+class PastillaPlazas extends StatelessWidget {
+  const PastillaPlazas({super.key, required this.libres});
 
-  final Ocupacion ocupacion;
   final int libres;
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colores;
+    final ocupacion = Ocupacion.desde(libres);
     final etiqueta = switch (ocupacion) {
       Ocupacion.completa => 'Completa',
       _ => libres == 1 ? '1 plaza' : '$libres plazas',
     };
+    // Sobre el verde y el naranja, negro; la completa va en una pastilla
+    // oscura casi opaca para que se lea sobre cualquier bloque.
+    final tinta = ocupacion.viva ? c.sobrePrimario : c.textoSuave;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -289,46 +245,35 @@ class _PastillaPlazas extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: ocupacion.viva
-            ? ocupacion.color(context.colores)
-            : const Color(0xCC000000),
+            ? ocupacion.color(c)
+            : c.fondo.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // El punto de "en directo": dice de un vistazo que ahi se entra.
           if (ocupacion.viva) ...[
-            const _Punto(),
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: tinta, shape: BoxShape.circle),
+            ),
             const SizedBox(width: EspaciadoPrevia.xs + 1),
           ],
           Text(
             etiqueta,
             style: TextStyle(
-              color: ocupacion.viva
-                  ? const Color(0xFF07130C)
-                  : context.colores.textoSuave,
+              color: tinta,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ],
       ),
     );
   }
-}
-
-/// El punto de "en directo": lo que dice de un vistazo que ahi se puede entrar.
-class _Punto extends StatelessWidget {
-  const _Punto();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 6,
-    height: 6,
-    decoration: const BoxDecoration(
-      color: Color(0xFF07130C),
-      shape: BoxShape.circle,
-    ),
-  );
 }
 
 class _Etiqueta extends StatelessWidget {

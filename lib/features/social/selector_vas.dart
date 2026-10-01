@@ -5,31 +5,42 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../app/tema.dart';
 import '../../data/models/local.dart';
 
-/// La pregunta de la noche, hecha boton.
+/// La pregunta de la noche, hecha pastilla sobre la foto del local.
 ///
 /// Un toque es "voy": es la respuesta de nueve de cada diez veces y no debe
 /// costar mas que eso. Los matices (quiza, mas tarde, ya estoy) estan a un
 /// toque largo, o a un toque si ya habias contestado, porque entonces lo que
 /// quieres es cambiar la respuesta, no repetirla.
 ///
-/// Va encima de bloques de color que cambian de un local a otro, asi que no
-/// usa ningun color de marca: tinta si no has dicho nada, blanco si si.
+/// Lleva dentro las caras de quien va porque las dos cosas son la misma
+/// pregunta: "¿vas?" pesa distinto cuando al lado estan Lucia y Dani. Va
+/// siempre sobre una foto oscurecida, asi que no depende del tema: vidrio
+/// oscuro si no has dicho nada, amarillo de marca si si. El salto de oscuro a
+/// amarillo es la confirmacion que se ve sin leer.
 class SelectorVas extends StatefulWidget {
   const SelectorVas({
     super.key,
     required this.estado,
     required this.nombreLocal,
     required this.onElegir,
-    this.fondo = BloquesPrevia.amarillo,
+    this.caras = const [],
+    this.resto = 0,
+    this.van = 0,
   });
 
   final EstadoNoche? estado;
   final String nombreLocal;
   final ValueChanged<EstadoNoche?> onElegir;
 
-  /// El color del bloque sobre el que va: el texto de la pastilla vacia se
-  /// pinta de ese color para que parezca recortada del cartel.
-  final Color fondo;
+  /// Quien va, con la tuya primero si vas.
+  final List<Cara> caras;
+
+  /// Cuanta gente mas va aparte de las caras que se ven.
+  final int resto;
+
+  /// Cuantos van en total. Se escribe solo cuando no hay caras que enseñar
+  /// (el servidor de antes no las manda) y para el lector de pantalla.
+  final int van;
 
   @override
   State<SelectorVas> createState() => _SelectorVasState();
@@ -38,6 +49,11 @@ class SelectorVas extends StatefulWidget {
 class _SelectorVasState extends State<SelectorVas> {
   /// Sube cada vez que te apuntas, para relanzar la pegatina que salta.
   int _estallidos = 0;
+
+  /// El fondo de la pastilla sin contestar. Casi opaco y sin desenfoque: el
+  /// desenfoque en cada fila de una lista larga cuesta fotogramas, y el velo
+  /// de la foto ya aparta lo que hay detras.
+  static const _vidrio = Color(0xD9141418);
 
   void _elegir(EstadoNoche? nuevo) {
     if (nuevo == widget.estado) return;
@@ -62,57 +78,105 @@ class _SelectorVasState extends State<SelectorVas> {
 
   @override
   Widget build(BuildContext context) {
-    const tinta = BloquesPrevia.tintaSobreBloque;
     final estado = widget.estado;
     final reducido = MovimientoPrevia.reducido(context);
+    final amarillo = context.colores.primario;
+    final sobreAmarillo = context.colores.sobrePrimario;
 
-    final Widget pastilla = estado == null
-        ? Container(
-            key: const ValueKey('vacia'),
-            height: 52,
-            padding: const EdgeInsets.symmetric(horizontal: 22),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: tinta,
-              borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-            ),
-            child: Titular('¿Vas?', tamano: 19, color: widget.fondo),
-          )
-        : Container(
-            key: ValueKey(estado),
-            height: 52,
-            padding: const EdgeInsets.only(left: 14, right: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x33000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (estado == EstadoNoche.aqui)
-                  const _PuntoEnDirecto()
-                else
-                  Text(estado.pegatina, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: 7),
-                Titular(estado.corta, tamano: 16, color: tinta),
-                const SizedBox(width: 2),
-                const Icon(Icons.expand_more_rounded, size: 20, color: tinta),
-              ],
+    final Widget caras = widget.caras.isEmpty
+        ? const SizedBox.shrink()
+        : Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: PilaDeCaras(
+              caras: widget.caras,
+              lado: 24,
+              maximo: 3,
+              resto: widget.resto,
+              // El separador de cada cara es el fondo de la pastilla en opaco:
+              // sobre el vidrio se nota como un aro fino, que es justo lo que
+              // separa una cara de la de al lado.
+              borde: estado == null ? const Color(0xFF141418) : amarillo,
             ),
           );
+
+    final Widget contenido = estado == null
+        ? Row(
+            key: const ValueKey('vacia'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              caras,
+              if (widget.caras.isEmpty && widget.van > 0) ...[
+                Text(
+                  '${widget.van} van',
+                  style: const TextStyle(
+                    color: Color(0xCCFFFFFF),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              const Titular('¿Vas?', tamano: 16, color: Colors.white),
+            ],
+          )
+        : Row(
+            key: ValueKey(estado),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              caras,
+              if (estado == EstadoNoche.aqui)
+                const _PuntoEnDirecto()
+              else
+                Text(estado.pegatina, style: const TextStyle(fontSize: 15)),
+              const SizedBox(width: 6),
+              Titular(estado.corta, tamano: 15, color: sobreAmarillo),
+              Icon(Icons.expand_more_rounded, size: 18, color: sobreAmarillo),
+            ],
+          );
+
+    final pastilla = AnimatedContainer(
+      duration: reducido ? Duration.zero : MovimientoPrevia.rapido,
+      curve: MovimientoPrevia.curva,
+      height: 40,
+      padding: EdgeInsets.only(
+        left: widget.caras.isEmpty ? 14 : 5,
+        right: estado == null ? 14 : 8,
+      ),
+      decoration: BoxDecoration(
+        color: estado == null ? _vidrio : amarillo,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+        border: Border.all(
+          color: estado == null ? const Color(0x2EFFFFFF) : amarillo,
+        ),
+      ),
+      child: AnimatedSwitcher(
+        duration: reducido ? Duration.zero : MovimientoPrevia.rapido,
+        switchInCurve: MovimientoPrevia.curva,
+        transitionBuilder: (hijo, animacion) => FadeTransition(
+          opacity: animacion,
+          child: ScaleTransition(
+            scale: Tween(begin: 0.92, end: 1.0).animate(animacion),
+            child: hijo,
+          ),
+        ),
+        child: contenido,
+      ),
+    );
+
+    final gente = widget.van == 0
+        ? 'Nadie ha dicho que va todavía'
+        : widget.van == 1
+        ? 'Va 1 persona'
+        : 'Van ${widget.van} personas';
 
     return Semantics(
       button: true,
       label: estado == null
-          ? '¿Vas a ${widget.nombreLocal}? Toca para decir que vas'
-          : '${estado.etiqueta} a ${widget.nombreLocal}. Toca para cambiarlo',
+          ? '¿Vas a ${widget.nombreLocal}? $gente. Toca para decir que vas; '
+                'mantén pulsado para más opciones'
+          : '${estado.etiqueta} a ${widget.nombreLocal}. $gente. '
+                'Toca para cambiarlo',
       excludeSemantics: true,
       child: Pulsable(
         onTap: estado == null ? () => _elegir(EstadoNoche.voy) : _abrirOpciones,
@@ -127,18 +191,8 @@ class _SelectorVasState extends State<SelectorVas> {
               AnimatedSize(
                 duration: reducido ? Duration.zero : MovimientoPrevia.normal,
                 curve: MovimientoPrevia.curva,
-                child: AnimatedSwitcher(
-                  duration: reducido ? Duration.zero : MovimientoPrevia.rapido,
-                  switchInCurve: MovimientoPrevia.curva,
-                  transitionBuilder: (hijo, animacion) => FadeTransition(
-                    opacity: animacion,
-                    child: ScaleTransition(
-                      scale: Tween(begin: 0.9, end: 1.0).animate(animacion),
-                      child: hijo,
-                    ),
-                  ),
-                  child: pastilla,
-                ),
+                alignment: Alignment.centerRight,
+                child: pastilla,
               ),
               // La pegatina que salta al apuntarte: el "hecho" que se ve sin
               // leer. Una por toque, y ninguna si se pidio menos movimiento.

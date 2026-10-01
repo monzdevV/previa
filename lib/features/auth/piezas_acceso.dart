@@ -18,6 +18,7 @@ class BotonAcceso extends StatefulWidget {
     required this.texto,
     required this.onPressed,
     this.cargando = false,
+    this.mientrasCarga = 'Un momento',
     this.fondo,
     this.tinta,
   });
@@ -29,6 +30,10 @@ class BotonAcceso extends StatefulWidget {
   /// falta algo sin tener que gritar un error antes de tiempo.
   final VoidCallback? onPressed;
   final bool cargando;
+
+  /// Lo que dice el lector de pantalla mientras gira la rueda: "Entrando"
+  /// informa mas que un "cargando" generico.
+  final String mientrasCarga;
   final Color? fondo;
   final Color? tinta;
 
@@ -75,7 +80,7 @@ class _BotonAccesoState extends State<BotonAcceso> {
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       color: tinta,
-                      semanticsLabel: 'Un momento',
+                      semanticsLabel: widget.mientrasCarga,
                     ),
                   )
                 : Text(widget.texto.toUpperCase(), key: ValueKey(widget.texto)),

@@ -30,6 +30,11 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
   final _ciudad = TextEditingController();
 
   DateTime? _fechaNacimiento;
+
+  /// El servidor no deja cambiar la fecha una vez fijada (es lo que impide
+  /// "rejuvenecerse" para saltarse el filtro de mayoria de edad). Solo se
+  /// puede poner si estaba vacia, p. ej. tras entrar con Google.
+  bool _fechaBloqueada = false;
   String? _avatar;
   bool _subiendoAvatar = false;
   bool _cargandoDatos = true;
@@ -82,6 +87,7 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       _ciudad.text = perfil?.ciudad ?? '';
       _avatar = perfil?.avatarUrl;
       _fechaNacimiento = fecha;
+      _fechaBloqueada = fecha != null;
       _cargandoDatos = false;
     });
   }
@@ -98,16 +104,87 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     super.dispose();
   }
 
-  Future<void> _cambiarFoto() async {
-    final elegida = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      // Un avatar no necesita mas: se ve a 44 px en la mayoria de sitios.
-      maxWidth: 800,
-      imageQuality: 85,
+  /// Galeria, camara o quitarla, en una hoja como el resto de la app.
+  Future<void> _opcionesDeFoto() async {
+    final tieneFoto = _avatar != null && _avatar!.isNotEmpty;
+    final eleccion = await mostrarHoja<String>(
+      context,
+      builder: (contexto) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            EspaciadoPrevia.m,
+            0,
+            EspaciadoPrevia.m,
+            EspaciadoPrevia.m,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(
+                  left: EspaciadoPrevia.s,
+                  bottom: EspaciadoPrevia.s,
+                ),
+                child: Titular('Tu foto', tamano: 22),
+              ),
+              _OpcionDeFoto(
+                icono: Icons.photo_library_outlined,
+                texto: 'Elegir de la galería',
+                onTap: () => Navigator.of(contexto).pop('galeria'),
+              ),
+              _OpcionDeFoto(
+                icono: Icons.photo_camera_outlined,
+                texto: 'Hacer una foto',
+                onTap: () => Navigator.of(contexto).pop('camara'),
+              ),
+              if (tieneFoto)
+                _OpcionDeFoto(
+                  icono: Icons.delete_outline,
+                  texto: 'Quitar foto',
+                  peligro: true,
+                  onTap: () => Navigator.of(contexto).pop('quitar'),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
+    if (!mounted || eleccion == null) return;
+    if (eleccion == 'quitar') return _quitarFoto();
+    return _cambiarFoto(
+      eleccion == 'camara' ? ImageSource.camera : ImageSource.gallery,
+    );
+  }
+
+  Future<void> _cambiarFoto(ImageSource origen) async {
+    final XFile? elegida;
+    try {
+      elegida = await ImagePicker().pickImage(
+        source: origen,
+        // Un avatar no necesita mas: se ve a 44 px en la mayoria de sitios y
+        // a lo ancho solo en tu cabecera.
+        maxWidth: 800,
+        imageQuality: 85,
+      );
+    } catch (_) {
+      // Sin camara o sin permiso: que se sepa en vez de no hacer nada.
+      if (mounted) {
+        setState(
+          () => _error = origen == ImageSource.camera
+              ? 'No se ha podido abrir la cámara. Revisa los permisos.'
+              : 'No se ha podido abrir la galería.',
+        );
+      }
+      return;
+    }
     if (elegida == null) return;
 
-    setState(() => _subiendoAvatar = true);
+    setState(() {
+      _subiendoAvatar = true;
+      _error = null;
+    });
     try {
       final bytes = await elegida.readAsBytes();
       final punto = elegida.name.lastIndexOf('.');
@@ -123,14 +200,48 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
       // la anterior hasta que se reinicia la aplicacion.
       refrescarPerfil(ref);
       if (mounted) setState(() => _avatar = url);
-    } catch (e) {
-      if (mounted) setState(() => _error = 'No se ha podido subir la foto.');
+      _avisar('Foto actualizada.');
+    } on ErrorPrevia catch (e) {
+      if (mounted) setState(() => _error = e.mensaje);
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => _error = 'No se ha podido subir la foto. Inténtalo otra vez.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _subiendoAvatar = false);
     }
   }
 
+  Future<void> _quitarFoto() async {
+    setState(() {
+      _subiendoAvatar = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(repositorioAuthProvider);
+      await repo.actualizarPerfil(quitarAvatar: true);
+      await repo.borrarMisAvatares();
+      refrescarPerfil(ref);
+      if (mounted) setState(() => _avatar = null);
+      _avisar('Foto quitada.');
+    } catch (_) {
+      if (mounted) setState(() => _error = 'No se ha podido quitar la foto.');
+    } finally {
+      if (mounted) setState(() => _subiendoAvatar = false);
+    }
+  }
+
+  void _avisar(String texto) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(texto)));
+  }
+
   Future<void> _elegirFecha() async {
+    if (_fechaBloqueada) return;
     final hoy = DateTime.now();
     final elegida = await showDatePicker(
       context: context,
@@ -152,7 +263,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
     // ella, la cuenta queda bloqueada sin que nada lo explique.
     if (_fechaNacimiento == null) {
       setState(
-        () => _error = 'Pon tu fecha de nacimiento: sin ella no podrás abrir '
+        () => _error =
+            'Pon tu fecha de nacimiento: sin ella no podrás abrir '
             'previas.',
       );
       return;
@@ -169,7 +281,8 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
           .actualizarPerfil(
             nombre: _nombre.text,
             bio: _bio.text,
-            fechaNacimiento: _fechaNacimiento,
+            // Una fecha ya fijada no se reenvia: el servidor la protege.
+            fechaNacimiento: _fechaBloqueada ? null : _fechaNacimiento,
             instagram: _instagram.text,
             tiktok: _tiktok.text,
             xUsuario: _x.text,
@@ -249,9 +362,14 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               Center(
                 child: Semantics(
                   button: true,
-                  label: 'Cambiar foto de perfil',
+                  label: _subiendoAvatar
+                      ? 'Subiendo foto de perfil'
+                      : (_avatar == null
+                            ? 'Añadir foto de perfil'
+                            : 'Cambiar foto de perfil'),
+                  excludeSemantics: true,
                   child: Pulsable(
-                    onTap: _subiendoAvatar ? null : _cambiarFoto,
+                    onTap: _subiendoAvatar ? null : _opcionesDeFoto,
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
@@ -299,8 +417,13 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               const SizedBox(height: EspaciadoPrevia.s),
               Center(
                 child: TextButton(
-                  onPressed: _subiendoAvatar ? null : _cambiarFoto,
-                  child: Text(_avatar == null ? 'Añadir foto' : 'Cambiar foto'),
+                  onPressed: _subiendoAvatar ? null : _opcionesDeFoto,
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  child: Text(
+                    _subiendoAvatar
+                        ? 'Subiendo…'
+                        : (_avatar == null ? 'Añadir foto' : 'Cambiar foto'),
+                  ),
                 ),
               ),
               const SizedBox(height: EspaciadoPrevia.m),
@@ -387,20 +510,28 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               ),
               const SizedBox(height: EspaciadoPrevia.m),
               InkWell(
-                onTap: _elegirFecha,
+                onTap: _fechaBloqueada ? null : _elegirFecha,
                 borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
                 child: InputDecorator(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Fecha de nacimiento',
-                    prefixIcon: Icon(Icons.cake_outlined),
+                    prefixIcon: const Icon(Icons.cake_outlined),
+                    suffixIcon: _fechaBloqueada
+                        ? Icon(
+                            Icons.lock_outline,
+                            size: 18,
+                            color: context.colores.textoTenue,
+                            semanticLabel: 'No se puede cambiar',
+                          )
+                        : null,
                   ),
                   child: Text(
                     _fechaNacimiento == null
                         ? 'Toca para elegir'
                         : formatoFecha.format(_fechaNacimiento!),
                     style: TextStyle(
-                      color: _fechaNacimiento == null
-                          ? context.colores.textoTenue
+                      color: _fechaNacimiento == null || _fechaBloqueada
+                          ? context.colores.textoSuave
                           : context.colores.texto,
                       fontSize: 16,
                     ),
@@ -409,8 +540,12 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
               ),
               const SizedBox(height: EspaciadoPrevia.xs),
               Text(
-                'Nadie más puede verla. Solo se publica tu edad, y sin ella '
-                'no puedes abrir previas.',
+                _fechaBloqueada
+                    ? 'Ya está fijada y no se puede cambiar. Nadie más la ve: '
+                          'solo se publica tu edad.'
+                    : 'Nadie más puede verla. Solo se publica tu edad, y sin '
+                          'ella no puedes abrir previas. Una vez guardada, no '
+                          'se puede cambiar.',
                 style: textos.bodyMedium?.copyWith(
                   fontSize: 12,
                   color: context.colores.textoTenue,
@@ -419,18 +554,36 @@ class _PantallaEditarPerfilState extends ConsumerState<PantallaEditarPerfil> {
 
               if (_error != null) ...[
                 const SizedBox(height: EspaciadoPrevia.m),
-                Container(
-                  padding: const EdgeInsets.all(EspaciadoPrevia.m),
-                  decoration: BoxDecoration(
-                    color: context.colores.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                    border: Border.all(
-                      color: context.colores.error.withValues(alpha: 0.4),
+                Semantics(
+                  liveRegion: true,
+                  child: Container(
+                    padding: const EdgeInsets.all(EspaciadoPrevia.m),
+                    decoration: BoxDecoration(
+                      color: context.colores.error.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(
+                        EspaciadoPrevia.radio,
+                      ),
+                      border: Border.all(
+                        color: context.colores.error.withValues(alpha: 0.4),
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: context.colores.error),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 20,
+                          color: context.colores.error,
+                        ),
+                        const SizedBox(width: EspaciadoPrevia.s),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: TextStyle(color: context.colores.error),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -483,4 +636,53 @@ class _CampoRed extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Una fila de la hoja de la foto: alta, con icono y encoge al pulsar.
+class _OpcionDeFoto extends StatelessWidget {
+  const _OpcionDeFoto({
+    required this.icono,
+    required this.texto,
+    required this.onTap,
+    this.peligro = false,
+  });
+
+  final IconData icono;
+  final String texto;
+  final VoidCallback onTap;
+  final bool peligro;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    return Semantics(
+      button: true,
+      label: texto,
+      excludeSemantics: true,
+      child: Pulsable(
+        onTap: onTap,
+        escala: 0.97,
+        child: SizedBox(
+          height: 56,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.s),
+            child: Row(
+              children: [
+                Icon(icono, color: peligro ? c.error : c.textoSuave),
+                const SizedBox(width: EspaciadoPrevia.m),
+                Text(
+                  texto,
+                  style: TextStyle(
+                    color: peligro ? c.error : c.texto,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

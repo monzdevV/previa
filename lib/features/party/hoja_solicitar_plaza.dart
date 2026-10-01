@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_previas.dart';
+import '../auth/piezas_acceso.dart' show AvisoError;
+import 'componentes_previa.dart';
 
 /// Hoja para pedir plaza. Devuelve true si la solicitud se ha enviado.
 Future<bool?> mostrarHojaSolicitarPlaza(
@@ -11,15 +14,9 @@ Future<bool?> mostrarHojaSolicitarPlaza(
   required String previaId,
   required int plazasLibres,
 }) {
-  return showModalBottomSheet<bool>(
-    context: context,
-    backgroundColor: context.colores.fondo,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(EspaciadoPrevia.radioGrande),
-      ),
-    ),
+  // La misma hoja que el resto de la app: mismo asa, misma forma.
+  return mostrarHoja<bool>(
+    context,
     builder: (_) =>
         _HojaSolicitarPlaza(previaId: previaId, plazasLibres: plazasLibres),
   );
@@ -66,11 +63,19 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
             mensaje: _mensaje.text,
           );
       if (!mounted) return;
+      HapticFeedback.heavyImpact();
       Navigator.of(context).pop(true);
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Solicitud enviada.')));
     } on ErrorPrevia catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
+    } catch (_) {
+      // Un fallo de red no puede dejar el boton girando sin explicacion.
+      if (mounted) {
+        setState(
+          () => _error = 'No se ha podido enviar. Comprueba tu conexión.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -79,20 +84,30 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
   @override
   Widget build(BuildContext context) {
     final textos = Theme.of(context).textTheme;
+    // Un grupo de quince pidiendo de golpe no es realista: tope de 10.
     final tope = widget.plazasLibres.clamp(1, 10);
+    final restantes = widget.plazasLibres - _grupo;
 
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(EspaciadoPrevia.l),
+        top: false,
+        // Con el teclado abierto o la letra grande la hoja no se recorta.
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            EspaciadoPrevia.l,
+            0,
+            EspaciadoPrevia.l,
+            EspaciadoPrevia.l,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('¿Cuántos vais?', style: textos.headlineMedium),
+              Semantics(
+                header: true,
+                child: Titular('¿Cuántos vais?', tamano: 30),
+              ),
               const SizedBox(height: EspaciadoPrevia.s),
               Text(
                 'Se pide plaza para todo el grupo de golpe. Quedan '
@@ -102,18 +117,28 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
               ),
               const SizedBox(height: EspaciadoPrevia.l),
 
-              Wrap(
-                spacing: EspaciadoPrevia.s,
-                runSpacing: EspaciadoPrevia.s,
-                children: [
-                  for (var n = 1; n <= tope; n++)
-                    ChoiceChip(
-                      label: Text('$n'),
-                      selected: _grupo == n,
-                      selectedColor: context.colores.primario,
-                      onSelected: (_) => setState(() => _grupo = n),
-                    ),
-                ],
+              _SelectorGrupo(
+                valor: _grupo,
+                tope: tope,
+                onCambio: (n) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _grupo = n);
+                },
+              ),
+              const SizedBox(height: EspaciadoPrevia.m),
+              // El efecto de tu peticion sobre el aforo: hace tangible que
+              // pedir mas plazas deja menos sitio a los demas.
+              BarraPlazas(libres: restantes < 0 ? 0 : restantes),
+              const SizedBox(height: EspaciadoPrevia.s),
+              Text(
+                _grupo >= tope && tope < widget.plazasLibres
+                    ? 'Máximo por solicitud: $tope personas.'
+                    : (restantes <= 0
+                          ? 'Os quedaríais con las últimas plazas.'
+                          : 'Quedarían $restantes '
+                                '${restantes == 1 ? "plaza" : "plazas"} '
+                                'para los demás.'),
+                style: textos.bodyMedium?.copyWith(fontSize: 13),
               ),
 
               const SizedBox(height: EspaciadoPrevia.l),
@@ -127,57 +152,97 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                   hintText:
                       'Somos dos, venimos de cenar por la zona. '
                       'Llevamos bebida.',
+                  helperText:
+                      'Un mensaje con algo de contexto multiplica las '
+                      'opciones de que te acepten.',
+                  helperMaxLines: 2,
                   alignLabelWithHint: true,
-                ),
-              ),
-
-              Text(
-                'Un mensaje con algo de contexto multiplica las opciones '
-                'de que te acepten.',
-                style: textos.bodyMedium?.copyWith(
-                  fontSize: 12,
-                  color: context.colores.textoTenue,
                 ),
               ),
 
               if (_error != null) ...[
                 const SizedBox(height: EspaciadoPrevia.m),
-                Container(
-                  padding: const EdgeInsets.all(EspaciadoPrevia.m),
-                  decoration: BoxDecoration(
-                    color: context.colores.error.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-                    border: Border.all(
-                      color: context.colores.error.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  child: Text(
-                    _error!,
-                    style: TextStyle(color: context.colores.error),
-                  ),
-                ),
+                AvisoError(_error!),
               ],
 
               const SizedBox(height: EspaciadoPrevia.l),
               FilledButton(
                 onPressed: _enviando ? null : _enviar,
                 child: _enviando
-                    ? SizedBox(
-                        width: 22,
-                        height: 22,
+                    ? SizedBox.square(
+                        dimension: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
                           color: context.colores.sobrePrimario,
+                          semanticsLabel: 'Enviando solicitud',
                         ),
                       )
                     : Text(
-                        _grupo == 1 ? 'Pedir mi plaza' : 'Pedir $_grupo plazas',
+                        _grupo == 1 ? 'PEDIR MI PLAZA' : 'PEDIR $_grupo PLAZAS',
                       ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Selector del tamaño del grupo con - / +.
+///
+/// Dos botones grandes (56 dp) y el numero en medio sustituyen a una fila de
+/// chips: es mas rapido con el pulgar y aguanta mejor la letra grande. El
+/// numero es una region viva para que el lector anuncie el cambio.
+class _SelectorGrupo extends StatelessWidget {
+  const _SelectorGrupo({
+    required this.valor,
+    required this.tope,
+    required this.onCambio,
+  });
+
+  final int valor;
+  final int tope;
+  final ValueChanged<int> onCambio;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        BotonPaso(
+          icono: Icons.remove,
+          tooltip: 'Una persona menos',
+          onPressed: valor > 1 ? () => onCambio(valor - 1) : null,
+        ),
+        Expanded(
+          child: Semantics(
+            liveRegion: true,
+            label: valor == 1 ? '1 persona' : '$valor personas',
+            excludeSemantics: true,
+            child: Column(
+              children: [
+                CifraAnimada(
+                  valor: valor,
+                  estilo: textos.displaySmall?.copyWith(
+                    color: context.colores.primarioTexto,
+                  ),
+                ),
+                Text(
+                  valor == 1 ? 'persona' : 'personas',
+                  style: textos.bodyMedium,
+                ),
+              ],
+            ),
+          ),
+        ),
+        BotonPaso(
+          icono: Icons.add,
+          tooltip: 'Una persona más',
+          onPressed: valor < tope ? () => onCambio(valor + 1) : null,
+        ),
+      ],
     );
   }
 }

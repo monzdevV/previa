@@ -10,7 +10,10 @@ import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
 import '../features/feed/pantalla_publicar.dart';
+import '../features/juegos/pantalla_hub_juegos.dart';
 import '../features/map/pantalla_inicio.dart';
+import '../features/onboarding/pantalla_onboarding.dart';
+import '../features/onboarding/servicio_onboarding.dart';
 import '../features/social/pantalla_buscar.dart';
 import '../features/social/pantalla_locales.dart';
 import '../features/social/pantalla_mis_noches.dart';
@@ -51,6 +54,8 @@ abstract final class Rutas {
   static const mensajes = '/mensajes';
   static const avisos = '/avisos';
   static const conversacion = '/conversacion';
+  static const juegos = '/juegos';
+  static const onboarding = '/bienvenida-tarjetas';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -81,7 +86,7 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
 
     // Un guardia unico en lugar de comprobaciones repartidas por las
     // pantallas: asi es imposible que a una se le olvide.
-    redirect: (context, estado) {
+    redirect: (context, estado) async {
       final haySesion = cliente.auth.currentUser != null;
       final ruta = estado.matchedLocation;
       final enZonaPublica =
@@ -90,10 +95,22 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
           ruta == Rutas.registro;
 
       if (!haySesion && !enZonaPublica) return Rutas.bienvenida;
+      // Primera vez en este dispositivo: las tarjetas de bienvenida van antes
+      // del inicio, tanto con una sesion recien creada como con una guardada.
+      if (haySesion &&
+          (enZonaPublica || ruta == Rutas.inicio) &&
+          !await ServicioOnboarding.yaVisto()) {
+        return Rutas.onboarding;
+      }
       if (haySesion && enZonaPublica) return Rutas.inicio;
       return null;
     },
 
+    // Las rutas usan `builder` y no `pageBuilder` a proposito: la pagina
+    // que crea go_router es una MaterialPage, que toma la transicion del
+    // tema (`TransicionPrevia`, en lib/app/movimiento.dart). Asi la misma
+    // animacion vale para estas rutas y para los `Navigator.push` sueltos
+    // (bloqueados, juegos), y respeta "reducir movimiento" en todas.
     routes: [
       GoRoute(
         path: Rutas.bienvenida,
@@ -175,6 +192,14 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
         path: '${Rutas.perfilDe}/:id',
         builder: (_, estado) =>
             PantallaPerfilPublico(perfilId: estado.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Rutas.onboarding,
+        builder: (_, _) => const PantallaOnboarding(),
+      ),
+      GoRoute(
+        path: Rutas.juegos,
+        builder: (_, _) => const PantallaHubJuegos(conAtras: true),
       ),
       GoRoute(path: Rutas.locales, builder: (_, _) => const PantallaLocales()),
       GoRoute(

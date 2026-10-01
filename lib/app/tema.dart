@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'colores.dart';
+import 'movimiento.dart';
 
 export '../data/models/cara.dart';
 export 'avatar.dart';
@@ -86,9 +87,22 @@ ThemeData construirTemaPrevia({
     surface: c.superficie,
     onSurface: c.texto,
     error: c.error,
-    onError: Colors.white,
-    outline: c.borde,
+    // Blanco sobre el rojo claro del modo oscuro se queda en 3,3:1; negro
+    // pasa de 6. En claro el rojo es oscuro y el blanco si llega.
+    onError: brillo == Brightness.dark ? c.sobrePrimario : Colors.white,
+    outline: c.bordeCampo,
+    outlineVariant: c.borde,
   );
+
+  // Anillo de foco para quien navega con teclado, mando o acceso por
+  // interruptor. La capa de foco de Material es un velo casi invisible sobre
+  // el amarillo; esto es un contorno de verdad. Solo aparece con foco.
+  WidgetStateProperty<BorderSide?> anilloFoco(BorderSide normal) =>
+      WidgetStateProperty.resolveWith(
+        (estados) => estados.contains(WidgetState.focused)
+            ? BorderSide(color: c.texto, width: 3)
+            : normal,
+      );
 
   final contorno = OutlineInputBorder(
     borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
@@ -113,6 +127,30 @@ ThemeData construirTemaPrevia({
     splashFactory: InkSparkle.splashFactory,
     fontFamily: caraDelSistema,
     extensions: [c],
+
+    // Explicitos para que un cambio futuro no encoja los objetivos tactiles
+    // sin que nadie se de cuenta: 48 dp es el minimo para el pulgar.
+    materialTapTargetSize: MaterialTapTargetSize.padded,
+    visualDensity: VisualDensity.standard,
+    focusColor: c.primario.withValues(alpha: 0.24),
+
+    // Una transicion para toda la app (ver TransicionPrevia).
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: TransicionPrevia(),
+        TargetPlatform.iOS: TransicionPrevia(),
+        TargetPlatform.macOS: TransicionPrevia(),
+        TargetPlatform.windows: TransicionPrevia(),
+        TargetPlatform.linux: TransicionPrevia(),
+        TargetPlatform.fuchsia: TransicionPrevia(),
+      },
+    ),
+
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: c.primarioTexto,
+      selectionColor: c.primario.withValues(alpha: 0.4),
+      selectionHandleColor: c.primarioTexto,
+    ),
 
     appBarTheme: AppBarTheme(
       backgroundColor: c.fondo,
@@ -181,20 +219,38 @@ ThemeData construirTemaPrevia({
         // Sin textStyle propio: heredan labelLarge del textTheme, que ya
         // lleva la letra de titulares. Fijarlo aqui la perdia.
         shape: const StadiumBorder(),
-      ),
+      ).copyWith(side: anilloFoco(BorderSide.none)),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: c.texto,
-        minimumSize: const Size.fromHeight(52),
-        // Contorno grueso en el color del texto: la pastilla vacia es la
-        // pareja del boton relleno, no un boton de segunda.
-        side: BorderSide(color: c.texto, width: 2),
-        shape: const StadiumBorder(),
-      ),
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: c.texto,
+            minimumSize: const Size.fromHeight(52),
+            // Contorno grueso en el color del texto: la pastilla vacia es la
+            // pareja del boton relleno, no un boton de segunda.
+            side: BorderSide(color: c.texto, width: 2),
+            shape: const StadiumBorder(),
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (estados) => estados.contains(WidgetState.disabled)
+                  ? BorderSide(color: c.bordeCampo, width: 2)
+                  : estados.contains(WidgetState.focused)
+                  ? BorderSide(color: c.primarioTexto, width: 3)
+                  : BorderSide(color: c.texto, width: 2),
+            ),
+          ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(foregroundColor: c.primarioTexto),
+      style: TextButton.styleFrom(
+        foregroundColor: c.primarioTexto,
+        // Objetivo tactil minimo de 48 dp (WCAG 2.5.5 / Material).
+        minimumSize: const Size(64, 48),
+        shape: const StadiumBorder(),
+      ).copyWith(side: anilloFoco(BorderSide.none)),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(minimumSize: const Size(48, 48))
+          .copyWith(side: anilloFoco(BorderSide.none)),
     ),
 
     inputDecorationTheme: InputDecorationTheme(
@@ -209,9 +265,12 @@ ThemeData construirTemaPrevia({
       prefixIconColor: c.textoTenue,
       suffixIconColor: c.textoTenue,
       border: contorno,
+      // Fino pero con 3:1 frente al fondo (WCAG 1.4.11): sin el, un campo
+      // vacio era un rectangulo casi negro sobre negro.
       enabledBorder: contorno.copyWith(
-        borderSide: const BorderSide(color: Colors.transparent),
+        borderSide: BorderSide(color: c.bordeCampo),
       ),
+      disabledBorder: contorno.copyWith(borderSide: BorderSide(color: c.borde)),
       focusedBorder: contorno.copyWith(
         borderSide: BorderSide(color: c.primarioTexto, width: 2),
       ),
@@ -236,9 +295,73 @@ ThemeData construirTemaPrevia({
         fontSize: 13,
         fontWeight: FontWeight.w700,
       ),
+      checkmarkColor: c.sobrePrimario,
       side: BorderSide.none,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+      ),
+    ),
+
+    // Interruptores, casillas y radios: amarillo con negro encima, como el
+    // resto de lo elegido. Apagados, con el borde de control (3:1).
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (e) =>
+            e.contains(WidgetState.selected) ? c.sobrePrimario : c.textoSuave,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : c.superficieAlta,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : c.bordeCampo,
+      ),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : null,
+      ),
+      checkColor: WidgetStatePropertyAll(c.sobrePrimario),
+      side: BorderSide(color: c.bordeCampo, width: 2),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (e) =>
+            e.contains(WidgetState.selected) ? c.primarioTexto : c.bordeCampo,
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: c.textoSuave,
+      textColor: c.texto,
+      minTileHeight: 56,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: c.primarioTexto,
+      linearTrackColor: c.superficieActiva,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: c.superficieAlta,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+      ),
+      titleTextStyle: titular(22),
+      contentTextStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        fontSize: 15,
+        height: 1.45,
+        color: c.textoSuave,
+      ),
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: c.texto,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.s),
+      ),
+      textStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.fondo,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
       ),
     ),
 
@@ -271,6 +394,11 @@ ThemeData construirTemaPrevia({
       backgroundColor: c.primario,
       foregroundColor: c.sobrePrimario,
       elevation: 0,
+      // El FAB pequeño de Material mide 40 dp; se sube al minimo de 48.
+      smallSizeConstraints: const BoxConstraints.tightFor(
+        width: 48,
+        height: 48,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
       ),
@@ -286,6 +414,7 @@ ThemeData construirTemaPrevia({
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
+      actionTextColor: c.primarioTexto,
       behavior: SnackBarBehavior.floating,
       elevation: 0,
       insetPadding: const EdgeInsets.fromLTRB(

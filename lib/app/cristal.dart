@@ -119,7 +119,7 @@ class BotonCristal extends StatelessWidget {
         excludeSemantics: true,
         child: Pulsable(
           onTap: onTap,
-          escala: 0.92,
+          formaFoco: const CircleBorder(),
           child: SizedBox.square(
             dimension: lado,
             child: activo
@@ -130,7 +130,10 @@ class BotonCristal extends StatelessWidget {
                     ),
                     child: Center(child: icono),
                   )
-                : Cristal(forma: BoxShape.circle, child: Center(child: icono)),
+                : Cristal(
+                    forma: BoxShape.circle,
+                    child: Center(child: icono),
+                  ),
           ),
         ),
       ),
@@ -147,7 +150,8 @@ class PastillaCristal extends StatelessWidget {
     this.icono,
     this.onTap,
     this.cargando = false,
-    this.alto = 44,
+    // 48: el minimo para el pulgar (Material y WCAG 2.5.5).
+    this.alto = 48,
     this.desplegable = false,
   });
 
@@ -203,7 +207,11 @@ class PastillaCristal extends StatelessWidget {
       ),
     );
     if (onTap == null) return pastilla;
-    return Pulsable(onTap: onTap, child: pastilla);
+    return Pulsable(
+      onTap: onTap,
+      formaFoco: const StadiumBorder(),
+      child: pastilla,
+    );
   }
 }
 

@@ -7,7 +7,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../juego/no_hay_huevos.dart';
+import '../juegos/no_hay_huevos.dart';
 
 final avisosProvider = FutureProvider<List<Aviso>>(
   (ref) => ref.watch(repositorioSocialProvider).misAvisos(),

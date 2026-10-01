@@ -84,6 +84,9 @@ class _RepoSocialDeMuestra extends RepositorioSocial {
           nombre: 'Oasis',
           ciudad: 'Zaragoza',
           zona: 'Centro',
+          eslogan: 'Tu finde empieza aquí',
+          lat: 41.6541,
+          lng: -0.8807,
           van: 23,
           aqui: 4,
           quiza: 3,
@@ -99,6 +102,9 @@ class _RepoSocialDeMuestra extends RepositorioSocial {
           nombre: 'Sala López',
           ciudad: 'Zaragoza',
           zona: 'Casco Viejo',
+          instagram: 'salalopez',
+          lat: 41.6522,
+          lng: -0.8790,
           van: 1,
           caras: [Cara(id: 'd', nombre: 'Irene')],
         ),
@@ -353,7 +359,7 @@ void main() {
     );
   });
 
-  testWidgets('cada local de la noche es un bloque de color distinto', (
+  testWidgets('los locales son fotos a sangre, pegadas y por cercania', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 1000);

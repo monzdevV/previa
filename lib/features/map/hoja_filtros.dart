@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/tema.dart';
 import '../../core/ambientes.dart';
+import 'filtros_rapidos.dart';
 import 'proveedores_mapa.dart';
 
 Future<void> mostrarHojaFiltros(BuildContext context) {
@@ -18,8 +19,10 @@ class _HojaFiltros extends ConsumerWidget {
     final notificador = ref.read(filtrosProvider.notifier);
     final textos = Theme.of(context).textTheme;
 
+    // Con desplazamiento: en un movil de 640 de alto la hoja entera no cabe
+    // y el boton de ver resultados quedaba cortado.
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
           EspaciadoPrevia.l,
           0,
@@ -32,7 +35,10 @@ class _HojaFiltros extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Titular('Filtros', tamano: 30),
+                Semantics(
+                  header: true,
+                  child: const Titular('Filtros', tamano: 30),
+                ),
                 const Spacer(),
                 if (!filtros.sonLosPorDefecto)
                   TextButton(
@@ -41,15 +47,20 @@ class _HojaFiltros extends ConsumerWidget {
                   ),
               ],
             ),
+            const SizedBox(height: EspaciadoPrevia.m),
+            // Lo mas pedido, a un toque, antes que los deslizadores.
+            const FiltrosRapidos(),
             const SizedBox(height: EspaciadoPrevia.l),
 
             _Etiqueta('Distancia', filtros.radioLegible),
             Slider(
               value: filtros.radioMetros.toDouble(),
-              min: 500,
-              max: 20000,
+              min: Filtros.radioMinimoMetros.toDouble(),
+              max: Filtros.radioMaximoMetros.toDouble(),
               divisions: 39,
               activeColor: context.colores.primario,
+              semanticFormatterCallback: (v) =>
+                  Filtros(radioMetros: v.round()).radioLegible,
               onChanged: (v) => notificador.fijarRadio(v.round()),
             ),
 
@@ -64,11 +75,16 @@ class _HojaFiltros extends ConsumerWidget {
               max: 24,
               divisions: 23,
               activeColor: context.colores.primario,
+              semanticFormatterCallback: (v) =>
+                  v.round() == 1 ? '1 hora' : '${v.round()} horas',
               onChanged: (v) => notificador.fijarHoras(v.round()),
             ),
 
             const SizedBox(height: EspaciadoPrevia.m),
-            Text('Somos', style: textos.titleLarge),
+            Semantics(
+              header: true,
+              child: Text('Somos', style: textos.titleLarge),
+            ),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               'Solo verás previas con sitio para todo el grupo.',
@@ -81,6 +97,7 @@ class _HojaFiltros extends ConsumerWidget {
                 for (final n in [1, 2, 3, 4, 5, 6])
                   ChoiceChip(
                     label: Text('$n'),
+                    tooltip: n == 1 ? 'Solo yo' : 'Somos $n',
                     selected: filtros.plazasMinimas == n,
                     selectedColor: context.colores.primario,
                     onSelected: (_) => notificador.fijarPlazas(n),
@@ -89,7 +106,10 @@ class _HojaFiltros extends ConsumerWidget {
             ),
 
             const SizedBox(height: EspaciadoPrevia.l),
-            Text('Ambiente', style: textos.titleLarge),
+            Semantics(
+              header: true,
+              child: Text('Ambiente', style: textos.titleLarge),
+            ),
             const SizedBox(height: EspaciadoPrevia.s),
             Text(
               filtros.ambiente.isEmpty
@@ -116,7 +136,7 @@ class _HojaFiltros extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.xl),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Ver resultados'),
+              child: const Text('VER RESULTADOS'),
             ),
           ],
         ),
@@ -135,12 +155,17 @@ class _Etiqueta extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+        Semantics(
+          header: true,
+          child: Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+        ),
         Text(
           valor,
           style: TextStyle(
-            color: context.colores.primarioSuave,
-            fontWeight: FontWeight.w700,
+            // primarioTexto y no el amarillo: sobre la hoja clara el amarillo
+            // no se lee.
+            color: context.colores.primarioTexto,
+            fontWeight: FontWeight.w800,
             fontSize: 15,
           ),
         ),

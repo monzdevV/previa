@@ -48,9 +48,12 @@ class ErrorPrevia implements Exception {
 /// Codigo de Postgres para "esa columna no existe".
 const _columnaInexistente = '42703';
 
+// Sin `is_moderator`: el rol de la app no tiene permiso de lectura sobre esa
+// columna, y pedirla tumbaba la lectura entera del perfil. Si eres moderador
+// se pregunta aparte con `soyModerador`.
 const _columnasDePerfil =
     'id, username, display_name, avatar_url, bio, onboarded, '
-    'reputation, ratings_count, instagram, city, is_moderator, is_demo';
+    'reputation, ratings_count, instagram, city, is_demo';
 
 /// Lee un perfil pidiendo tambien sus redes.
 ///
@@ -69,7 +72,8 @@ Future<Map<String, dynamic>?> leerPerfil(
         .eq('id', id)
         .maybeSingle();
   } on PostgrestException catch (e) {
-    if (e.code != _columnaInexistente) rethrow;
+    debugPrint('leerPerfil: ${e.code} ${e.message}');
+    if (!_esColumnaInexistente(e)) rethrow;
     return cliente
         .from('profiles')
         .select(_columnasDePerfil)
@@ -77,6 +81,12 @@ Future<Map<String, dynamic>?> leerPerfil(
         .maybeSingle();
   }
 }
+
+/// PostgREST no siempre traslada el codigo de Postgres tal cual, asi que se
+/// mira tambien el mensaje.
+bool _esColumnaInexistente(PostgrestException e) =>
+    e.code == _columnaInexistente ||
+    (e.message.contains('column') && e.message.contains('does not exist'));
 
 class RepositorioAuth {
   RepositorioAuth(this._cliente);
@@ -244,6 +254,18 @@ class RepositorioAuth {
     return Perfil.desdeJson(fila);
   }
 
+  /// Si quien tiene la sesion modera. Va por funcion porque la columna no
+  /// se puede leer; sin la funcion (migracion `vas_y_redes` sin aplicar) se
+  /// responde que no, que es lo seguro: la moderacion ya la protege el
+  /// servidor, esto solo decide si se enseña la entrada.
+  Future<bool> soyModerador() async {
+    try {
+      return await _cliente.rpc('soy_moderador') as bool? ?? false;
+    } on PostgrestException {
+      return false;
+    }
+  }
+
   /// La edad la calcula el servidor a partir de una fecha que el cliente
   /// no puede leer.
   Future<int?> edadDe(String id) async {
@@ -267,6 +289,7 @@ class RepositorioAuth {
     String? xUsuario,
     String? ciudad,
     String? username,
+    bool quitarAvatar = false,
   }) async {
     final id = usuarioActual?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
@@ -278,7 +301,7 @@ class RepositorioAuth {
     final cambios = <String, dynamic>{
       if (nombre != null) 'display_name': nombre.trim(),
       if (bio != null) 'bio': bio.trim(),
-      'avatar_url': ?avatarUrl,
+      if (quitarAvatar) 'avatar_url': null else 'avatar_url': ?avatarUrl,
       if (fechaNacimiento != null)
         'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
       // Se guarda vacio como nulo: una cadena en blanco en la base de datos
@@ -288,10 +311,70 @@ class RepositorioAuth {
             ? null
             : instagram.trim().replaceAll('@', ''),
       if (ciudad != null) 'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
+      if (username != null && username.trim().isNotEmpty)
+        'username': username.trim().toLowerCase(),
     };
-    if (cambios.isEmpty) return;
+    // TikTok y X llegan con la migracion `vas_y_redes`: van aparte para que,
+    // si aun no esta aplicada, el resto del perfil se guarde igual.
+    final redes = <String, dynamic>{
+      if (tiktok != null) 'tiktok': _usuarioDeRed(tiktok),
+      if (xUsuario != null) 'x_handle': _usuarioDeRed(xUsuario),
+    };
+    if (cambios.isEmpty && redes.isEmpty) return;
 
-    await _cliente.from('profiles').update(cambios).eq('id', id);
+    try {
+      try {
+        await _cliente
+            .from('profiles')
+            .update({...cambios, ...redes})
+            .eq('id', id);
+      } on PostgrestException catch (e) {
+        if (redes.isEmpty || !_esColumnaInexistente(e)) rethrow;
+        if (cambios.isNotEmpty) {
+          await _cliente.from('profiles').update(cambios).eq('id', id);
+        }
+      }
+    } on PostgrestException catch (e) {
+      // 23505: unique_violation. El unico unico que se toca aqui es el
+      // nombre de usuario.
+      if (e.code == '23505' || e.message.contains('duplicate')) {
+        throw const ErrorPrevia('Ese nombre de usuario ya está cogido.');
+      }
+      if (e.message.contains('fecha de nacimiento')) {
+        throw const ErrorPrevia(
+          'Tu fecha de nacimiento ya está fijada y no se puede cambiar.',
+        );
+      }
+      rethrow;
+    }
+  }
+
+  /// Vacio se guarda como nulo, y sin la arroba que la gente suele poner.
+  static String? _usuarioDeRed(String valor) {
+    final limpio = valor.trim().replaceAll('@', '');
+    return limpio.isEmpty ? null : limpio;
+  }
+
+  /// Borra las fotos de perfil que haya en tu carpeta del almacen.
+  ///
+  /// Es lo que hace que "Quitar foto" quite la foto de verdad y no solo el
+  /// enlace. Si falla (red, permisos) no se lanza: el perfil ya no la
+  /// enseña y la siguiente subida la sobrescribe.
+  Future<void> borrarMisAvatares() async {
+    final id = usuarioActual?.id;
+    if (id == null) return;
+    try {
+      final ficheros = await _cliente.storage.from('avatares').list(path: id);
+      final rutas = [
+        for (final f in ficheros)
+          if (f.name.startsWith('avatar')) '$id/${f.name}',
+      ];
+      if (rutas.isNotEmpty) {
+        await _cliente.storage.from('avatares').remove(rutas);
+      }
+    } catch (e) {
+      debugPrint('borrarMisAvatares: $e');
+    }
   }
 
   /// RGPD, articulos 15 y 20: derecho de acceso y portabilidad.

@@ -11,9 +11,12 @@ import 'package:go_router/go_router.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import '../party/estados_pantalla.dart' show mensajeResponsable;
 import '../profile/pantallas_legales.dart'
     show PantallaCondiciones, PantallaPrivacidad;
+import 'fuerza_contrasena.dart';
 import 'piezas_acceso.dart';
+import 'validadores.dart';
 
 /// Registro en tres pasos cortos: nombre, fecha de nacimiento y cuenta.
 ///
@@ -24,7 +27,12 @@ import 'piezas_acceso.dart';
 /// legal y la exige el servidor) y con que vas a entrar. El nombre de usuario
 /// se inventa solo y la foto, la bio y lo demas se ponen luego en el perfil.
 class PantallaRegistro extends ConsumerStatefulWidget {
-  const PantallaRegistro({super.key});
+  const PantallaRegistro({super.key, this.hoy});
+
+  /// Fecha de "hoy" fija para las pruebas: la rueda arranca en el dia en que
+  /// se cumplen 18 y, con el reloj de verdad, la captura cambiaria cada dia.
+  @visibleForTesting
+  final DateTime? hoy;
 
   @override
   ConsumerState<PantallaRegistro> createState() => _PantallaRegistroState();
@@ -36,8 +44,6 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
   /// Entre 250 y 300 ms: lo bastante para que se lea que avanzas, lo bastante
   /// poco para que tres pasos no se sientan mas lentos que un formulario.
   static const _transicion = Duration(milliseconds: 280);
-
-  static final _formaCorreo = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
   final _paginas = PageController();
   final _nombre = TextEditingController();
@@ -99,13 +105,15 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
     super.dispose();
   }
 
-  static DateTime _haceDieciochoAnos() {
-    final hoy = DateTime.now();
+  DateTime get _hoy => widget.hoy ?? DateTime.now();
+
+  DateTime _haceDieciochoAnos() {
+    final hoy = _hoy;
     return DateTime(hoy.year - 18, hoy.month, hoy.day);
   }
 
-  static int _edad(DateTime nacimiento) {
-    final hoy = DateTime.now();
+  int _edad(DateTime nacimiento) {
+    final hoy = _hoy;
     final cumplido = !DateTime(
       hoy.year,
       nacimiento.month,
@@ -117,8 +125,8 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
   bool get _nombreValido => _nombre.text.trim().length >= 2;
   bool get _fechaValida =>
       _fechaTocada && RepositorioAuth.esMayorDeEdad(_fecha);
-  bool get _correoValido => _formaCorreo.hasMatch(_correo.text.trim());
-  bool get _contrasenaValida => _contrasena.text.length >= 6;
+  bool get _correoValido => esCorreoValido(_correo.text);
+  bool get _contrasenaValida => _contrasena.text.length >= minimoContrasena;
   bool get _cuentaValida =>
       _correoValido && _contrasenaValida && _aceptaCondiciones;
 
@@ -395,6 +403,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 BotonAcceso(
                   texto: esUltimo ? 'Crear cuenta' : 'Siguiente',
                   cargando: _cargando,
+                  mientrasCarga: 'Creando la cuenta',
                   onPressed: _pasoValido ? _siguiente : null,
                 ),
               ],
@@ -446,8 +455,9 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
 
   Widget _pasoFecha(BuildContext context) {
     final c = context.colores;
-    final hoy = DateTime.now();
+    final hoy = _hoy;
     final mayor = RepositorioAuth.esMayorDeEdad(_fecha);
+    final fechaDicha = MaterialLocalizations.of(context).formatFullDate(_fecha);
 
     final Widget lectura;
     if (!_fechaTocada) {
@@ -491,8 +501,17 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
           height: 44,
           child: Align(
             alignment: Alignment.centerLeft,
+            // La rueda se lee columna a columna; aqui se dice la fecha
+            // entera y lo que significa, que es lo que importa al avanzar.
             child: Semantics(
               liveRegion: true,
+              excludeSemantics: true,
+              label: !_fechaTocada
+                  ? 'Fecha de nacimiento, sin elegir. Mueve la rueda.'
+                  : mayor
+                  ? 'Fecha de nacimiento, $fechaDicha. ${_edad(_fecha)} años.'
+                  : 'Fecha de nacimiento, $fechaDicha. '
+                        'Previa es solo para mayores de 18 años.',
               child: AnimatedSwitcher(
                 duration: MovimientoPrevia.rapido,
                 child: lectura,
@@ -535,6 +554,29 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
               }),
             ),
           ),
+        ),
+        const SizedBox(height: EspaciadoPrevia.m),
+        Row(
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                Icons.verified_user_outlined,
+                size: 16,
+                color: c.textoSuave,
+              ),
+            ),
+            const SizedBox(width: EspaciadoPrevia.s),
+            Expanded(
+              child: Text(
+                mensajeResponsable,
+                style: TextStyle(
+                  color: c.textoSuave,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -596,7 +638,7 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
                 _correo.text.contains('@') &&
                     !_correoValido &&
                     !_focoCorreo.hasFocus
-                ? 'Revisa el correo'
+                ? 'Escribe un correo válido'
                 : null,
           ),
         ),
@@ -621,10 +663,6 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
           decoration: InputDecoration(
             labelText: 'Contraseña',
             prefixIcon: const Icon(Icons.lock_outline_rounded),
-            helperText: _contrasenaValida ? 'Perfecto' : 'Mínimo 6 caracteres',
-            helperStyle: TextStyle(
-              color: _contrasenaValida ? c.disponible : c.textoTenue,
-            ),
             suffixIcon: IconButton(
               tooltip: _oculta ? 'Mostrar contraseña' : 'Ocultar contraseña',
               icon: Icon(
@@ -636,6 +674,10 @@ class _PantallaRegistroState extends ConsumerState<PantallaRegistro> {
             ),
           ),
         ),
+        // Una sola guia bajo el campo: el minimo mientras falta y la
+        // seguridad cuando ya vale. Antes habia un "Mínimo 6 / Perfecto"
+        // aparte; tenerlos los dos seria decir lo mismo dos veces.
+        IndicadorFuerzaContrasena(controlador: _contrasena),
         const SizedBox(height: EspaciadoPrevia.s),
 
         // Consentimiento explicito y sin premarcar (RGPD, art. 7): tiene que

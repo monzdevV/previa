@@ -237,9 +237,7 @@ class EstadoVacio extends StatelessWidget {
               ),
               FilledButton(
                 onPressed: onAccion,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                ),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
                 child: Text(accion!.toUpperCase()),
               ),
             ],
@@ -313,7 +311,7 @@ class Conmutador extends StatelessWidget {
               onElegir(i);
             },
             child: SizedBox(
-              height: 44,
+              height: 48,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -378,7 +376,7 @@ class Conmutador extends StatelessWidget {
             child: FractionallySizedBox(
               widthFactor: 1 / n,
               child: Container(
-                height: 44,
+                height: 48,
                 decoration: BoxDecoration(
                   color: c.primario,
                   borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),

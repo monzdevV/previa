@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/repositories/repositorio_auth.dart';
+import 'aparece.dart';
 import 'piezas_acceso.dart';
+import 'validadores.dart';
 
 /// Volver a entrar: dos campos y un boton, con la misma voz que el registro
 /// para que las dos puertas se reconozcan como la misma casa.
@@ -120,66 +122,78 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Semantics(
-                        header: true,
-                        child: Titular(
-                          'Vuelve a la noche',
-                          tamano: conTeclado ? 34 : 42,
+                      Aparece(
+                        child: Semantics(
+                          header: true,
+                          child: Titular(
+                            'Vuelve a la noche',
+                            tamano: conTeclado ? 34 : 42,
+                          ),
                         ),
                       ),
                       const SizedBox(
                         height: EspaciadoPrevia.s + EspaciadoPrevia.xs,
                       ),
-                      Text(
-                        'Tus planes y tus conversaciones siguen aquí.',
-                        style: textos.bodyLarge,
+                      Aparece(
+                        orden: 1,
+                        child: Text(
+                          'Tus planes y tus conversaciones siguen aquí.',
+                          style: textos.bodyLarge,
+                        ),
                       ),
                       SizedBox(
                         height: conTeclado
                             ? EspaciadoPrevia.l
                             : EspaciadoPrevia.xl,
                       ),
-                      TextField(
-                        controller: _correo,
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        autofillHints: const [
-                          AutofillHints.email,
-                          AutofillHints.username,
-                        ],
-                        textInputAction: TextInputAction.next,
-                        onEditingComplete: _focoContrasena.requestFocus,
-                        decoration: const InputDecoration(
-                          // "o usuario": la cuenta de demostracion entra
-                          // escribiendo solo "admin".
-                          labelText: 'Correo o usuario',
-                          prefixIcon: Icon(Icons.mail_outline_rounded),
+                      Aparece(
+                        orden: 2,
+                        child: TextField(
+                          controller: _correo,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [
+                            AutofillHints.email,
+                            AutofillHints.username,
+                          ],
+                          textInputAction: TextInputAction.next,
+                          onEditingComplete: _focoContrasena.requestFocus,
+                          decoration: const InputDecoration(
+                            // "o usuario": la cuenta de demostracion entra
+                            // escribiendo solo "admin".
+                            labelText: 'Correo o usuario',
+                            prefixIcon: Icon(Icons.mail_outline_rounded),
+                          ),
                         ),
                       ),
                       const SizedBox(height: EspaciadoPrevia.m),
-                      TextField(
-                        controller: _contrasena,
-                        focusNode: _focoContrasena,
-                        obscureText: _oculta,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.done,
-                        onEditingComplete: _entrar,
-                        decoration: InputDecoration(
-                          labelText: 'Contraseña',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
-                          suffixIcon: IconButton(
-                            tooltip: _oculta
-                                ? 'Mostrar contraseña'
-                                : 'Ocultar contraseña',
-                            icon: Icon(
-                              _oculta
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                      Aparece(
+                        orden: 3,
+                        child: TextField(
+                          controller: _contrasena,
+                          focusNode: _focoContrasena,
+                          obscureText: _oculta,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: const [AutofillHints.password],
+                          textInputAction: TextInputAction.done,
+                          onEditingComplete: _entrar,
+                          decoration: InputDecoration(
+                            labelText: 'Contraseña',
+                            prefixIcon: const Icon(Icons.lock_outline_rounded),
+                            suffixIcon: IconButton(
+                              tooltip: _oculta
+                                  ? 'Mostrar contraseña'
+                                  : 'Ocultar contraseña',
+                              icon: Icon(
+                                _oculta
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _oculta = !_oculta),
                             ),
-                            onPressed: () => setState(() => _oculta = !_oculta),
                           ),
                         ),
                       ),
@@ -227,6 +241,7 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                     BotonAcceso(
                       texto: 'Entrar',
                       cargando: _cargando,
+                      mientrasCarga: 'Entrando',
                       onPressed: _completo ? _entrar : null,
                     ),
                     if (!conTeclado)
@@ -282,8 +297,7 @@ class _HojaRecuperarState extends ConsumerState<_HojaRecuperar> {
     super.dispose();
   }
 
-  bool get _valido =>
-      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(_correo.text.trim());
+  bool get _valido => esCorreoValido(_correo.text);
 
   Future<void> _enviar() async {
     if (!_valido || _cargando) return;
@@ -377,6 +391,7 @@ class _HojaRecuperarState extends ConsumerState<_HojaRecuperar> {
                     BotonAcceso(
                       texto: 'Mandar enlace',
                       cargando: _cargando,
+                      mientrasCarga: 'Mandando el enlace',
                       onPressed: _valido ? _enviar : null,
                     ),
                   ],

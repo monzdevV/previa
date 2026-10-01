@@ -130,7 +130,9 @@ void main() {
     tester,
   ) async {
     _movilPequeno(tester);
-    await tester.pumpWidget(_app(const PantallaRegistro()));
+    // Con "hoy" fijo la rueda arranca siempre en la misma fecha y la captura
+    // del paso 2 no cambia cada dia (por eso fallaba antes).
+    await tester.pumpWidget(_app(PantallaRegistro(hoy: DateTime(2026, 6, 15))));
     await _asentar(tester);
 
     // Paso 1: el boton no se enciende hasta que hay un nombre.

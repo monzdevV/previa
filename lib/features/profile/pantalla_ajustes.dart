@@ -8,7 +8,11 @@ import '../../app/tema.dart';
 import '../../core/entorno.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_retos.dart';
-import '../juego/no_hay_huevos.dart' show nombreDelJuego;
+import '../juegos/no_hay_huevos.dart' show nombreDelJuego;
+import '../safety/aviso_ubicacion_aproximada.dart';
+import '../safety/exportar_datos.dart';
+import '../safety/pantalla_bloqueados.dart';
+import 'pantalla_moderacion.dart' show soyModeradorProvider;
 
 /// Ajustes: todo lo que se usa de vez en cuando.
 ///
@@ -28,10 +32,13 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
   /// va el primero lanzaria otra peticion contra una cuenta a medio borrar.
   bool _eliminando = false;
 
+  /// Preparar el fichero tarda un momento: sin indicador parece que el
+  /// toque no ha hecho nada y se vuelve a pulsar.
+  bool _exportando = false;
+
   @override
   Widget build(BuildContext context) {
-    final moderador =
-        ref.watch(miPerfilProvider).valueOrNull?.esModerador ?? false;
+    final moderador = ref.watch(soyModeradorProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ajustes')),
@@ -73,6 +80,17 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
                 ),
             ],
           ),
+          _Grupo(
+            titulo: 'Juegos',
+            filas: [
+              _Fila(
+                icono: Icons.sports_esports_outlined,
+                titulo: 'Juegos para la previa',
+                detalle: 'Retos y partidas con tu grupo',
+                onTap: () => context.push(Rutas.juegos),
+              ),
+            ],
+          ),
           const _Grupo(
             titulo: 'Preferencias',
             filas: [_ElectorDeTema(), _InterruptorDelJuego()],
@@ -80,6 +98,16 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
           _Grupo(
             titulo: 'Privacidad',
             filas: [
+              _Fila(
+                icono: Icons.block_outlined,
+                titulo: 'Usuarios bloqueados',
+                detalle: 'Ver a quién has bloqueado y desbloquear',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PantallaBloqueados(),
+                  ),
+                ),
+              ),
               _Fila(
                 icono: Icons.shield_outlined,
                 titulo: 'Cómo cuidamos tu privacidad',
@@ -107,7 +135,8 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
                 icono: Icons.download_outlined,
                 titulo: 'Descargar mis datos',
                 detalle: 'Todo lo que guardamos de ti, en un fichero',
-                onTap: _exportar,
+                cargando: _exportando,
+                onTap: _exportando ? null : _exportar,
               ),
               _Fila(
                 icono: Icons.delete_outline,
@@ -124,6 +153,9 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
             onPressed: () => ref.read(repositorioAuthProvider).salir(),
             icon: const Icon(Icons.logout, size: 18),
             label: const Text('Cerrar sesión'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),
           Center(
@@ -142,45 +174,37 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
 
   Future<void> _exportar() async {
     final mensajero = ScaffoldMessenger.of(context);
+    setState(() => _exportando = true);
     try {
       final datos = await ref.read(repositorioAuthProvider).exportarMisDatos();
+      // El derecho de acceso pide entregar el fichero, no avisar de que
+      // existe: se abre la hoja de compartir (o la descarga en web) y solo se
+      // confirma si la persona no la ha cerrado sin mas.
+      final entregado = await entregarExportacion(datos);
+      if (entregado) {
+        mensajero.showSnackBar(
+          const SnackBar(content: Text('Fichero con tus datos listo.')),
+        );
+      }
+    } catch (e) {
       mensajero.showSnackBar(
         SnackBar(
-          content: Text('Datos preparados: ${datos.keys.length} secciones.'),
+          content: Text(
+            e is ErrorPrevia
+                ? e.mensaje
+                : 'No se han podido exportar tus datos. Inténtalo otra vez.',
+          ),
         ),
       );
-    } catch (_) {
-      mensajero.showSnackBar(
-        const SnackBar(content: Text('No se han podido exportar tus datos.')),
-      );
+    } finally {
+      if (mounted) setState(() => _exportando = false);
     }
   }
 
   Future<void> _eliminarCuenta() async {
     final confirmado = await showDialog<bool>(
       context: context,
-      builder: (contexto) => AlertDialog(
-        backgroundColor: context.colores.superficieAlta,
-        title: const Text('¿Eliminar tu cuenta?'),
-        content: const Text(
-          'Se borrarán tu perfil, tus previas, tus mensajes y tus '
-          'valoraciones. Esto no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(contexto).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(contexto).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: context.colores.error,
-              minimumSize: const Size(0, 44),
-            ),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      builder: (_) => const _DialogoEliminarCuenta(),
     );
 
     if (confirmado != true || _eliminando || !mounted) return;
@@ -188,17 +212,93 @@ class _PantallaAjustesState extends ConsumerState<PantallaAjustes> {
     setState(() => _eliminando = true);
     try {
       await ref.read(repositorioAuthProvider).eliminarMiCuenta();
-    } catch (_) {
+    } catch (e) {
+      // Antes el fallo se perdia en silencio y parecia que la cuenta se
+      // habia borrado o que la app se habia colgado.
       mensajero.showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'No se ha podido eliminar la cuenta. Inténtalo otra vez.',
+            e is ErrorPrevia
+                ? e.mensaje
+                : 'No se ha podido eliminar la cuenta. Inténtalo otra vez.',
           ),
         ),
       );
     } finally {
       if (mounted) setState(() => _eliminando = false);
     }
+  }
+}
+
+/// Pide escribir ELIMINAR: un toque sin querer no puede borrar una cuenta.
+class _DialogoEliminarCuenta extends StatefulWidget {
+  const _DialogoEliminarCuenta();
+
+  @override
+  State<_DialogoEliminarCuenta> createState() => _DialogoEliminarCuentaState();
+}
+
+class _DialogoEliminarCuentaState extends State<_DialogoEliminarCuenta> {
+  final _texto = TextEditingController();
+
+  @override
+  void dispose() {
+    _texto.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    final listo = _texto.text.trim().toUpperCase() == 'ELIMINAR';
+    return AlertDialog(
+      backgroundColor: c.superficieAlta,
+      title: const Text('¿Eliminar tu cuenta?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Se borrarán tu perfil, tus fotos, tus previas, tus mensajes y '
+            'tus valoraciones. Esto no se puede deshacer.',
+          ),
+          const SizedBox(height: EspaciadoPrevia.m),
+          const Text('Escribe ELIMINAR para confirmar.'),
+          const SizedBox(height: EspaciadoPrevia.s),
+          TextField(
+            controller: _texto,
+            autofocus: true,
+            autocorrect: false,
+            textCapitalization: TextCapitalization.characters,
+            decoration: const InputDecoration(hintText: 'ELIMINAR'),
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) {
+              if (listo) Navigator.of(context).pop(true);
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: listo ? () => Navigator.of(context).pop(true) : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: c.error,
+            // Negro sobre el rojo vivo del modo oscuro; blanco sobre el
+            // rojo oscuro del claro. Asi pasa el contraste en los dos.
+            foregroundColor: Theme.of(context).brightness == Brightness.dark
+                ? c.sobrePrimario
+                : Colors.white,
+            minimumSize: const Size(0, 48),
+          ),
+          child: const Text('Eliminar'),
+        ),
+      ],
+    );
   }
 }
 
@@ -220,7 +320,9 @@ class _Grupo extends StatelessWidget {
             left: EspaciadoPrevia.xs,
             bottom: EspaciadoPrevia.s,
           ),
-          child: Titular(titulo, tamano: 18),
+          // Encabezado de verdad: con lector de pantalla se salta de grupo
+          // en grupo en vez de recorrer fila a fila.
+          child: Semantics(header: true, child: Titular(titulo, tamano: 18)),
         ),
         Material(
           color: context.colores.superficie,
@@ -274,7 +376,11 @@ class _Fila extends StatelessWidget {
       trailing: cargando
           ? SizedBox.square(
               dimension: 20,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: c.error),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: peligro ? c.error : c.primarioTexto,
+                semanticsLabel: 'Un momento',
+              ),
             )
           : Icon(Icons.chevron_right, color: c.textoTenue),
       onTap: onTap,
@@ -308,13 +414,20 @@ class _ComoFunciona extends StatelessWidget {
             icono: Icons.place_outlined,
             parrafos: [
               'Usamos tu ubicación para una sola cosa: enseñarte previas que '
-                  'tengas cerca. No la guardamos en ningún sitio. Se usa para '
-                  'hacer la búsqueda y se descarta.',
+                  'tengas cerca. No la guardamos en tu perfil ni la ve nadie '
+                  'más. Viaja a nuestro servidor solo para hacer la búsqueda; '
+                  'los registros técnicos del servidor pueden conservarla un '
+                  'tiempo breve.',
               'Pedimos únicamente precisión aproximada, no la exacta. Para un '
                   'radio de kilómetros sobra, y así gastamos menos batería.',
               'Si no nos das permiso, la app sigue funcionando: puedes mover '
                   'el mapa a mano y buscar por zona.',
             ],
+          ),
+
+          const Padding(
+            padding: EdgeInsets.only(bottom: EspaciadoPrevia.l),
+            child: AvisoUbicacionAproximada(),
           ),
 
           _Apartado(
@@ -352,8 +465,9 @@ class _ComoFunciona extends StatelessWidget {
             titulo: 'Tus derechos',
             icono: Icons.gavel_outlined,
             parrafos: [
-              'Puedes descargar todo lo que tenemos sobre ti desde tu perfil, '
-                  'en un fichero que puedes llevarte a otro sitio.',
+              'Puedes descargar todo lo que tenemos sobre ti desde Ajustes, '
+                  'en «Descargar mis datos»: es un fichero que puedes llevarte '
+                  'a otro sitio.',
               'Puedes eliminar tu cuenta cuando quieras. Se borra todo: perfil, '
                   'previas, mensajes y valoraciones. No hay copia oculta.',
               'Si algo no te cuadra, puedes reclamar ante la Agencia Española '
@@ -386,7 +500,6 @@ class _ComoFunciona extends StatelessWidget {
                   'avisa a alguien de dónde vas y vete si algo no te gusta.',
             ],
           ),
-
         ],
       ),
     );
@@ -413,12 +526,21 @@ class _Apartado extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icono, size: 20, color: context.colores.primarioSuave),
-              const SizedBox(width: EspaciadoPrevia.s),
-              Expanded(child: Text(titulo, style: textos.titleLarge)),
-            ],
+          Semantics(
+            header: true,
+            child: Row(
+              children: [
+                ExcludeSemantics(
+                  child: Icon(
+                    icono,
+                    size: 20,
+                    color: context.colores.primarioTexto,
+                  ),
+                ),
+                const SizedBox(width: EspaciadoPrevia.s),
+                Expanded(child: Text(titulo, style: textos.titleLarge)),
+              ],
+            ),
           ),
           const SizedBox(height: EspaciadoPrevia.s),
           for (final p in parrafos)
@@ -484,14 +606,17 @@ class _InterruptorDelJuegoState extends ConsumerState<_InterruptorDelJuego> {
   @override
   void initState() {
     super.initState();
-    ref.read(repositorioRetosProvider).juego().then(
-      (valor) {
-        if (mounted) setState(() => _juego = valor);
-      },
-      onError: (_) {
-        if (mounted) setState(() => _juego = true);
-      },
-    );
+    ref
+        .read(repositorioRetosProvider)
+        .juego()
+        .then(
+          (valor) {
+            if (mounted) setState(() => _juego = valor);
+          },
+          onError: (_) {
+            if (mounted) setState(() => _juego = true);
+          },
+        );
   }
 
   Future<void> _cambiar(bool valor) async {
@@ -506,9 +631,9 @@ class _InterruptorDelJuegoState extends ConsumerState<_InterruptorDelJuego> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _juego = antes);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se ha podido guardar.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No se ha podido guardar.')));
     } finally {
       if (mounted) setState(() => _guardando = false);
     }

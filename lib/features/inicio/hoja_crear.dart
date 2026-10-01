@@ -69,11 +69,16 @@ class _Opcion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const tinta = BloquesPrevia.tintaSobreBloque;
+    // Una sola frase para el lector: el titulo va en mayusculas y el icono
+    // y la flecha no dicen nada que no diga ya el texto.
     return Semantics(
       button: true,
+      label: '$titulo. $detalle',
+      onTap: onTap,
+      excludeSemantics: true,
       child: Pulsable(
         onTap: onTap,
-        escala: 0.98,
+        escala: 0.97,
         child: Container(
           padding: const EdgeInsets.all(EspaciadoPrevia.m),
           decoration: BoxDecoration(

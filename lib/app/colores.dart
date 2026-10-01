@@ -25,7 +25,10 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
     required this.textoSuave,
     required this.textoTenue,
     required this.borde,
+    required this.bordeCampo,
     required this.error,
+    required this.acento,
+    required this.aviso,
   });
 
   final Color fondo;
@@ -51,8 +54,23 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
   final Color texto;
   final Color textoSuave;
   final Color textoTenue;
+
+  /// Borde DECORATIVO (tarjetas, separadores): casi invisible a proposito.
   final Color borde;
+
+  /// Borde de los controles (campos de texto, chips sin elegir). WCAG 1.4.11
+  /// pide 3:1 frente al fondo contiguo; [borde] no llega y un campo vacio se
+  /// confundia con el fondo.
+  final Color bordeCampo;
+
   final Color error;
+
+  /// [disponible] y [secundario] en version para TEXTO e ICONOS, como
+  /// [primarioTexto] lo es del amarillo. En oscuro coinciden; en claro son
+  /// mas oscuros porque el verde y el naranja de relleno sobre blanco no
+  /// llegan a 4,5:1. Los rellenos siguen usando [disponible] y [secundario].
+  final Color acento;
+  final Color aviso;
 
   Color get navegacion => texto;
 
@@ -66,8 +84,6 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
   /// El filo del vidrio: una linea de luz, no un borde de caja.
   Color get bordeCristal =>
       _esOscura ? const Color(0x24FFFFFF) : const Color(0x14000000);
-  Color get acento => disponible;
-  Color get aviso => secundario;
 
   /// Degradado de marca. Solo en la accion principal, nunca tras texto.
   LinearGradient get degradado => LinearGradient(
@@ -92,9 +108,13 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
     sobrePrimario: Color(0xFF000000),
     texto: Color(0xFFFFFFFF),
     textoSuave: Color(0xFFB0B0B0),
-    textoTenue: Color(0xFF7A7A7A),
+    // 4,8:1 sobre superficieAlta (#7A7A7A se quedaba en 4,05).
+    textoTenue: Color(0xFF878787),
     borde: Color(0xFF262626),
+    bordeCampo: Color(0xFF666666),
     error: Color(0xFFFF4757),
+    acento: Color(0xFF35E07F),
+    aviso: Color(0xFFFF9F1C),
   );
 
   static const claro = ColoresPrevia(
@@ -107,15 +127,20 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
     primarioSuave: Color(0xFFFFF27A),
     // Ambar oscuro: el amarillo de marca sobre blanco no llega ni de lejos
     // al contraste minimo para texto.
-    primarioTexto: Color(0xFF8A6D00),
+    // (#8A6D00 se quedaba en 4,2:1 sobre superficieAlta.)
+    primarioTexto: Color(0xFF806500),
     secundario: Color(0xFFE08600),
     disponible: Color(0xFF00A055),
     sobrePrimario: Color(0xFF000000),
     texto: Color(0xFF0A0A0B),
     textoSuave: Color(0xFF56565E),
-    textoTenue: Color(0xFF7C7C85),
+    // 4,5:1 sobre superficieAlta (#7C7C85 no llegaba ni sobre blanco).
+    textoTenue: Color(0xFF6B6B73),
     borde: Color(0xFFE0E0E6),
-    error: Color(0xFFD62839),
+    bordeCampo: Color(0xFF85858C),
+    error: Color(0xFFC8233A),
+    acento: Color(0xFF007A3D),
+    aviso: Color(0xFFA35400),
   );
 
   @override
@@ -135,7 +160,10 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
     Color? textoSuave,
     Color? textoTenue,
     Color? borde,
+    Color? bordeCampo,
     Color? error,
+    Color? acento,
+    Color? aviso,
   }) => ColoresPrevia(
     fondo: fondo ?? this.fondo,
     fondoProfundo: fondoProfundo ?? this.fondoProfundo,
@@ -152,7 +180,10 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
     textoSuave: textoSuave ?? this.textoSuave,
     textoTenue: textoTenue ?? this.textoTenue,
     borde: borde ?? this.borde,
+    bordeCampo: bordeCampo ?? this.bordeCampo,
     error: error ?? this.error,
+    acento: acento ?? this.acento,
+    aviso: aviso ?? this.aviso,
   );
 
   @override
@@ -174,7 +205,10 @@ class ColoresPrevia extends ThemeExtension<ColoresPrevia> {
       textoSuave: Color.lerp(textoSuave, otro.textoSuave, t)!,
       textoTenue: Color.lerp(textoTenue, otro.textoTenue, t)!,
       borde: Color.lerp(borde, otro.borde, t)!,
+      bordeCampo: Color.lerp(bordeCampo, otro.bordeCampo, t)!,
       error: Color.lerp(error, otro.error, t)!,
+      acento: Color.lerp(acento, otro.acento, t)!,
+      aviso: Color.lerp(aviso, otro.aviso, t)!,
     );
   }
 }

@@ -16,8 +16,11 @@ pantalla:
    abre la hoja de crear (subir foto o abrir previa).
 2. **Mapa** — previas cerca: una pastilla arriba (resumen y filtros) y un
    carrusel de tarjetas atado al mapa.
-3. **¿Vas?** — en el centro. Quién va esta noche a cada local; un toque es
-   "voy", toque largo para quizá, más tarde o estoy aquí.
+3. **¿Vas?** — en el centro. Los locales de la ciudad como fotos a ancho
+   completo, pegadas y ordenadas de más cerca a más lejos, con la ciudad en
+   una pastilla blanca flotando arriba. Toque en la foto abre la ficha (quién
+   va, sala, entradas); toque en la pastilla "¿Vas?" es "voy"; toque largo
+   en cualquier parte, quizá, más tarde, estoy aquí o no voy.
 4. **Buzón** — mensajes y avisos juntos. Arriba, buscar gente.
 5. **Tú** — tu perfil: foto, redes, calendario social y fotos. Arriba, el
    engranaje de Ajustes, donde vive todo lo secundario (solicitudes, valorar,
@@ -154,6 +157,14 @@ amarillo.
    perfil. **La app funciona sin ella**: "quizá" avisa de que falta y TikTok/X
    no se guardan. Tras aplicarla, conviene añadir sus pruebas a
    `supabase/tests/`.
+
+01. **Aplicar `supabase/migrations/20260929120000_locales_con_foto.sql`**
+   (después de la anterior). Añade a `venues` `cover_url`, `logo_url` y
+   `tagline` (solo lectura para la app) y hace que `locales_de_la_noche`
+   devuelva eso más `lat`/`lng`. Luego hay que **rellenar foto, logo y
+   coordenadas de los locales** desde el panel: sin foto la tarjeta pinta
+   luces de colores y sin coordenadas no enseña distancia. La distancia se
+   calcula en el teléfono; la posición no se manda al servidor.
 
 0. **Poner la clave de la IA**: `npx supabase secrets set ANTHROPIC_API_KEY=...
    --project-ref bfqzabpgtehncnbxtslg`. Sin ella los retos salen de la lista

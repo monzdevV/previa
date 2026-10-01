@@ -14,12 +14,21 @@ import '../../core/entorno.dart';
 import '../../data/models/previa.dart';
 import '../../data/services/servicio_ubicacion.dart';
 import '../party/tarjeta_previa.dart';
+import 'agrupacion_mapa.dart';
 import 'capas_del_mapa.dart';
+import 'esqueleto_carga.dart';
 import 'hoja_filtros.dart';
 import 'proveedores_mapa.dart';
 
 /// Alto del carrusel de tarjetas de abajo.
 const _altoCarrusel = 132.0;
+
+/// Ancho de cada tarjeta del carrusel respecto a la pantalla: deja asomar la
+/// siguiente para que se entienda que se puede deslizar.
+const _fraccionTarjeta = 0.86;
+
+/// Zoom maximo del mapa. A este zoom un grupo ya no se deshace acercando.
+const _zoomMaximo = 17.0;
 
 /// Mapa de previas cercanas: mapa, contexto y una accion.
 ///
@@ -46,7 +55,7 @@ class PantallaMapa extends ConsumerStatefulWidget {
 class _PantallaMapaState extends ConsumerState<PantallaMapa>
     with TickerProviderStateMixin {
   final _mapa = MapController();
-  final _paginas = PageController(viewportFraction: 0.86);
+  final _paginas = PageController(viewportFraction: _fraccionTarjeta);
 
   /// Centro al que ha arrastrado el usuario, todavia sin buscar.
   LatLng? _centroPendiente;
@@ -156,20 +165,17 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
     _volarA(p.ubicacion, math.max(_mapa.camera.zoom, 14.5));
   }
 
-  /// Agrupa las previas cuyas placas se pisarian a este zoom.
-  ///
-  /// Rejilla simple en pixeles del zoom actual: suficiente para las decenas
-  /// de previas que caben en un radio de busqueda, y sin dependencias.
-  List<List<Previa>> _agrupar(List<Previa> lista) {
-    if (!_mapaListo || lista.length < 2) return [for (final p in lista) [p]];
-    const celda = 64.0;
-    final grupos = <String, List<Previa>>{};
-    for (final p in lista) {
-      final punto = _mapa.camera.project(p.ubicacion, _zoomDeAgrupado.toDouble());
-      final clave = '${(punto.x / celda).floor()}:${(punto.y / celda).floor()}';
-      grupos.putIfAbsent(clave, () => []).add(p);
+  /// Toque en un grupo: se acerca para deshacerlo. Si el mapa ya no puede
+  /// acercarse mas (dos previas en la misma calle), acercar no serviria de
+  /// nada y se abren en lista.
+  void _abrirGrupo(GrupoPrevias grupo) {
+    HapticFeedback.selectionClick();
+    final zoom = _mapaListo ? _mapa.camera.zoom : 14.0;
+    if (zoom >= _zoomMaximo - 0.5) {
+      _verLista(context, grupo.previas, titulo: 'Aquí al lado');
+      return;
     }
-    return grupos.values.toList();
+    _volarA(grupo.centro, math.min(zoom + 2, _zoomMaximo));
   }
 
   @override
@@ -213,119 +219,136 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
           : '${l.length} ${l.length == 1 ? "previa" : "previas"} · '
                 '${filtros.radioLegible}',
     );
+    final grupos = agruparPrevias(lista, _zoomDeAgrupado.toDouble());
 
     return Scaffold(
       body: Stack(
         children: [
-          FlutterMap(
-            mapController: _mapa,
-            options: MapOptions(
-              initialCenter: centro,
-              initialZoom: 14,
-              minZoom: 10,
-              maxZoom: 17,
-              // Mientras las teselas no llegan, el hueco es el fondo y no un
-              // blanco: en una app que se abre de noche ese fogonazo deslumbra.
-              backgroundColor: context.colores.fondo,
-              onMapReady: () => setState(() => _mapaListo = true),
-              onTap: (_, _) => setState(() => _seleccionada = null),
-              onPositionChanged: (camara, porGesto) {
-                final z = camara.zoom.floor();
-                if (z != _zoomDeAgrupado) setState(() => _zoomDeAgrupado = z);
-                if (!porGesto) return;
-                final distancia = const Distance().distance(
-                  centro,
-                  camara.center,
-                );
-                // Solo se ofrece rebuscar si de verdad se ha movido.
-                if (distancia > 500 && _centroPendiente == null) {
-                  setState(() => _centroPendiente = camara.center);
-                } else if (distancia > 500) {
-                  _centroPendiente = camara.center;
-                }
-              },
-            ),
-            children: [
-              ...capasBaseDelMapa(
-                context,
-                proveedor: ref.watch(proveedorTeselasProvider),
-                conAtribucion: false,
+          // El lienzo del mapa es pintura: no dice nada al lector de
+          // pantalla. Se etiqueta como un bloque y se remite al carrusel y a
+          // la lista, que cuentan lo mismo con texto.
+          Semantics(
+            label:
+                'Mapa de previas cercanas. Las previas también están en las '
+                'tarjetas de abajo y en la lista.',
+            child: FlutterMap(
+              mapController: _mapa,
+              options: MapOptions(
+                initialCenter: centro,
+                initialZoom: 14,
+                minZoom: 10,
+                maxZoom: _zoomMaximo,
+                // Mientras las teselas no llegan, el hueco es el fondo y no un
+                // blanco: en una app que se abre de noche ese fogonazo deslumbra.
+                backgroundColor: context.colores.fondo,
+                onMapReady: () => setState(() => _mapaListo = true),
+                onTap: (_, _) => setState(() => _seleccionada = null),
+                onPositionChanged: (camara, porGesto) {
+                  final z = camara.zoom.floor();
+                  if (z != _zoomDeAgrupado) setState(() => _zoomDeAgrupado = z);
+                  if (!porGesto) return;
+                  final distancia = const Distance().distance(
+                    centro,
+                    camara.center,
+                  );
+                  // Solo se ofrece rebuscar si de verdad se ha movido.
+                  if (distancia > 500 && _centroPendiente == null) {
+                    setState(() => _centroPendiente = camara.center);
+                  } else if (distancia > 500) {
+                    _centroPendiente = camara.center;
+                  }
+                },
               ),
+              children: [
+                ...capasBaseDelMapa(
+                  context,
+                  proveedor: ref.watch(proveedorTeselasProvider),
+                  conAtribucion: false,
+                ),
 
-              // Radio de busqueda, en letra de mapa y no en amarillo: el
-              // alcance de la busqueda no es una previa con sitio.
-              CircleLayer(
-                circles: [
-                  CircleMarker(
-                    point: centro,
-                    radius: filtros.radioMetros.toDouble(),
-                    useRadiusInMeter: true,
-                    color: Colors.transparent,
-                    borderColor: context.colores.textoTenue.withValues(
-                      alpha: 0.45,
-                    ),
-                    borderStrokeWidth: 1,
-                  ),
-                ],
-              ),
-
-              // Cada previa, como zona aproximada.
-              CircleLayer(
-                circles: [
-                  for (final p in lista)
+                // Radio de busqueda, en letra de mapa y no en amarillo: el
+                // alcance de la busqueda no es una previa con sitio.
+                CircleLayer(
+                  circles: [
                     CircleMarker(
-                      point: p.ubicacion,
-                      radius: Entorno.metrosDeDifuminado.toDouble(),
+                      point: centro,
+                      radius: filtros.radioMetros.toDouble(),
                       useRadiusInMeter: true,
-                      color: (p.quedanPlazas
-                              ? context.colores.primario
-                              : context.colores.textoTenue)
-                          .withValues(alpha: _seleccionada == p.id ? 0.3 : 0.14),
-                      borderColor: _seleccionada == p.id
-                          ? context.colores.texto
-                          : context.colores.primario.withValues(alpha: 0.5),
-                      borderStrokeWidth: _seleccionada == p.id ? 2 : 1,
+                      color: Colors.transparent,
+                      borderColor: context.colores.textoTenue.withValues(
+                        alpha: 0.45,
+                      ),
+                      borderStrokeWidth: 1,
                     ),
-                ],
-              ),
+                  ],
+                ),
 
-              MarkerLayer(
-                markers: [
-                  if (posicion.hasValue)
-                    Marker(
-                      point: posicion.value!,
-                      width: 22,
-                      height: 22,
-                      child: const _TuPosicion(),
-                    ),
-                  for (final grupo in _agrupar(lista))
-                    if (grupo.length == 1)
+                // Cada previa, como zona aproximada.
+                CircleLayer(
+                  circles: [
+                    for (final p in lista)
+                      CircleMarker(
+                        point: p.ubicacion,
+                        radius: Entorno.metrosDeDifuminado.toDouble(),
+                        useRadiusInMeter: true,
+                        color:
+                            (p.quedanPlazas
+                                    ? context.colores.primario
+                                    : context.colores.textoTenue)
+                                .withValues(
+                                  alpha: _seleccionada == p.id ? 0.3 : 0.14,
+                                ),
+                        borderColor: _seleccionada == p.id
+                            ? context.colores.texto
+                            : context.colores.primario.withValues(alpha: 0.5),
+                        borderStrokeWidth: _seleccionada == p.id ? 2 : 1,
+                      ),
+                  ],
+                ),
+
+                MarkerLayer(
+                  markers: [
+                    if (posicion.hasValue)
                       Marker(
-                        point: grupo.first.ubicacion,
-                        width: 84,
-                        height: 50,
-                        child: _Placa(
-                          previa: grupo.first,
-                          elegida: _seleccionada == grupo.first.id,
-                          onTap: () => _elegirEnMapa(lista, grupo.first),
-                        ),
-                      )
-                    else
-                      Marker(
-                        point: _centroide(grupo),
-                        width: 56,
-                        height: 56,
-                        child: _Racimo(
-                          cuantas: grupo.length,
-                          onTap: () => _volarA(
-                            _centroide(grupo),
-                            math.min(_mapa.camera.zoom + 2, 17),
+                        point: posicion.value!,
+                        width: 22,
+                        height: 22,
+                        child: const _TuPosicion(),
+                      ),
+                    for (final grupo in grupos)
+                      if (!grupo.esAgrupado)
+                        Marker(
+                          point: grupo.centro,
+                          width: 84,
+                          height: 50,
+                          child: _Aparece(
+                            clave: grupo.previas.first.id,
+                            child: _Placa(
+                              previa: grupo.previas.first,
+                              elegida: _seleccionada == grupo.previas.first.id,
+                              onTap: () =>
+                                  _elegirEnMapa(lista, grupo.previas.first),
+                            ),
+                          ),
+                        )
+                      else
+                        Marker(
+                          point: grupo.centro,
+                          width: 56,
+                          height: 56,
+                          child: _Aparece(
+                            clave:
+                                'grupo:${grupo.previas.map((p) => p.id).join(',')}',
+                            child: _Racimo(
+                              cuantas: grupo.previas.length,
+                              onTap: () => _abrirGrupo(grupo),
+                            ),
                           ),
                         ),
-                      ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
 
           // Arriba: una sola pastilla. Resume lo que hay y abre los filtros.
@@ -341,22 +364,34 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PastillaCristal(
-                    icono: filtros.sonLosPorDefecto
-                        ? Icons.tune_rounded
-                        : Icons.filter_alt_rounded,
-                    texto: resumen,
-                    cargando: previas.isLoading,
-                    onTap: () => mostrarHojaFiltros(context),
-                    desplegable: true,
+                  // Se anuncia sola al cambiar ("3 previas · 5 km") tras cada
+                  // busqueda, y dice que abre los filtros.
+                  Semantics(
+                    button: true,
+                    liveRegion: true,
+                    hint: filtros.sonLosPorDefecto
+                        ? 'Abre los filtros'
+                        : 'Hay filtros puestos. Abre los filtros',
+                    child: PastillaCristal(
+                      icono: filtros.sonLosPorDefecto
+                          ? Icons.tune_rounded
+                          : Icons.filter_alt_rounded,
+                      texto: resumen,
+                      cargando: previas.isLoading,
+                      alto: 48,
+                      onTap: () => mostrarHojaFiltros(context),
+                      desplegable: true,
+                    ),
                   ),
                   AnimatedSwitcher(
                     duration: MovimientoPrevia.rapido,
+                    // Sin recorte de tamaño: el recorte cortaba la sombra del
+                    // vidrio y dejaba un rectangulo claro alrededor.
                     transitionBuilder: (hijo, animacion) => FadeTransition(
                       opacity: animacion,
-                      child: SizeTransition(
-                        sizeFactor: animacion,
-                        alignment: Alignment.topCenter,
+                      child: ScaleTransition(
+                        scale: Tween(begin: 0.92, end: 1.0).animate(animacion),
+                        alignment: Alignment.topLeft,
                         child: hijo,
                       ),
                     ),
@@ -366,10 +401,14 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
                             padding: const EdgeInsets.only(
                               top: EspaciadoPrevia.s,
                             ),
-                            child: PastillaCristal(
-                              icono: Icons.search_rounded,
-                              texto: 'Buscar en esta zona',
-                              onTap: _buscarAqui,
+                            child: Semantics(
+                              button: true,
+                              child: PastillaCristal(
+                                icono: Icons.search_rounded,
+                                texto: 'Buscar en esta zona',
+                                alto: 48,
+                                onTap: _buscarAqui,
+                              ),
                             ),
                           ),
                   ),
@@ -401,11 +440,15 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
                   child: Row(
                     children: [
                       if (lista.isNotEmpty)
-                        PastillaCristal(
-                          icono: Icons.view_agenda_rounded,
-                          texto: 'Lista',
-                          alto: 40,
-                          onTap: () => _verLista(context, lista),
+                        Semantics(
+                          button: true,
+                          hint: 'Ver todas en lista',
+                          child: PastillaCristal(
+                            icono: Icons.view_agenda_rounded,
+                            texto: 'Lista',
+                            alto: 48,
+                            onTap: () => _verLista(context, lista),
+                          ),
                         ),
                       // Esri pide que se cite el plano. Va aqui, entre los
                       // controles, porque abajo a la izquierda lo taparia el
@@ -423,37 +466,33 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
                       BotonCristal(
                         icono: Icons.my_location_rounded,
                         etiqueta: 'Volver a mi posición',
-                        lado: 46,
+                        lado: 48,
                         onTap: _volverAMiPosicion,
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: EspaciadoPrevia.s + 2),
-                SizedBox(
-                  height: _altoCarrusel,
-                  child: previas.when(
-                    loading: () => const _TarjetaEsqueleto(),
-                    error: (e, _) => _TarjetaSuelta(
-                      pegatina: '📡',
-                      titulo: 'Sin conexión',
-                      detalle: 'No hemos podido buscar previas.',
-                      accion: 'Reintentar',
-                      onAccion: () => ref.invalidate(previasCercaProvider),
-                    ),
-                    data: (l) => l.isEmpty
-                        ? _TarjetaSuelta(
-                            pegatina: '🏠',
-                            titulo: 'Nada por aquí',
-                            detalle: filtros.sonLosPorDefecto
-                                ? '¿Abres tú la previa y que venga la gente?'
-                                : 'Prueba a quitar filtros o ábrela tú.',
-                            accion: widget.onCrearPrevia == null
-                                ? null
-                                : 'Abrir una',
-                            onAccion: widget.onCrearPrevia,
-                          )
-                        : PageView.builder(
+                // Esqueleto y carrusel tienen alto fijo para que nada salte
+                // al cargar; la tarjeta suelta (vacio, error) crece si la
+                // letra del sistema es grande, en vez de cortarse.
+                previas.when(
+                  loading: () => const SizedBox(
+                    height: _altoCarrusel,
+                    child: EsqueletoTarjetaMapa(fraccion: _fraccionTarjeta),
+                  ),
+                  error: (e, _) => _TarjetaSuelta(
+                    pegatina: '📡',
+                    titulo: 'No hemos podido buscar',
+                    detalle: 'Revisa la conexión y vuelve a intentarlo.',
+                    accion: 'Reintentar',
+                    onAccion: () => ref.invalidate(previasCercaProvider),
+                  ),
+                  data: (l) => l.isEmpty
+                      ? _vacio(filtros)
+                      : SizedBox(
+                          height: _altoCarrusel,
+                          child: PageView.builder(
                             controller: _paginas,
                             itemCount: l.length,
                             onPageChanged: (i) => _alCambiarTarjeta(l, i),
@@ -468,7 +507,7 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
                               ),
                             ),
                           ),
-                  ),
+                        ),
                 ),
               ],
             ),
@@ -478,7 +517,51 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
     );
   }
 
-  Future<void> _verLista(BuildContext context, List<Previa> lista) {
+  /// Nada que ensenar. La salida depende de por que: con filtros puestos lo
+  /// mas probable es que sobren; sin filtros, que la zona se quede corta.
+  /// Abrir una previa siempre es la otra salida.
+  Widget _vacio(Filtros filtros) {
+    final notificador = ref.read(filtrosProvider.notifier);
+    final abrir = widget.onCrearPrevia;
+    final ampliado = math.min(
+      filtros.radioMetros * 2,
+      Filtros.radioMaximoMetros,
+    );
+    final puedeAmpliar = filtros.radioMetros < Filtros.radioMaximoMetros;
+
+    if (filtros.hayFiltrosAparteDelRadio) {
+      return _TarjetaSuelta(
+        pegatina: '🔍',
+        titulo: 'Nada con estos filtros',
+        detalle: 'Quítalos y mira lo que hay, o abre tú la previa.',
+        accion: 'Quitar filtros',
+        onAccion: notificador.quitarFiltrosSalvoRadio,
+        secundaria: abrir == null ? null : 'Abrir una',
+        onSecundaria: abrir,
+      );
+    }
+    final radio = Filtros(radioMetros: ampliado).radioLegible;
+    return _TarjetaSuelta(
+      pegatina: '🏠',
+      titulo: 'Nada por aquí',
+      detalle: puedeAmpliar
+          ? '¿Abres tú la previa? O mira hasta $radio.'
+          : '¿Abres tú la previa y que venga la gente?',
+      accion: abrir == null ? null : 'Abrir una',
+      onAccion: abrir,
+      secundaria: puedeAmpliar ? 'Ampliar a $radio' : null,
+      onSecundaria: puedeAmpliar
+          ? () => notificador.fijarRadio(ampliado)
+          : null,
+    );
+  }
+
+  Future<void> _verLista(
+    BuildContext context,
+    List<Previa> lista, {
+    String titulo = 'Cerca de ti',
+  }) {
+    final reducido = MovimientoPrevia.reducido(context);
     return mostrarHoja<void>(
       context,
       arrastrable: true,
@@ -494,7 +577,12 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
         children: [
           Row(
             children: [
-              const Expanded(child: Titular('Cerca de ti', tamano: 30)),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Titular(titulo, tamano: 30),
+                ),
+              ),
               if (widget.onCrearPrevia != null)
                 FilledButton.icon(
                   onPressed: () {
@@ -507,17 +595,30 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
                 ),
             ],
           ),
+          const SizedBox(height: EspaciadoPrevia.xs),
+          Text(
+            lista.length == 1 ? '1 previa' : '${lista.length} previas',
+            style: TextStyle(
+              color: contexto.colores.textoSuave,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: EspaciadoPrevia.m),
-          for (final p in lista)
-            Padding(
-              padding: const EdgeInsets.only(bottom: EspaciadoPrevia.m),
-              child: TarjetaPrevia(
-                previa: p,
-                compacta: true,
-                onTap: () {
-                  Navigator.of(contexto).pop();
-                  widget.onAbrirPrevia?.call(p);
-                },
+          for (final (i, p) in lista.indexed)
+            _entrada(
+              reducido: reducido,
+              indice: i,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: EspaciadoPrevia.m),
+                child: TarjetaPrevia(
+                  previa: p,
+                  compacta: true,
+                  onTap: () {
+                    Navigator.of(contexto).pop();
+                    widget.onAbrirPrevia?.call(p);
+                  },
+                ),
               ),
             ),
         ],
@@ -526,14 +627,49 @@ class _PantallaMapaState extends ConsumerState<PantallaMapa>
   }
 }
 
-LatLng _centroide(List<Previa> grupo) {
-  var lat = 0.0;
-  var lng = 0.0;
-  for (final p in grupo) {
-    lat += p.ubicacion.latitude;
-    lng += p.ubicacion.longitude;
+/// Las tarjetas de la lista caen en cascada al abrirla, solo las primeras
+/// (ver [MovimientoPrevia.retrasoDe]). Con movimiento reducido, aparecen.
+Widget _entrada({
+  required bool reducido,
+  required int indice,
+  required Widget child,
+}) {
+  if (reducido || indice > 6) return child;
+  return child
+      .animate(delay: MovimientoPrevia.retrasoDe(indice))
+      .fadeIn(duration: const Duration(milliseconds: 220))
+      .moveY(
+        begin: 10,
+        end: 0,
+        duration: const Duration(milliseconds: 220),
+        curve: MovimientoPrevia.curva,
+      );
+}
+
+/// Entrada de un marcador la primera vez que aparece: sube de 0.85 y se
+/// funde, sin rebote. La clave es la previa (o el grupo): si el mapa se
+/// redibuja con lo mismo no se repite. Con movimiento reducido, aparece.
+class _Aparece extends StatelessWidget {
+  const _Aparece({required this.clave, required this.child});
+
+  final String clave;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (MovimientoPrevia.reducido(context)) return child;
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(clave),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 220),
+      curve: MovimientoPrevia.curva,
+      builder: (context, t, hijo) => Opacity(
+        opacity: t,
+        child: Transform.scale(scale: 0.85 + 0.15 * t, child: hijo),
+      ),
+      child: child,
+    );
   }
-  return LatLng(lat / grupo.length, lng / grupo.length);
 }
 
 /// Tu posicion: un punto blanco con halo, en letra de mapa y no en amarillo,
@@ -582,54 +718,67 @@ class _Placa extends StatelessWidget {
 
     return Semantics(
       button: true,
+      // Cada placa es su propio nodo y no se funde con la etiqueta del mapa.
+      container: true,
+      selected: elegida,
       label:
           '${previa.titulo}, de ${previa.anfitrionNombre}. '
-          '${viva ? '${previa.plazasLibres} plazas' : 'Completa'}',
+          '${viva ? (previa.plazasLibres == 1 ? 'Queda 1 plaza' : 'Quedan ${previa.plazasLibres} plazas') : 'Completa'}',
+      hint: 'Toca para verla en el carrusel',
       excludeSemantics: true,
-      child: GestureDetector(
+      onTap: onTap,
+      child: Pulsable(
         onTap: onTap,
-        child: Center(
-          child: AnimatedScale(
-            scale: elegida ? 1.15 : 1,
-            duration: MovimientoPrevia.rapido,
-            curve: MovimientoPrevia.curva,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(3, 3, 10, 3),
-              decoration: BoxDecoration(
-                color: fondo,
-                borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-                border: Border.all(
-                  color: elegida ? c.texto : Colors.black26,
-                  width: elegida ? 2.5 : 1.5,
-                ),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x55000000),
-                    blurRadius: 8,
-                    offset: Offset(0, 3),
+        escala: 0.94,
+        // La vibracion ya la da quien elige la previa.
+        vibrar: false,
+        // Placa de tamano fijo sobre el mapa: si la letra del sistema crece
+        // sin limite el numero se sale. Se acota solo aqui.
+        child: MediaQuery.withClampedTextScaling(
+          maxScaleFactor: 1.3,
+          child: Center(
+            child: AnimatedScale(
+              scale: elegida ? 1.15 : 1,
+              duration: MovimientoPrevia.rapido,
+              curve: MovimientoPrevia.curva,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(3, 3, 10, 3),
+                decoration: BoxDecoration(
+                  color: fondo,
+                  borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+                  border: Border.all(
+                    color: elegida ? c.texto : Colors.black26,
+                    width: elegida ? 2.5 : 1.5,
                   ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AvatarPerfil(
-                    url: previa.anfitrionAvatar,
-                    inicial: previa.anfitrionNombre,
-                    lado: 26,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    viva ? '${previa.plazasLibres}' : 'Llena',
-                    style: TextStyle(
-                      color: tinta,
-                      fontFamily: LetraPrevia.titular,
-                      fontWeight: FontWeight.w900,
-                      fontSize: viva ? 16 : 12,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x55000000),
+                      blurRadius: 8,
+                      offset: Offset(0, 3),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AvatarPerfil(
+                      url: previa.anfitrionAvatar,
+                      inicial: previa.anfitrionNombre,
+                      lado: 26,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      viva ? '${previa.plazasLibres}' : 'Llena',
+                      style: TextStyle(
+                        color: tinta,
+                        fontFamily: LetraPrevia.titular,
+                        fontWeight: FontWeight.w900,
+                        fontSize: viva ? 16 : 12,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -639,7 +788,8 @@ class _Placa extends StatelessWidget {
   }
 }
 
-/// Varias previas que a este zoom se pisarian. Tocar acerca la camara.
+/// Varias previas que a este zoom se pisarian. Tocar acerca la camara (o,
+/// si ya no se puede acercar mas, las abre en lista).
 class _Racimo extends StatelessWidget {
   const _Racimo({required this.cuantas, required this.onTap});
 
@@ -651,10 +801,15 @@ class _Racimo extends StatelessWidget {
     final c = context.colores;
     return Semantics(
       button: true,
-      label: '$cuantas previas juntas. Toca para acercar',
+      container: true,
+      label: '$cuantas previas juntas',
+      hint: 'Toca para verlas',
       excludeSemantics: true,
-      child: GestureDetector(
+      onTap: onTap,
+      child: Pulsable(
         onTap: onTap,
+        escala: 0.94,
+        vibrar: false,
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -669,13 +824,22 @@ class _Racimo extends StatelessWidget {
               ),
             ],
           ),
-          child: Text(
-            '$cuantas',
-            style: TextStyle(
-              fontFamily: LetraPrevia.titular,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-              color: c.sobrePrimario,
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Text(
+                  '$cuantas',
+                  style: TextStyle(
+                    fontFamily: LetraPrevia.titular,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                    color: c.sobrePrimario,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -705,12 +869,29 @@ class _TarjetaMapa extends StatelessWidget {
     final hora = DateFormat('HH:mm', 'es_ES').format(previa.empiezaEn);
     final ocupacion = Ocupacion.desde(previa.plazasLibres);
 
+    final plazas = switch (ocupacion) {
+      Ocupacion.completa => 'Completa',
+      _ when previa.plazasLibres == 1 => 'Queda 1 plaza',
+      _ => 'Quedan ${previa.plazasLibres} plazas',
+    };
+    final donde = previa.distanciaLegible.isEmpty
+        ? previa.zona
+        : '${previa.zona}, a ${previa.distanciaLegible}';
+
+    // Una sola frase en el orden en que se decide (cuando, que, quien,
+    // donde, sitio), en lugar de leer cada texto suelto de la tarjeta.
     return Semantics(
       button: true,
-      label: 'Abrir ${previa.titulo}',
+      selected: elegida,
+      label:
+          '${previa.cuandoEmpieza}, a las $hora. ${previa.titulo}. '
+          'Abre ${previa.anfitrionNombre}. $donde. $plazas',
+      hint: 'Toca para ver la previa',
+      excludeSemantics: true,
+      onTap: onTap,
       child: Pulsable(
         onTap: onTap,
-        escala: 0.98,
+        escala: 0.97,
         child: AnimatedContainer(
           duration: MovimientoPrevia.rapido,
           decoration: BoxDecoration(
@@ -809,7 +990,10 @@ class _TarjetaMapa extends StatelessWidget {
                         style: TextStyle(color: c.textoSuave, fontSize: 13),
                       ),
                       const SizedBox(height: 6),
-                      _Plazas(ocupacion: ocupacion, libres: previa.plazasLibres),
+                      _Plazas(
+                        ocupacion: ocupacion,
+                        libres: previa.plazasLibres,
+                      ),
                     ],
                   ),
                 ),
@@ -897,13 +1081,17 @@ class _Plazas extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 6),
-        Text(
-          texto,
-          style: TextStyle(
-            color: ocupacion.viva ? ocupacion.color(c) : c.textoTenue,
-            fontSize: 12.5,
-            fontWeight: FontWeight.w800,
-            decoration: ocupacion.viva ? null : TextDecoration.lineThrough,
+        Flexible(
+          child: Text(
+            texto,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: ocupacion.viva ? ocupacion.color(c) : c.textoTenue,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              decoration: ocupacion.viva ? null : TextDecoration.lineThrough,
+            ),
           ),
         ),
       ],
@@ -913,6 +1101,12 @@ class _Plazas extends StatelessWidget {
 
 /// Una sola tarjeta en lugar del carrusel: vacio, error o lo que haga falta
 /// contar sin lista.
+///
+/// Con una accion, el boton va a la derecha. Con dos, van debajo del texto:
+/// la principal en amarillo y la otra como texto, para que solo haya un
+/// amarillo que mirar. Mide como minimo lo que el carrusel, para que el
+/// cambio de estado no haga saltar los controles de encima; con letra grande
+/// crece en vez de cortarse.
 class _TarjetaSuelta extends StatelessWidget {
   const _TarjetaSuelta({
     required this.pegatina,
@@ -920,6 +1114,8 @@ class _TarjetaSuelta extends StatelessWidget {
     required this.detalle,
     this.accion,
     this.onAccion,
+    this.secundaria,
+    this.onSecundaria,
   });
 
   final String pegatina;
@@ -927,78 +1123,98 @@ class _TarjetaSuelta extends StatelessWidget {
   final String detalle;
   final String? accion;
   final VoidCallback? onAccion;
+  final String? secundaria;
+  final VoidCallback? onSecundaria;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m),
-      child: Cristal(
-        radio: EspaciadoPrevia.radioGrande,
-        padding: const EdgeInsets.all(EspaciadoPrevia.m),
-        child: Row(
-          children: [
-            Pegatina(pegatina, tamano: 40, giro: -0.12),
-            const SizedBox(width: EspaciadoPrevia.m),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Titular(titulo, tamano: 20),
-                  const SizedBox(height: 4),
-                  Text(
-                    detalle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: context.colores.textoSuave,
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
+    final principal = accion != null && onAccion != null
+        ? FilledButton(
+            onPressed: onAccion,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
             ),
-            if (accion != null && onAccion != null) ...[
-              const SizedBox(width: EspaciadoPrevia.s),
-              FilledButton(
-                onPressed: onAccion,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 44),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                ),
-                child: Text(accion!.toUpperCase()),
-              ),
-            ],
-          ],
+            child: Text(accion!.toUpperCase()),
+          )
+        : null;
+    final otra = secundaria != null && onSecundaria != null
+        ? TextButton(
+            onPressed: onSecundaria,
+            style: TextButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              foregroundColor: context.colores.primarioTexto,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+            child: Text(secundaria!),
+          )
+        : null;
+    final texto = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Titular(titulo, tamano: 20),
+        const SizedBox(height: 4),
+        Text(
+          detalle,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: context.colores.textoSuave, fontSize: 13),
         ),
-      ),
-    ).animate().fadeIn(duration: MovimientoPrevia.rapido).moveY(
-      begin: 12,
-      end: 0,
-      curve: MovimientoPrevia.curva,
+        // Con accion secundaria, los botones van debajo del texto.
+        if (otra != null) ...[
+          const SizedBox(height: EspaciadoPrevia.s),
+          Wrap(
+            spacing: EspaciadoPrevia.xs,
+            runSpacing: EspaciadoPrevia.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [?principal, otra],
+          ),
+        ],
+      ],
     );
-  }
-}
 
-class _TarjetaEsqueleto extends StatelessWidget {
-  const _TarjetaEsqueleto();
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colores;
     final tarjeta = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m + 12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: c.superficieAlta,
-          borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+      padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: _altoCarrusel),
+        child: Cristal(
+          radio: EspaciadoPrevia.radioGrande,
+          padding: const EdgeInsets.all(EspaciadoPrevia.m),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Pegatina(pegatina, tamano: 40, giro: -0.12),
+              ),
+              const SizedBox(width: EspaciadoPrevia.m),
+              Expanded(child: texto),
+              if (principal != null && otra == null) ...[
+                const SizedBox(width: EspaciadoPrevia.s),
+                principal,
+              ],
+            ],
+          ),
         ),
       ),
     );
-    if (MovimientoPrevia.reducido(context)) return tarjeta;
-    return tarjeta
-        .animate(onPlay: (a) => a.repeat())
-        .shimmer(duration: 1400.ms, color: c.superficieActiva);
+
+    // Se anuncia al aparecer: quien no ve el mapa se entera de que no hay
+    // nada (o de que ha fallado) sin tener que ir a buscarlo.
+    final anunciada = Semantics(
+      liveRegion: true,
+      container: true,
+      child: tarjeta,
+    );
+    if (MovimientoPrevia.reducido(context)) return anunciada;
+    return anunciada
+        .animate()
+        .fadeIn(duration: MovimientoPrevia.rapido)
+        .moveY(
+          begin: 12,
+          end: 0,
+          duration: const Duration(milliseconds: 220),
+          curve: MovimientoPrevia.curva,
+        );
   }
 }
 
@@ -1011,40 +1227,50 @@ class _AvisoUbicacion extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final e = error;
-    final mensaje = e is ErrorUbicacion ? e.mensaje : 'No hemos podido situarte.';
+    final mensaje = e is ErrorUbicacion
+        ? e.mensaje
+        : 'No hemos podido situarte.';
     final vaAAjustes =
         e is ErrorUbicacion &&
         e.causa == FalloUbicacion.permisoDenegadoParaSiempre;
 
-    return Cristal(
-      radio: EspaciadoPrevia.radio,
-      padding: const EdgeInsets.fromLTRB(
-        EspaciadoPrevia.m,
-        EspaciadoPrevia.s,
-        EspaciadoPrevia.xs,
-        EspaciadoPrevia.s,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.location_off_outlined,
-            size: 18,
-            color: context.colores.aviso,
-          ),
-          const SizedBox(width: EspaciadoPrevia.s),
-          Expanded(
-            child: Text(
-              '$mensaje Mueve el mapa a mano para buscar.',
-              style: TextStyle(color: context.colores.texto, fontSize: 13),
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: Cristal(
+        radio: EspaciadoPrevia.radio,
+        padding: const EdgeInsets.fromLTRB(
+          EspaciadoPrevia.m,
+          EspaciadoPrevia.s,
+          EspaciadoPrevia.xs,
+          EspaciadoPrevia.s,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_off_outlined,
+              size: 18,
+              color: context.colores.aviso,
             ),
-          ),
-          TextButton(
-            onPressed: vaAAjustes
-                ? () => ref.read(servicioUbicacionProvider).abrirAjustes()
-                : onReintentar,
-            child: Text(vaAAjustes ? 'Ajustes' : 'Reintentar'),
-          ),
-        ],
+            const SizedBox(width: EspaciadoPrevia.s),
+            Expanded(
+              child: Text(
+                '$mensaje Mueve el mapa a mano para buscar.',
+                style: TextStyle(color: context.colores.texto, fontSize: 13),
+              ),
+            ),
+            TextButton(
+              onPressed: vaAAjustes
+                  ? () => ref.read(servicioUbicacionProvider).abrirAjustes()
+                  : onReintentar,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                foregroundColor: context.colores.primarioTexto,
+              ),
+              child: Text(vaAAjustes ? 'Abrir ajustes' : 'Reintentar'),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -26,6 +26,7 @@ class FichaDeCabecera {
   final String? avatar;
   final String? bio;
   final String? ciudad;
+
   /// Nula si nadie le ha valorado todavia: un 0 seria mentira.
   final double? reputacion;
   final String? instagram;
@@ -129,10 +130,7 @@ class CabeceraDePerfil extends StatelessWidget {
                     if (ficha.usuario != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        [
-                          '@${ficha.usuario}',
-                          ...datos,
-                        ].join('  ·  '),
+                        ['@${ficha.usuario}', ...datos].join('  ·  '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -214,34 +212,42 @@ class _Foto extends StatelessWidget {
         if (onAnadirFoto != null)
           Align(
             alignment: const Alignment(0, -0.1),
-            child: Pulsable(
-              onTap: onAnadirFoto,
-              child: Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: BloquesPrevia.tintaSobreBloque,
-                  borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.add_a_photo_rounded,
-                      color: Colors.white,
-                      size: 19,
+            child: Semantics(
+              button: true,
+              label: 'Añade tu foto',
+              excludeSemantics: true,
+              child: Pulsable(
+                onTap: onAnadirFoto,
+                escala: 0.97,
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: BloquesPrevia.tintaSobreBloque,
+                    borderRadius: BorderRadius.circular(
+                      EspaciadoPrevia.pastilla,
                     ),
-                    SizedBox(width: EspaciadoPrevia.s),
-                    Text(
-                      'AÑADE TU FOTO',
-                      style: TextStyle(
-                        fontFamily: LetraPrevia.titular,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo_rounded,
                         color: Colors.white,
+                        size: 19,
                       ),
-                    ),
-                  ],
+                      SizedBox(width: EspaciadoPrevia.s),
+                      Text(
+                        'AÑADE TU FOTO',
+                        style: TextStyle(
+                          fontFamily: LetraPrevia.titular,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -291,24 +297,27 @@ class _Cifra extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(right: EspaciadoPrevia.l),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          valor == null ? '–' : '$valor',
-          style: TextStyle(
-            fontFamily: LetraPrevia.titular,
-            fontWeight: FontWeight.w900,
-            fontSize: 20,
-            color: context.colores.texto,
-            fontFeatures: const [FontFeature.tabularFigures()],
+    // Se lee "128 seguidores" de una vez, no la cifra y la palabra sueltas.
+    child: MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            valor == null ? '–' : '$valor',
+            style: TextStyle(
+              fontFamily: LetraPrevia.titular,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+              color: context.colores.texto,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-        ),
-        Text(
-          etiqueta,
-          style: TextStyle(color: context.colores.textoTenue, fontSize: 12),
-        ),
-      ],
+          Text(
+            etiqueta,
+            style: TextStyle(color: context.colores.textoSuave, fontSize: 12),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -379,7 +388,11 @@ class TarjetaCompletarPerfil extends StatelessWidget {
             Row(
               children: [
                 const Expanded(
-                  child: Titular('Completa tu perfil', tamano: 20, color: tinta),
+                  child: Titular(
+                    'Completa tu perfil',
+                    tamano: 20,
+                    color: tinta,
+                  ),
                 ),
                 Text(
                   '$hechas/3',
@@ -394,7 +407,10 @@ class TarjetaCompletarPerfil extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'Con foto y redes la gente sabe con quién va a quedar.',
-              style: TextStyle(color: tinta.withValues(alpha: 0.8), fontSize: 13),
+              style: TextStyle(
+                color: tinta.withValues(alpha: 0.8),
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: EspaciadoPrevia.s + 2),
             Wrap(

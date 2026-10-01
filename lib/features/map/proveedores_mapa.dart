@@ -44,6 +44,11 @@ class Filtros {
     this.ambiente = const {},
   });
 
+  /// Limites de la distancia que se puede pedir (los del deslizador de la
+  /// hoja de filtros).
+  static const radioMinimoMetros = 500;
+  static const radioMaximoMetros = 20000;
+
   final int radioMetros;
   final int horas;
   final int plazasMinimas;
@@ -63,6 +68,14 @@ class Filtros {
     ambiente: ambiente ?? this.ambiente,
   );
 
+  /// Hay algo filtrado aparte de la distancia (horas, plazas o ambiente).
+  /// Es la causa mas probable de no ver nada, y se ofrece quitarlo sin tocar
+  /// la distancia que el usuario eligio.
+  bool get hayFiltrosAparteDelRadio =>
+      horas != Entorno.horasPorDefecto ||
+      plazasMinimas != 1 ||
+      ambiente.isNotEmpty;
+
   bool get sonLosPorDefecto =>
       radioMetros == Entorno.radioBusquedaPorDefecto &&
       horas == Entorno.horasPorDefecto &&
@@ -76,7 +89,7 @@ class Filtros {
       ambiente.isEmpty || previa.ambiente.any(ambiente.contains);
 
   String get radioLegible => radioMetros >= 1000
-      ? '${(radioMetros / 1000).toStringAsFixed(radioMetros % 1000 == 0 ? 0 : 1)} km'
+      ? '${(radioMetros / 1000).toStringAsFixed(radioMetros % 1000 == 0 ? 0 : 1).replaceAll('.', ',')} km'
       : '$radioMetros m';
 }
 
@@ -89,6 +102,10 @@ class FiltrosNotifier extends Notifier<Filtros> {
   void fijarPlazas(int plazas) =>
       state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
+
+  /// Quita horas, plazas y ambiente pero respeta la distancia elegida.
+  void quitarFiltrosSalvoRadio() =>
+      state = Filtros(radioMetros: state.radioMetros);
 
   void alternarAmbiente(String etiqueta) {
     final nuevo = Set<String>.from(state.ambiente);

@@ -9,7 +9,7 @@ import 'package:intl/intl.dart';
 import '../../app/tema.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_social.dart';
-import '../juego/no_hay_huevos.dart';
+import '../juegos/no_hay_huevos.dart';
 
 final _mensajesProvider = FutureProvider.family<List<MensajeDeSala>, String>(
   (ref, localId) => ref.watch(repositorioSocialProvider).salaMensajes(localId),
