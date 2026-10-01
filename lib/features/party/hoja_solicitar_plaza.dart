@@ -37,16 +37,9 @@ class _HojaSolicitarPlaza extends ConsumerStatefulWidget {
 }
 
 class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
-  final _mensaje = TextEditingController();
   int _grupo = 1;
   bool _enviando = false;
   String? _error;
-
-  @override
-  void dispose() {
-    _mensaje.dispose();
-    super.dispose();
-  }
 
   Future<void> _enviar() async {
     setState(() {
@@ -60,7 +53,6 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
           .solicitarPlaza(
             previaId: widget.previaId,
             tamanoGrupo: _grupo,
-            mensaje: _mensaje.text,
           );
       if (!mounted) return;
       HapticFeedback.heavyImpact();
@@ -141,25 +133,9 @@ class _HojaSolicitarPlazaState extends ConsumerState<_HojaSolicitarPlaza> {
                 style: textos.bodyMedium?.copyWith(fontSize: 13),
               ),
 
-              const SizedBox(height: EspaciadoPrevia.l),
-              TextField(
-                controller: _mensaje,
-                maxLines: 3,
-                maxLength: 300,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Preséntate (opcional)',
-                  hintText:
-                      'Somos dos, venimos de cenar por la zona. '
-                      'Llevamos bebida.',
-                  helperText:
-                      'Un mensaje con algo de contexto multiplica las '
-                      'opciones de que te acepten.',
-                  helperMaxLines: 2,
-                  alignLabelWithHint: true,
-                ),
-              ),
-
+              // Sin mensaje libre a propósito: antes de aceptar, el anfitrión solo
+              // ve cuántos sois. Un texto de desconocidos es un canal de acoso y
+              // obliga a moderar; el contexto llega ya dentro del chat.
               if (_error != null) ...[
                 const SizedBox(height: EspaciadoPrevia.m),
                 AvisoError(_error!),
