@@ -12,7 +12,9 @@ class AccionRuleta {
   String texto({required bool sinAlcohol}) {
     if (sorbos == 0) return plantilla;
     final cantidad = sinAlcohol
-        ? '$sorbos tragos de cualquier bebida'
+        ? (sorbos == 1
+              ? '1 trago de cualquier bebida'
+              : '$sorbos tragos de cualquier bebida')
         : (sorbos == 1 ? '1 sorbo' : '$sorbos sorbos');
     return plantilla.replaceAll('{sorbos}', cantidad);
   }
