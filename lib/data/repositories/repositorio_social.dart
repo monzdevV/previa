@@ -436,14 +436,6 @@ class RepositorioSocial {
   Future<void> retirarPublicacion(String reporteId) =>
       _cliente.rpc('retirar_publicacion', params: {'reporte': reporteId});
 
-  /// Tu racha de findes.
-  Future<Racha> miRacha() async {
-    final filas = await _cliente.rpc('mi_racha');
-    final lista = filas as List;
-    if (lista.isEmpty) return const Racha();
-    return Racha.desdeJson(lista.first as Map<String, dynamic>);
-  }
-
   /// El resumen de una noche, para la tarjeta del final.
   Future<ResumenDeNoche> resumenDeNoche(DateTime noche) async {
     final fecha = _comoNoche(noche);

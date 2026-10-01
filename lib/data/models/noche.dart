@@ -1,30 +1,7 @@
-/// La racha de findes.
-///
-/// Un finde es una semana en la que saliste al menos una noche. La racha no
-/// se rompe el lunes: mientras la semana en curso no acabe, sigue viva aunque
-/// todavia no hayas salido, porque si no se caeria cada lunes por la mañana.
-class Racha {
-  const Racha({
-    this.semanas = 0,
-    this.mejor = 0,
-    this.saliEstaSemana = false,
-  });
-
-  final int semanas;
-  final int mejor;
-  final bool saliEstaSemana;
-
-  bool get viva => semanas > 0;
-
-  /// Si la racha está en juego: la tienes, pero esta semana aún no has salido.
-  bool get enRiesgo => viva && !saliEstaSemana;
-
-  factory Racha.desdeJson(Map<String, dynamic> json) => Racha(
-    semanas: (json['racha'] as num?)?.toInt() ?? 0,
-    mejor: (json['mejor'] as num?)?.toInt() ?? 0,
-    saliEstaSemana: json['sali_esta_semana'] as bool? ?? false,
-  );
-}
+// La racha vive en el dominio como Dart puro (regla_de_racha.dart) para
+// poder probarla sin Flutter; se reexporta aqui para que quien ya importaba
+// este fichero la siga encontrando.
+export '../../domain/racha/regla_de_racha.dart' show Racha;
 
 /// Lo que dio de si una noche. Es lo que se enseña en la tarjeta del final.
 class ResumenDeNoche {

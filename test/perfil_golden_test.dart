@@ -11,6 +11,8 @@ import 'package:previa/features/map/proveedores_mapa.dart';
 import 'package:previa/features/profile/pantalla_perfil.dart';
 import 'package:previa/features/profile/proveedores_perfil.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'apoyo_visual.dart';
 
 /// El perfil propio de una cuenta recien creada: sin foto, con Instagram y
@@ -29,6 +31,10 @@ void main() {
     tester.view.physicalSize = const Size(390, 1500);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
+
+    // El hito de 3 semanas ya está celebrado: si no, el mensaje de
+    // felicitación taparía el perfil en la captura.
+    SharedPreferences.setMockInitialValues({'racha_hito_celebrado_yo': 3});
 
     final hoy = DateTime.now();
     DateTime dia(int d) => DateTime(hoy.year, hoy.month, d);
@@ -56,6 +62,7 @@ void main() {
           misPublicacionesProvider.overrideWith((ref) async => const []),
           deEsasNochesProvider.overrideWith((ref) async => const []),
           misPreviasProvider.overrideWith((ref) async => const []),
+          uidActualProvider.overrideWithValue('yo'),
           rachaProvider.overrideWith(
             (ref) async => const Racha(semanas: 3, saliEstaSemana: true),
           ),
@@ -73,9 +80,8 @@ void main() {
           theme: temaDePrueba(),
           home: const PantallaPerfil(),
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(padding: const EdgeInsets.only(top: 47, bottom: 34)),
+            data: MediaQuery.of(context)
+                .copyWith(padding: const EdgeInsets.only(top: 47, bottom: 34)),
             child: child!,
           ),
         ),
