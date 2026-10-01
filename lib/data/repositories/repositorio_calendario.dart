@@ -41,6 +41,40 @@ class RepositorioCalendario {
 
   final SupabaseClient _cliente;
 
+  /// Solo las fechas de las noches de alguien, sin fotos ni locales, para
+  /// calcular la racha en el teléfono. Unión de "voy" y publicaciones: basta
+  /// una de las dos para que la noche cuente. Se pide poco (una columna) y
+  /// con tope, porque la racha solo necesita las últimas semanas.
+  ///
+  /// Se calcula aquí y no en una función del servidor por la misma razón que
+  /// el calendario: las políticas de lectura ya aplican los bloqueos y no hay
+  /// que repetir esa regla (ni migrar nada) para una cuenta de semanas.
+  Future<List<DateTime>> fechasDeNoches(
+    String perfilId, {
+    required DateTime desde,
+  }) async {
+    final d = _fecha(desde);
+    final resultados = await Future.wait<dynamic>([
+      _cliente
+          .from('venue_plans')
+          .select('night')
+          .eq('profile_id', perfilId)
+          .gte('night', d)
+          .limit(1000),
+      _cliente
+          .from('posts')
+          .select('night')
+          .eq('author_id', perfilId)
+          .gte('night', d)
+          .limit(1000),
+    ]);
+    return [
+      for (final lista in resultados)
+        for (final f in lista as List)
+          DateTime.parse((f as Map)['night'] as String),
+    ];
+  }
+
   Future<List<NocheDelCalendario>> nochesDe(
     String perfilId, {
     required DateTime desde,
@@ -73,7 +107,9 @@ class RepositorioCalendario {
       final noche = DateTime.parse(fila['night'] as String);
       final nombre = (fila['venues'] as Map?)?['name'] as String?;
       sitios.putIfAbsent(noche, () => {}).add(nombre ?? 'Un sitio');
-      localesPorNoche.putIfAbsent(noche, () => {}).add(fila['venue_id'] as String);
+      localesPorNoche
+          .putIfAbsent(noche, () => {})
+          .add(fila['venue_id'] as String);
     }
 
     final fotos = <DateTime, int>{};

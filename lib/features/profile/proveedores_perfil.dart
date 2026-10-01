@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/noche.dart';
+import '../../domain/racha/regla_de_racha.dart';
 import '../../data/models/publicacion.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_calendario.dart';
@@ -31,9 +32,18 @@ final deEsasNochesProvider = FutureProvider<List<Publicacion>>(
   (ref) => ref.watch(repositorioSocialProvider).fotosDeMisNoches(),
 );
 
-final rachaProvider = FutureProvider<Racha>(
-  (ref) => ref.watch(repositorioSocialProvider).miRacha(),
-);
+/// Tu racha, calculada en el teléfono con las fechas de tus noches (sin
+/// migración ni RPC: ver `regla_de_racha.dart`). Dos años de historia
+/// sobran para el récord y acotan lo que se descarga.
+final rachaProvider = FutureProvider<Racha>((ref) async {
+  final uid = ref.watch(uidActualProvider);
+  if (uid == null) return const Racha();
+  final ahora = DateTime.now();
+  final noches = await ref
+      .watch(repositorioCalendarioProvider)
+      .fechasDeNoches(uid, desde: DateTime(ahora.year - 2, ahora.month));
+  return calcularRacha(noches, ahora: ahora);
+});
 
 final resumenProvider = FutureProvider.family<ResumenDeNoche, DateTime>(
   (ref, noche) => ref.watch(repositorioSocialProvider).resumenDeNoche(noche),
