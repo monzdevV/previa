@@ -235,3 +235,14 @@ amarillo.
 - `flutter build web --no-tree-shake-icons` es la forma rápida de comprobar
   que compila de verdad; `flutter analyze` no lo pilla todo.
 - No hay emulador Android ni iOS en esta máquina. Solo Windows, Chrome y Edge.
+
+## Racha de fiestas
+
+- La regla vive en `lib/domain/racha/regla_de_racha.dart` (Dart puro, probado en
+  `test/racha_regla_test.dart`): semanas lunes-domingo con al menos una noche,
+  un comodín por racha, hitos 3/5/10/20, noche = hora de Madrid menos 6 h como
+  `privado.noche_actual()`.
+- Se calcula en el teléfono con `RepositorioCalendario.fechasDeNoches`; la RPC
+  `mi_racha` que llamaba el cliente nunca estuvo en las migraciones y se quitó.
+  No hay migración. `TarjetaRacha` (perfil) celebra los hitos y recuerda el
+  último celebrado en `SharedPreferences`.

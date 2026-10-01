@@ -13,6 +13,7 @@ import 'calendario_social.dart';
 import 'pestanas_perfil.dart';
 import 'proveedores_perfil.dart';
 import 'reputacion.dart';
+import 'tarjeta_racha.dart';
 
 /// Tu perfil, como lo ven los demas, con lo tuyo encima.
 ///
@@ -147,6 +148,10 @@ class _PantallaPerfilState extends ConsumerState<PantallaPerfil> {
                           !p.tieneRedes ||
                           (p.bio ?? '').trim().isEmpty)
                         const SizedBox(height: EspaciadoPrevia.l),
+                      // Racha y calendario juntos: la racha es la lectura
+                      // rápida de lo que el calendario cuenta con fotos.
+                      const TarjetaRacha(),
+                      const SizedBox(height: EspaciadoPrevia.l),
                       CalendarioSocial(perfilId: p.id, esMio: true),
                       if (misPrevias.isNotEmpty) ...[
                         const SizedBox(height: EspaciadoPrevia.xl),
