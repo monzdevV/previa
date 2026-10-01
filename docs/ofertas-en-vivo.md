@@ -100,3 +100,30 @@ de noches pasadas se pueden purgar a los 90 días (decisión abierta).
 Migración `20260930240000_ofertas_en_vivo.sql` escrita y **sin aplicar**. La app
 usa un repositorio en memoria solo en depuración; en producción no enseña
 ofertas hasta que exista la implementación contra Supabase.
+
+## Revisión adversarial (1 oct 2026)
+
+Una revisión independiente de la migración y de la app encontró fallos que ya
+están corregidos en la migración (aún sin aplicar) y en la app: código de puerta
+sensible a mayúsculas, presencia "aquí" válida para mañana, ofertas
+reactivables, tope de activas saltable por concurrencia, filtro de alcohol
+evitable, reintento tras agotar el cupo, código de canje de 6 caracteres y
+orden del aviso al canjear.
+
+Pendiente antes de producción:
+
+- Las pruebas SQL no se han ejecutado (no hay Postgres local): correr
+  `supabase/tests/seguridad_ofertas.sql` en un proyecto de pruebas, no en el
+  compartido. Los casos negativos 59-60, 63-64, 66-69 usan `exception when
+  others` y pasan con cualquier error; conviene comprobar `SQLSTATE`.
+- Pantalla o RPC "mis canjes": quien canjea en el minuto 29 y llega a la puerta
+  en el 31 ya no ve su código si solo se muestra mientras la oferta está viva.
+- Refresco de la pastilla al expirar y reloj del servidor en lugar del del
+  móvil.
+- La implementación contra Supabase debe listar columnas explícitas (un
+  `select *` sobre `venue_offers` falla porque `door_code` no está concedido) y
+  traer los canjes con `canjes_de_oferta`.
+- Confirmación antes de cancelar una oferta.
+- Plantillas cerradas también en el servidor (`template_id`) en vez de texto
+  libre filtrado por expresión regular.
+- Comprobar que el esquema `privado` no está expuesto por la API.

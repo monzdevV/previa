@@ -6,7 +6,7 @@
 -- ejerce las politicas desde cada punto de vista y borra los datos al terminar.
 --
 -- Como ejecutarla: pegar el contenido en el editor SQL de Supabase.
--- Resultado esperado: 14 filas (58 a 71), todas con resultado PASA.
+-- Resultado esperado: 18 filas (58 a 75), todas con resultado PASA.
 --
 -- Que demuestra cada prueba:
 --   58-60  solo el dueno crea, y el texto de alcohol se rechaza
@@ -16,6 +16,10 @@
 --   68     no se escribe en canjes a mano
 --   69     limite de ofertas activas
 --   70-71  solo el dueno valida un codigo
+--   72     reintentar tras agotar el cupo devuelve tu codigo
+--   73     una oferta cancelada no se reactiva
+--   74     el filtro de alcohol caza variantes (bebed, 2×1, cañas)
+--   75     el codigo de puerta vale en mayusculas y con espacios
 
 create temp table resultados_ofertas (
   n int, prueba text, esperado text, obtenido text, ok boolean
@@ -35,6 +39,8 @@ declare
   v_int   int;
   v_txt   text;
   v_ok    boolean;
+  v_oferta2 uuid;
+  v_puerta2 text;
 begin
   insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
                           email_confirmed_at, created_at, updated_at,
@@ -223,6 +229,63 @@ begin
   v_ok := public.validar_canje(v_codigo);
   execute 'reset role';
   insert into resultados_ofertas values (71,'La duena valida el codigo','true', v_ok::text, v_ok);
+
+  -- 72: con el cupo agotado, quien ya canjeo recupera su codigo --------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_hugo,'role','authenticated')::text, true);
+  v_codigo2 := public.canjear_oferta(v_oferta, null);
+  execute 'reset role';
+  insert into resultados_ofertas values
+    (72,'Reintentar tras agotar el cupo devuelve tu codigo','mismo codigo',
+     case when v_codigo2 = v_codigo then 'mismo codigo' else coalesce(v_codigo2,'nada') end,
+     v_codigo2 = v_codigo);
+
+  -- 73: la duena cancela una vez y no puede descancelar ---------------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_gala,'role','authenticated')::text, true);
+  update public.venue_offers set cancelled_at = now() where id = v_oferta;
+  begin
+    update public.venue_offers set cancelled_at = null where id = v_oferta;
+    execute 'reset role';
+    insert into resultados_ofertas values (73,'Una oferta cancelada no se reactiva','denegado','reactivada', false);
+  exception when check_violation then
+    execute 'reset role';
+    insert into resultados_ofertas values (73,'Una oferta cancelada no se reactiva','denegado','denegado', true);
+  end;
+
+  -- 74: el filtro de alcohol aguanta variantes (por debajo del tope de activas) -------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_gala,'role','authenticated')::text, true);
+  v_txt := null;
+  begin
+    insert into public.venue_offers (venue_id, created_by, kind, title, ends_at, max_redemptions)
+    values (v_local, v_gala, 'experiencia', 'Bebed GRATIS 2×1 de cañas', now() + interval '20 minutes', 10);
+  exception when others then
+    v_txt := sqlerrm;
+  end;
+  execute 'reset role';
+  insert into resultados_ofertas values
+    (74,'El filtro de alcohol caza variantes','rechazada por alcohol',
+     coalesce(v_txt,'creada'), v_txt like '%alcohol%');
+
+  -- 75: el codigo de puerta vale en mayusculas y con espacios ---------------------------
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_gala,'role','authenticated')::text, true);
+  select id into v_oferta2 from public.venue_offers
+   where title = 'Foto de grupo gratis' and venue_id = v_local;
+  v_puerta2 := public.codigo_de_puerta(v_oferta2);
+  perform set_config('request.jwt.claims',
+    json_build_object('sub',v_ines,'role','authenticated')::text, true);
+  v_codigo := public.canjear_oferta(v_oferta2, ' ' || upper(v_puerta2) || ' ');
+  execute 'reset role';
+  insert into resultados_ofertas values
+    (75,'El codigo de puerta no distingue mayusculas','canjeada',
+     case when v_codigo is not null then 'canjeada' else 'nada' end,
+     v_codigo is not null);
 
   -- Limpieza ---------------------------------------------------------------------------------------------
   delete from public.venues where id = v_local;

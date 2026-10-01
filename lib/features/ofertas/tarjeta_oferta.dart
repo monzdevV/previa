@@ -227,8 +227,15 @@ class _HojaCanjeState extends ConsumerState<HojaCanje> {
       final codigo = await ref
           .read(repositorioOfertasProvider)
           .canjear(widget.oferta.id, codigoPuerta: _puerta.text);
-      widget.alCanjear?.call();
+      // Primero se guarda el código: el canje ya está hecho en el servidor y,
+      // si el aviso al padre fallara (la hoja puede haberse cerrado), el
+      // usuario no debe ver un error de un canje que sí se hizo.
       if (mounted) setState(() => _codigo = codigo);
+      try {
+        widget.alCanjear?.call();
+      } catch (_) {
+        // Solo refresca la lista de ofertas; se verá al volver a abrirla.
+      }
     } catch (e) {
       if (mounted) {
         setState(

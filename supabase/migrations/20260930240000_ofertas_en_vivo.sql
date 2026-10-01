@@ -55,7 +55,9 @@ returns boolean language sql stable security definer set search_path = public as
     select 1 from public.venue_plans v
     where v.venue_id = p_local and v.profile_id = p_perfil
       and v.status = 'aqui'
-      and v.night between privado.noche_actual() and privado.noche_actual() + 1
+      -- Solo esta noche. Aqui la tolerancia de "mañana" que si tiene la guardia
+      -- de planes dejaria entrar desde casa diciendo "estoy aqui" para mañana.
+      and v.night = privado.noche_actual()
   );
 $$;
 
@@ -145,10 +147,24 @@ as $$
 declare
   v_activas integer;
   v_noche   integer;
+  v_texto   text;
 begin
-  if new.title || ' ' || coalesce(new.detail, '') ~* (
-       '(barra\s*libre|open\s*bar|\m2\s*x\s*1\M|dos\s*por\s*uno|\mbebe\M|\mbebid|'
-       '\mcopas?\M|chupito|cubata|combinado|cerveza|alcohol|\mshots?\M|emborrach)'
+  -- Antes de mirar los limites, se serializa por local: sin esto, dos altas a
+  -- la vez ven las dos "1 activa" y entran, dejando tres.
+  perform pg_advisory_xact_lock(hashtextextended(new.venue_id::text, 0));
+
+  -- El texto se normaliza antes de buscar: sin tildes, en minusculas, con la
+  -- "x" de "2×1" y sin signos ni caracteres invisibles entre letras. Las raices
+  -- (beb, cerve...) van sin \m para atrapar "bebed", "cervezas" o "bebidas".
+  v_texto := regexp_replace(
+    translate(lower(new.title || ' ' || coalesce(new.detail, '')),
+              'áéíóúüñ×', 'aeiouunx'),
+    '[^a-z0-9 ]', '', 'g');
+  if v_texto ~ (
+       'barra\s*libre|open\s*bar|\m(2|dos)\s*(x|por)\s*(1|uno)\M|\m3\s*x\s*2\M|'
+       'beb(e|es|ed|er|id)|\mcopa|chupit|cubat|combinad|cerve|birra|\mcana\M|'
+       'vodka|\mron\M|whisk|\mgin\M|tequila|mojito|trago|litro|alcohol|'
+       '\mshots?\M|emborrach|vermu|sangria|sidra|\mvino'
      ) then
     raise exception 'Las ofertas no pueden promover el consumo de alcohol.'
       using errcode = 'check_violation';
@@ -188,6 +204,33 @@ create trigger venue_offers_guardia
   for each row execute function privado.guardia_de_oferta();
 
 revoke execute on function privado.guardia_de_oferta() from public;
+
+-- 3.2 Guardia de cancelacion ------------------------------------------------------
+-- El unico cambio permitido a una oferta es cancelarla, una vez. Si el dueño
+-- pudiera poner `cancelled_at` a null, cancelaria, crearia otras dos y
+-- descancelaria, saltandose el tope de ofertas activas.
+create or replace function privado.guardia_de_cancelacion()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if old.cancelled_at is not null or new.cancelled_at is null then
+    raise exception 'Una oferta cancelada no se puede reactivar.'
+      using errcode = 'check_violation';
+  end if;
+  -- La fecha la pone el servidor: no se admite una inventada por el cliente.
+  new.cancelled_at := now();
+  return new;
+end;
+$$;
+
+create trigger venue_offers_cancelacion
+  before update on public.venue_offers
+  for each row execute function privado.guardia_de_cancelacion();
+
+revoke execute on function privado.guardia_de_cancelacion() from public;
 
 -- 4. Canjes ----------------------------------------------------------------------
 
@@ -252,8 +295,18 @@ begin
   if not privado.esta_en_local(v_oferta.venue_id, yo) then
     raise exception 'Tienes que estar en el local.' using errcode = 'insufficient_privilege';
   end if;
+
+  -- Si ya la tenias, se devuelve el mismo codigo en lugar de dar error. Va
+  -- antes del QR y del cupo: quien se llevo el ultimo cupo y reintenta (por
+  -- una mala conexion, por ejemplo) debe recibir su codigo, no "agotados".
+  select code into v_codigo from public.offer_redemptions
+   where offer_id = p_oferta and profile_id = yo;
+  if v_codigo is not null then return v_codigo; end if;
+
+  -- Se compara sin mayusculas ni espacios: el teclado de la app escribe en
+  -- mayusculas y el codigo se genera en minusculas.
   if v_oferta.verification = 'qr'
-     and p_codigo_puerta is distinct from v_oferta.door_code then
+     and lower(btrim(coalesce(p_codigo_puerta, ''))) <> lower(v_oferta.door_code) then
     raise exception 'Escanea el QR de la puerta.' using errcode = 'insufficient_privilege';
   end if;
 
@@ -262,12 +315,9 @@ begin
     raise exception 'Se han agotado los cupos.' using errcode = 'check_violation';
   end if;
 
-  -- Si ya la tenias, se devuelve el mismo codigo en lugar de dar error.
-  select code into v_codigo from public.offer_redemptions
-   where offer_id = p_oferta and profile_id = yo;
-  if v_codigo is not null then return v_codigo; end if;
-
-  v_codigo := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
+  -- 8 caracteres (4.300 millones de combinaciones): `code` es unico para
+  -- siempre y con 6 acabaria chocando.
+  v_codigo := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8));
   insert into public.offer_redemptions (offer_id, profile_id, code)
   values (p_oferta, yo, v_codigo);
   return v_codigo;

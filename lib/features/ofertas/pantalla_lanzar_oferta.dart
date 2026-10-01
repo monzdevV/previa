@@ -58,8 +58,13 @@ class _PantallaLanzarOfertaState extends ConsumerState<PantallaLanzarOferta> {
             duracion: _duracion,
             cupos: _cupos,
           );
-      ref.invalidate(ofertasDelLocalProvider(widget.localId));
-      ref.invalidate(ofertasActivasProvider(widget.localId));
+      // Si la pantalla se cerró durante el envío, el ref ya no es válido y
+      // la oferta sí está creada: no se debe mostrar un error ni dejar que
+      // un reintento la duplique.
+      if (mounted) {
+        ref.invalidate(ofertasDelLocalProvider(widget.localId));
+        ref.invalidate(ofertasActivasProvider(widget.localId));
+      }
       mensajero.showSnackBar(
         const SnackBar(
           content: Text('Oferta lanzada. Ya la ve quien está dentro.'),
