@@ -30,8 +30,7 @@ const _tarjetas = [
   _Tarjeta(
     etiqueta: 'BIENVENIDA',
     titulo: 'Previas cerca de ti',
-    texto:
-        'Previa reúne a gente que quiere empezar la noche antes de salir. '
+    texto: 'Previa reúne a gente que quiere empezar la noche antes de salir. '
         'Encuentra un plan cerca o abre el tuyo.',
     tipo: TipoIlustracion.previa,
     descripcionImagen: 'Una chincheta de mapa rodeada de personas',
@@ -39,8 +38,7 @@ const _tarjetas = [
   _Tarjeta(
     etiqueta: 'PRIVACIDAD',
     titulo: 'Tu sitio, a salvo',
-    texto:
-        'Ves las previas como círculos aproximados. La dirección exacta '
+    texto: 'Ves las previas como círculos aproximados. La dirección exacta '
         'solo se revela cuando el anfitrión te acepta.',
     tipo: TipoIlustracion.privacidad,
     descripcionImagen: 'Un mapa con un círculo que oculta el punto exacto',
@@ -48,8 +46,7 @@ const _tarjetas = [
   _Tarjeta(
     etiqueta: 'SEGURIDAD',
     titulo: 'Solo mayores de 18',
-    texto:
-        'Comprobamos la edad al registrarte. Puedes valorar, bloquear y '
+    texto: 'Comprobamos la edad al registrarte. Puedes valorar, bloquear y '
         'denunciar en cualquier momento. Disfruta con cabeza.',
     tipo: TipoIlustracion.seguridad,
     descripcionImagen: 'Un escudo con el texto más dieciocho',
@@ -57,8 +54,7 @@ const _tarjetas = [
   _Tarjeta(
     etiqueta: 'UBICACIÓN',
     titulo: '¿Para qué tu ubicación?',
-    texto:
-        'Solo para ordenar las previas por cercanía mientras usas la app. '
+    texto: 'Solo para ordenar las previas por cercanía mientras usas la app. '
         'No la guardamos ni la compartimos, y puedes usar Previa sin ella.',
     tipo: TipoIlustracion.permiso,
     descripcionImagen: 'Un aviso de permiso de ubicación con una chincheta',
@@ -71,7 +67,11 @@ const _tarjetas = [
 /// lo pida: quien entiende el motivo lo concede más y se siente menos
 /// vigilado. Si dice "Ahora no", la app sigue funcionando (mapa por defecto).
 class PantallaOnboarding extends StatefulWidget {
-  const PantallaOnboarding({super.key, this.solicitarPermiso, this.alTerminar});
+  const PantallaOnboarding({
+    super.key,
+    this.solicitarPermiso,
+    this.alTerminar,
+  });
 
   /// Inyectable para pruebas: por defecto pide el permiso real.
   final Future<void> Function()? solicitarPermiso;
@@ -178,7 +178,10 @@ class _PantallaOnboardingState extends State<PantallaOnboarding> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _IndicadorPagina(actual: _pagina, total: _tarjetas.length),
+                  _IndicadorPagina(
+                    actual: _pagina,
+                    total: _tarjetas.length,
+                  ),
                   const SizedBox(height: EspaciadoPrevia.l),
                   if (_esUltima) ...[
                     FilledButton.icon(
@@ -228,10 +231,7 @@ class _PaginaTarjeta extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (_, v, hijo) => Opacity(
         opacity: v,
-        child: Transform.translate(
-          offset: Offset(0, (1 - v) * 16),
-          child: hijo,
-        ),
+        child: Transform.translate(offset: Offset(0, (1 - v) * 16), child: hijo),
       ),
       // Con scroll: a letra muy grande el texto no cabe y antes se cortaría.
       child: LayoutBuilder(
@@ -302,9 +302,7 @@ class _IndicadorPagina extends StatelessWidget {
         children: [
           for (var i = 0; i < total; i++)
             AnimatedContainer(
-              duration: reducir
-                  ? Duration.zero
-                  : const Duration(milliseconds: 250),
+              duration: reducir ? Duration.zero : const Duration(milliseconds: 250),
               curve: Curves.easeOut,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               height: 8,

@@ -128,9 +128,7 @@ class _CalendarioSocialState extends State<CalendarioSocial> {
             // y sin transicion la pagina daba un salto al deslizar.
             final primero = DateTime(mes.year, mes.month);
             final filas =
-                ((primero.weekday -
-                            1 +
-                            DateTime(mes.year, mes.month + 1, 0).day) /
+                ((primero.weekday - 1 + DateTime(mes.year, mes.month + 1, 0).day) /
                         7)
                     .ceil();
             return AnimatedContainer(
@@ -483,13 +481,8 @@ Future<void> _verNoche(
             if (noche.fotos > 0) ...[
               const SizedBox(height: EspaciadoPrevia.s),
               Text(
-                noche.fotos == 1
-                    ? '1 foto esa noche'
-                    : '${noche.fotos} fotos esa noche',
-                style: TextStyle(
-                  color: c.primarioTexto,
-                  fontWeight: FontWeight.w700,
-                ),
+                noche.fotos == 1 ? '1 foto esa noche' : '${noche.fotos} fotos esa noche',
+                style: TextStyle(color: c.primarioTexto, fontWeight: FontWeight.w700),
               ),
             ],
             if (esMio) ...[

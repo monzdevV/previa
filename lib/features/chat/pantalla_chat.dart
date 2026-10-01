@@ -15,24 +15,25 @@ import '../safety/acciones_seguridad.dart';
 /// Mensajes en vivo. Supabase Realtime empuja cada insercion por WebSocket,
 /// asi que no hay que refrescar ni sondear. Se cierra al salir del chat para
 /// no dejar la suscripcion abierta mientras se navega por otras pantallas.
-final mensajesProvider = StreamProvider.autoDispose
-    .family<List<Mensaje>, String>(
-      (ref, previaId) =>
-          ref.watch(repositorioPreviasProvider).mensajesDe(previaId),
-    );
+final mensajesProvider = StreamProvider.autoDispose.family<List<Mensaje>, String>(
+  (ref, previaId) => ref.watch(repositorioPreviasProvider).mensajesDe(previaId),
+);
 
 /// Quien va, para poder poner nombre a cada mensaje.
 final miembrosProvider = FutureProvider.autoDispose
-    .family<Map<String, String>, String>((ref, previaId) async {
-      final filas = await ref
-          .watch(repositorioPreviasProvider)
-          .miembrosDe(previaId);
-      return {
-        for (final f in filas)
-          f['profile_id'] as String:
-              (f['profiles'] as Map?)?['display_name'] as String? ?? 'Alguien',
-      };
-    });
+    .family<Map<String, String>, String>((
+  ref,
+  previaId,
+) async {
+  final filas = await ref
+      .watch(repositorioPreviasProvider)
+      .miembrosDe(previaId);
+  return {
+    for (final f in filas)
+      f['profile_id'] as String:
+          (f['profiles'] as Map?)?['display_name'] as String? ?? 'Alguien',
+  };
+});
 
 /// Si soy el anfitrion: el anfitrion no puede "salir", solo cancelar.
 final _soyAnfitrionProvider = FutureProvider.autoDispose.family<bool, String>(
@@ -372,7 +373,8 @@ class _PantallaChatState extends ConsumerState<PantallaChat> {
                   ValueListenableBuilder<TextEditingValue>(
                     valueListenable: _texto,
                     builder: (_, valor, _) {
-                      final activo = !_enviando && valor.text.trim().isNotEmpty;
+                      final activo =
+                          !_enviando && valor.text.trim().isNotEmpty;
                       return IconButton.filled(
                         tooltip: 'Enviar mensaje',
                         onPressed: activo ? _enviar : null,
@@ -527,8 +529,9 @@ class _MensajeSistema extends StatelessWidget {
             Expanded(
               child: Text(
                 texto,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(fontSize: 13),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: 13),
               ),
             ),
           ],
@@ -840,11 +843,6 @@ class _Sugerencia extends StatelessWidget {
     return pastilla
         .animate(delay: MovimientoPrevia.retrasoDe(indice + 1))
         .fadeIn(duration: _entrada, curve: MovimientoPrevia.curva)
-        .moveY(
-          begin: 12,
-          end: 0,
-          duration: _entrada,
-          curve: MovimientoPrevia.curva,
-        );
+        .moveY(begin: 12, end: 0, duration: _entrada, curve: MovimientoPrevia.curva);
   }
 }

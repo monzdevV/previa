@@ -33,9 +33,7 @@ class PantallaModeracion extends ConsumerWidget {
       appBar: AppBar(title: const Text('Moderación')),
       body: reportes.when(
         loading: () => Center(
-          child: CircularProgressIndicator(
-            color: context.colores.primarioTexto,
-          ),
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
         error: (e, _) => const _Mensaje(
           texto: 'No se ha podido cargar. ¿Tienes permiso de moderación?',

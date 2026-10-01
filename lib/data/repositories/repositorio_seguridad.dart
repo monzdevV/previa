@@ -109,10 +109,9 @@ class RepositorioSeguridad {
       throw const ErrorPrevia('No puedes bloquearte a ti mismo.');
     }
     try {
-      await _cliente.from('blocks').insert({
-        'blocker_id': yo,
-        'blocked_id': perfilId,
-      });
+      await _cliente
+          .from('blocks')
+          .insert({'blocker_id': yo, 'blocked_id': perfilId});
     } on PostgrestException catch (e) {
       // Bloquear dos veces no es un fallo: el resultado buscado ya existe.
       if (e.code == '23505') return;
@@ -217,11 +216,8 @@ class RepositorioSeguridad {
       try {
         final filas = await _cliente.rpc('mis_bloqueados') as List;
         return filas
-            .map(
-              (f) => UsuarioBloqueado.desdeJson(
-                Map<String, dynamic>.from(f as Map),
-              ),
-            )
+            .map((f) =>
+                UsuarioBloqueado.desdeJson(Map<String, dynamic>.from(f as Map)))
             .toList();
       } on PostgrestException {
         final filas = await _cliente
@@ -230,18 +226,13 @@ class RepositorioSeguridad {
             .eq('blocker_id', yo)
             .order('created_at', ascending: false);
         return (filas as List)
-            .map(
-              (f) => UsuarioBloqueado.desdeJson(
-                Map<String, dynamic>.from(f as Map),
-              ),
-            )
+            .map((f) =>
+                UsuarioBloqueado.desdeJson(Map<String, dynamic>.from(f as Map)))
             .toList();
       }
     } catch (e) {
-      throw traducirErrorDeSeguridad(
-        e,
-        accion: 'cargar los usuarios bloqueados',
-      );
+      throw traducirErrorDeSeguridad(e,
+          accion: 'cargar los usuarios bloqueados');
     }
   }
 }

@@ -29,9 +29,7 @@ Future<bool> entregarExportacion(
 
   final resultado = await SharePlus.instance.share(
     ShareParams(
-      files: [
-        XFile.fromData(bytes, mimeType: 'application/json', name: nombre),
-      ],
+      files: [XFile.fromData(bytes, mimeType: 'application/json', name: nombre)],
       fileNameOverrides: [nombre],
       subject: 'Mis datos de Previa',
     ),

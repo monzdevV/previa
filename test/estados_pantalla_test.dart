@@ -5,44 +5,38 @@ import 'package:previa/features/auth/validadores.dart';
 import 'package:previa/features/party/estados_pantalla.dart';
 
 Widget _app(Widget hijo, {double escala = 1}) => MaterialApp(
-  theme: construirTemaPrevia(),
-  builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context)
-        .copyWith(textScaler: TextScaler.linear(escala)),
-    child: child!,
-  ),
-  home: Scaffold(body: hijo),
-);
+      theme: construirTemaPrevia(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(
+          textScaler: TextScaler.linear(escala),
+        ),
+        child: child!,
+      ),
+      home: Scaffold(body: hijo),
+    );
 
 void main() {
   group('EstadoError', () {
-    testWidgets('muestra el mensaje y un botón Reintentar que funciona', (
-      tester,
-    ) async {
+    testWidgets('muestra el mensaje y un botón Reintentar que funciona',
+        (tester) async {
       var reintentos = 0;
-      await tester.pumpWidget(
-        _app(
-          EstadoError(
-            mensaje: 'No se ha podido buscar',
-            detalle: 'Comprueba tu conexión.',
-            onReintentar: () => reintentos++,
-          ),
-        ),
-      );
+      await tester.pumpWidget(_app(EstadoError(
+        mensaje: 'No se ha podido buscar',
+        detalle: 'Comprueba tu conexión.',
+        onReintentar: () => reintentos++,
+      )));
 
       expect(find.text('No se ha podido buscar'), findsOneWidget);
       await tester.tap(find.text('Reintentar'));
       expect(reintentos, 1);
     });
 
-    testWidgets('se anuncia como región viva para el lector de pantalla', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        _app(
-          EstadoError(mensaje: 'No se ha podido buscar', onReintentar: () {}),
-        ),
-      );
+    testWidgets('se anuncia como región viva para el lector de pantalla',
+        (tester) async {
+      await tester.pumpWidget(_app(EstadoError(
+        mensaje: 'No se ha podido buscar',
+        onReintentar: () {},
+      )));
 
       expect(
         find.byWidgetPredicate(
@@ -57,35 +51,31 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(
-        _app(
-          EstadoError(
-            mensaje: 'No se han podido cargar las solicitudes',
-            detalle: 'Comprueba tu conexión e inténtalo otra vez.',
-            onReintentar: () {},
-          ),
-          escala: 2,
+      await tester.pumpWidget(_app(
+        EstadoError(
+          mensaje: 'No se han podido cargar las solicitudes',
+          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
+          onReintentar: () {},
         ),
-      );
+        escala: 2,
+      ));
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('cumple las guías de accesibilidad de Flutter', (tester) async {
       final semantica = tester.ensureSemantics();
-      await tester.pumpWidget(
-        _app(
-          EstadoError(mensaje: 'No se ha podido buscar', onReintentar: () {}),
-        ),
-      );
+      await tester.pumpWidget(_app(EstadoError(
+        mensaje: 'No se ha podido buscar',
+        onReintentar: () {},
+      )));
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
       await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
       semantica.dispose();
     });
   });
 
-  testWidgets('MensajeResponsable no desborda con texto al 200 %', (
-    tester,
-  ) async {
+  testWidgets('MensajeResponsable no desborda con texto al 200 %',
+      (tester) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);

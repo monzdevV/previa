@@ -49,7 +49,8 @@ class PantallaValorar extends ConsumerWidget {
           child: EstadoVacio(
             icono: Icons.cloud_off_rounded,
             titulo: 'Sin conexión',
-            detalle: 'No hemos podido cargar quién fue. Comprueba tu conexión.',
+            detalle:
+                'No hemos podido cargar quién fue. Comprueba tu conexión.',
             accion: 'Reintentar',
             onAccion: () => ref.invalidate(companerosProvider(previaId)),
           ),

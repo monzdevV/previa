@@ -95,12 +95,7 @@ class _Fila extends ConsumerWidget {
   void _abrir(BuildContext context, WidgetRef ref) {
     final a = aviso;
     if (a.tipo == 'reto' && a.postId != null) {
-      abrirRetoConmigo(
-        context,
-        ref,
-        publicacionId: a.postId!,
-        fotoUrl: a.postUrl,
-      );
+      abrirRetoConmigo(context, ref, publicacionId: a.postId!, fotoUrl: a.postUrl);
     } else if (a.tipo == 'mensaje' && a.actorId != null) {
       context.push('${Rutas.conversacion}/${a.actorId}');
     } else if (a.previaId != null) {
@@ -122,7 +117,11 @@ class _Fila extends ConsumerWidget {
         horizontal: EspaciadoPrevia.m,
         vertical: EspaciadoPrevia.xs,
       ),
-      leading: AvatarPerfil(url: a.actorAvatar, inicial: a.quien, lado: 46),
+      leading: AvatarPerfil(
+        url: a.actorAvatar,
+        inicial: a.quien,
+        lado: 46,
+      ),
       title: Text(a.texto, style: textos.bodyLarge),
       subtitle: Text(
         DateFormat('d MMM · HH:mm', 'es_ES').format(a.creadoEn),

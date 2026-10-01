@@ -156,7 +156,9 @@ class _BuscadorState extends ConsumerState<_Buscador> {
         ),
         if (!kIsWeb)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m),
+            padding: const EdgeInsets.symmetric(
+              horizontal: EspaciadoPrevia.m,
+            ),
             child: OutlinedButton.icon(
               onPressed: () => _escanear(context, ref),
               icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -191,8 +193,9 @@ class _BuscadorState extends ConsumerState<_Buscador> {
 
 /// Abre la camara, lee un QR de Previa y lleva al perfil que contiene.
 Future<void> _escanear(BuildContext context, WidgetRef ref) async {
-  final usuario = await Navigator.of(context)
-      .push<String>(MaterialPageRoute(builder: (_) => const _Escaner()));
+  final usuario = await Navigator.of(context).push<String>(
+    MaterialPageRoute(builder: (_) => const _Escaner()),
+  );
   if (usuario == null || !context.mounted) return;
 
   final PerfilResumen? perfil;
@@ -273,8 +276,7 @@ class _Siguiendo extends ConsumerWidget {
       error: (e, _) => const _Vacio(texto: 'No se ha podido cargar.'),
       data: (lista) => lista.isEmpty
           ? const _Vacio(
-              texto:
-                  'Todavía no sigues a nadie. Busca gente o escanea '
+              texto: 'Todavía no sigues a nadie. Busca gente o escanea '
                   'su código.',
             )
           : ListView.builder(
@@ -302,8 +304,7 @@ class _MiCodigo extends ConsumerWidget {
         final usuario = datos?['username'] as String?;
         if (usuario == null) {
           return const _Vacio(
-            texto:
-                'Elige un nombre de usuario en tu perfil para tener '
+            texto: 'Elige un nombre de usuario en tu perfil para tener '
                 'código.',
           );
         }
@@ -408,12 +409,16 @@ class _FilaPersonaState extends ConsumerState<_FilaPersona> {
       trailing: _siguiendo
           ? OutlinedButton(
               onPressed: _ocupado ? null : _alternar,
-              style: OutlinedButton.styleFrom(minimumSize: const Size(104, 38)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(104, 38),
+              ),
               child: const Text('Siguiendo'),
             )
           : FilledButton(
               onPressed: _ocupado ? null : _alternar,
-              style: FilledButton.styleFrom(minimumSize: const Size(104, 38)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(104, 38),
+              ),
               child: const Text('Seguir'),
             ),
     );

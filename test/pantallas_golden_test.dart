@@ -77,41 +77,39 @@ class _RepoSocialDeMuestra extends RepositorioSocial {
   Stream<int> flujoDeAvisos() => Stream.value(0);
 
   @override
-  Future<List<Local>> localesDeLaNoche(
-    String ciudad, {
-    DateTime? noche,
-  }) async => const [
-    Local(
-      id: 'l1',
-      nombre: 'Oasis',
-      ciudad: 'Zaragoza',
-      zona: 'Centro',
-      eslogan: 'Tu finde empieza aquí',
-      lat: 41.6541,
-      lng: -0.8807,
-      van: 23,
-      aqui: 4,
-      quiza: 3,
-      miEstado: EstadoNoche.voy,
-      caras: [
-        Cara(id: 'a', nombre: 'Lucía'),
-        Cara(id: 'b', nombre: 'Dani'),
-        Cara(id: 'c', nombre: 'Marta'),
-      ],
-    ),
-    Local(
-      id: 'l2',
-      nombre: 'Sala López',
-      ciudad: 'Zaragoza',
-      zona: 'Casco Viejo',
-      instagram: 'salalopez',
-      lat: 41.6522,
-      lng: -0.8790,
-      van: 1,
-      caras: [Cara(id: 'd', nombre: 'Irene')],
-    ),
-    Local(id: 'l3', nombre: 'Kembo', ciudad: 'Zaragoza', quiza: 2),
-  ];
+  Future<List<Local>> localesDeLaNoche(String ciudad, {DateTime? noche}) async =>
+      const [
+        Local(
+          id: 'l1',
+          nombre: 'Oasis',
+          ciudad: 'Zaragoza',
+          zona: 'Centro',
+          eslogan: 'Tu finde empieza aquí',
+          lat: 41.6541,
+          lng: -0.8807,
+          van: 23,
+          aqui: 4,
+          quiza: 3,
+          miEstado: EstadoNoche.voy,
+          caras: [
+            Cara(id: 'a', nombre: 'Lucía'),
+            Cara(id: 'b', nombre: 'Dani'),
+            Cara(id: 'c', nombre: 'Marta'),
+          ],
+        ),
+        Local(
+          id: 'l2',
+          nombre: 'Sala López',
+          ciudad: 'Zaragoza',
+          zona: 'Casco Viejo',
+          instagram: 'salalopez',
+          lat: 41.6522,
+          lng: -0.8790,
+          van: 1,
+          caras: [Cara(id: 'd', nombre: 'Irene')],
+        ),
+        Local(id: 'l3', nombre: 'Kembo', ciudad: 'Zaragoza', quiza: 2),
+      ];
 
   @override
   Future<List<Publicacion>> feed({
@@ -173,9 +171,10 @@ Widget _app(
     theme: temaDePrueba(plataforma: plataforma, brillo: brillo),
     home: pantalla,
     builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(
-        context,
-      ).copyWith(padding: margen, textScaler: TextScaler.linear(escalaDeTexto)),
+      data: MediaQuery.of(context).copyWith(
+        padding: margen,
+        textScaler: TextScaler.linear(escalaDeTexto),
+      ),
       child: child!,
     ),
   ),
@@ -288,7 +287,9 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(_app(const PantallaFeed(), margen: margenAndroid));
+    await tester.pumpWidget(
+      _app(const PantallaFeed(), margen: margenAndroid),
+    );
     await _asentar(tester);
 
     await expectLater(
@@ -383,18 +384,10 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(
-      _app(const PantallaInicio(), margen: margenAndroid),
-    );
+    await tester.pumpWidget(_app(const PantallaInicio(), margen: margenAndroid));
     await _asentar(tester);
 
-    for (final pestana in [
-      'Mapa',
-      '¿Vas? Quién sale esta noche',
-      'Buzón',
-      'Tú',
-      'Inicio',
-    ]) {
+    for (final pestana in ['Mapa', '¿Vas? Quién sale esta noche', 'Buzón', 'Tú', 'Inicio']) {
       await tester.tap(find.bySemanticsLabel(pestana));
       await _asentar(tester);
       expect(tester.takeException(), isNull, reason: 'Desborda en $pestana');

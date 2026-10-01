@@ -59,10 +59,8 @@ Future<String?> _elegirMotivo(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: EspaciadoPrevia.l),
-            Text(
-              '¿Qué ha pasado?',
-              style: Theme.of(contexto).textTheme.titleLarge,
-            ),
+            Text('¿Qué ha pasado?',
+                style: Theme.of(contexto).textTheme.titleLarge),
             const SizedBox(height: EspaciadoPrevia.m),
             for (final e in motivosDeReporte.entries)
               ListTile(
@@ -90,9 +88,7 @@ Future<void> flujoReportar(
   final motivo = await _elegirMotivo(context);
   if (motivo == null || !context.mounted) return;
   try {
-    await ref
-        .read(repositorioSeguridadProvider)
-        .reportar(
+    await ref.read(repositorioSeguridadProvider).reportar(
           motivo: motivo,
           perfilId: perfilId,
           previaId: previaId,
@@ -115,8 +111,7 @@ Future<bool> flujoBloquear(
   final ok = await _confirmar(
     context,
     titulo: '¿Bloquear a $nombre?',
-    detalle:
-        'Dejaréis de veros por completo: sus previas desaparecerán de '
+    detalle: 'Dejaréis de veros por completo: sus previas desaparecerán de '
         'tu mapa y no podrá escribirte. Puedes desbloquearle en Ajustes.',
     accion: 'Bloquear',
   );
@@ -134,17 +129,13 @@ Future<bool> flujoBloquear(
 }
 
 /// Flujo de salir de la previa. Devuelve true si se salio.
-Future<bool> flujoSalir(
-  BuildContext context,
-  WidgetRef ref, {
-  required String previaId,
-}) async {
+Future<bool> flujoSalir(BuildContext context, WidgetRef ref,
+    {required String previaId}) async {
   final mensajero = ScaffoldMessenger.of(context);
   final ok = await _confirmar(
     context,
     titulo: '¿Salir de la previa?',
-    detalle:
-        'Dejarás de ver el chat y la dirección exacta. Tendrás que '
+    detalle: 'Dejarás de ver el chat y la dirección exacta. Tendrás que '
         'volver a pedir plaza si quieres entrar otra vez.',
     accion: 'Salir',
   );
@@ -188,26 +179,19 @@ Future<void> mostrarHojaPersona(
           const SizedBox(height: EspaciadoPrevia.s),
           ListTile(
             leading: const Icon(Icons.flag_outlined),
-            title: Text(
-              mensajeId != null ? 'Reportar este mensaje' : 'Reportar',
-            ),
+            title: Text(mensajeId != null ? 'Reportar este mensaje' : 'Reportar'),
             onTap: () {
               Navigator.of(contexto).pop();
-              flujoReportar(
-                context,
-                ref,
-                perfilId: perfilId,
-                previaId: previaId,
-                mensajeId: mensajeId,
-              );
+              flujoReportar(context, ref,
+                  perfilId: perfilId,
+                  previaId: previaId,
+                  mensajeId: mensajeId);
             },
           ),
           ListTile(
             leading: Icon(Icons.block, color: context.colores.error),
-            title: Text(
-              'Bloquear',
-              style: TextStyle(color: context.colores.error),
-            ),
+            title: Text('Bloquear',
+                style: TextStyle(color: context.colores.error)),
             onTap: () {
               Navigator.of(contexto).pop();
               flujoBloquear(context, ref, perfilId: perfilId, nombre: nombre);

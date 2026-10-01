@@ -7,14 +7,14 @@ import 'package:previa/features/onboarding/servicio_onboarding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _app(Widget pantalla, {double escala = 1}) => MaterialApp(
-  theme: construirTemaPrevia(),
-  builder: (context, child) => MediaQuery(
-    data: MediaQuery.of(context)
-        .copyWith(textScaler: TextScaler.linear(escala)),
-    child: child!,
-  ),
-  home: pantalla,
-);
+      theme: construirTemaPrevia(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(escala)),
+        child: child!,
+      ),
+      home: pantalla,
+    );
 
 void _movil(WidgetTester tester) {
   tester.view.physicalSize = const Size(412, 892);
@@ -35,29 +35,21 @@ void main() {
       expect(await ServicioOnboarding.yaVisto(), isTrue);
 
       ServicioOnboarding.reiniciarParaPruebas();
-      expect(
-        await ServicioOnboarding.yaVisto(),
-        isTrue,
-        reason: 'debe persistir en shared_preferences',
-      );
+      expect(await ServicioOnboarding.yaVisto(), isTrue,
+          reason: 'debe persistir en shared_preferences');
     });
   });
 
   group('PantallaOnboarding', () {
-    testWidgets('recorre las tarjetas y termina pidiendo el permiso', (
-      tester,
-    ) async {
+    testWidgets('recorre las tarjetas y termina pidiendo el permiso',
+        (tester) async {
       _movil(tester);
       var pedido = false;
       var terminado = false;
-      await tester.pumpWidget(
-        _app(
-          PantallaOnboarding(
-            solicitarPermiso: () async => pedido = true,
-            alTerminar: () => terminado = true,
-          ),
-        ),
-      );
+      await tester.pumpWidget(_app(PantallaOnboarding(
+        solicitarPermiso: () async => pedido = true,
+        alTerminar: () => terminado = true,
+      )));
       await tester.pump(const Duration(milliseconds: 600));
 
       expect(find.text('Previas cerca de ti'), findsOneWidget);
@@ -82,18 +74,15 @@ void main() {
       expect(await ServicioOnboarding.yaVisto(), isTrue);
     });
 
-    testWidgets('Saltar marca como visto sin pedir el permiso', (tester) async {
+    testWidgets('Saltar marca como visto sin pedir el permiso',
+        (tester) async {
       _movil(tester);
       var pedido = false;
       var terminado = false;
-      await tester.pumpWidget(
-        _app(
-          PantallaOnboarding(
-            solicitarPermiso: () async => pedido = true,
-            alTerminar: () => terminado = true,
-          ),
-        ),
-      );
+      await tester.pumpWidget(_app(PantallaOnboarding(
+        solicitarPermiso: () async => pedido = true,
+        alTerminar: () => terminado = true,
+      )));
 
       await tester.tap(find.text('Saltar'));
       await tester.pump();
@@ -106,14 +95,10 @@ void main() {
     testWidgets('si falla el permiso igualmente termina', (tester) async {
       _movil(tester);
       var terminado = false;
-      await tester.pumpWidget(
-        _app(
-          PantallaOnboarding(
-            solicitarPermiso: () async => throw Exception('sin plugin'),
-            alTerminar: () => terminado = true,
-          ),
-        ),
-      );
+      await tester.pumpWidget(_app(PantallaOnboarding(
+        solicitarPermiso: () async => throw Exception('sin plugin'),
+        alTerminar: () => terminado = true,
+      )));
       for (var i = 0; i < 3; i++) {
         await tester.tap(find.text('Siguiente'));
         await tester.pump();
@@ -128,9 +113,10 @@ void main() {
     testWidgets('guías de accesibilidad y texto al 200 %', (tester) async {
       _movil(tester);
       final semantica = tester.ensureSemantics();
-      await tester.pumpWidget(
-        _app(PantallaOnboarding(alTerminar: () {}), escala: 2),
-      );
+      await tester.pumpWidget(_app(
+        PantallaOnboarding(alTerminar: () {}),
+        escala: 2,
+      ));
       await tester.pump(const Duration(milliseconds: 600));
 
       await expectLater(tester, meetsGuideline(androidTapTargetGuideline));

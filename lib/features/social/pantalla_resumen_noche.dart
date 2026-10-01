@@ -70,12 +70,11 @@ class _PantallaResumenNocheState extends ConsumerState<PantallaResumenNoche> {
       appBar: AppBar(title: const Text('Tu noche')),
       body: resumen.when(
         loading: () => Center(
-          child: CircularProgressIndicator(
-            color: context.colores.primarioTexto,
-          ),
+          child: CircularProgressIndicator(color: context.colores.primarioTexto),
         ),
-        error: (e, _) =>
-            const Center(child: Text('No se ha podido cargar la noche.')),
+        error: (e, _) => const Center(
+          child: Text('No se ha podido cargar la noche.'),
+        ),
         data: (r) => ListView(
           padding: const EdgeInsets.all(EspaciadoPrevia.m),
           children: [
@@ -295,7 +294,10 @@ class _Cifra extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           etiqueta,
-          style: TextStyle(fontSize: 12, color: context.colores.textoTenue),
+          style: TextStyle(
+            fontSize: 12,
+            color: context.colores.textoTenue,
+          ),
         ),
       ],
     ),
@@ -337,7 +339,9 @@ class InsigniaDeRacha extends ConsumerWidget {
           ),
           const SizedBox(width: EspaciadoPrevia.xs),
           Text(
-            racha.semanas == 1 ? '1 finde' : '${racha.semanas} findes',
+            racha.semanas == 1
+                ? '1 finde'
+                : '${racha.semanas} findes',
             style: TextStyle(
               color: enRiesgo
                   ? context.colores.textoSuave

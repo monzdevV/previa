@@ -36,17 +36,11 @@ void jugar(Partida p, Respuesta r) {
 void main() {
   group('repositorio', () {
     test('incluye niveles inferiores y filtra por juego', () {
-      final suave = retosPara(
-        TipoJuego.noHayHuevos,
-        NivelReto.suave,
-        fuente: retosDePrueba,
-      );
+      final suave = retosPara(TipoJuego.noHayHuevos, NivelReto.suave,
+          fuente: retosDePrueba);
       expect(suave.every((r) => r.nivel == NivelReto.suave), isTrue);
-      final atrevido = retosPara(
-        TipoJuego.noHayHuevos,
-        NivelReto.atrevido,
-        fuente: retosDePrueba,
-      );
+      final atrevido = retosPara(TipoJuego.noHayHuevos, NivelReto.atrevido,
+          fuente: retosDePrueba);
       expect(atrevido.any((r) => r.nivel == NivelReto.suave), isTrue);
       expect(atrevido.any((r) => r.nivel == NivelReto.atrevido), isTrue);
       expect(atrevido.any((r) => r.nivel == NivelReto.sinFiltro), isFalse);
@@ -55,17 +49,13 @@ void main() {
 
     test('el contenido real cubre todos los juegos y niveles', () {
       for (final j in TipoJuego.values) {
-        expect(
-          retosPara(j, NivelReto.suave, fuente: todosLosRetos),
-          isNotEmpty,
-        );
+        expect(retosPara(j, NivelReto.suave, fuente: todosLosRetos),
+            isNotEmpty);
       }
       final ids = todosLosRetos.map((r) => r.id).toSet();
       expect(ids.length, todosLosRetos.length, reason: 'ids repetidos');
-      expect(
-        todosLosRetos.every((r) => r.sorbos >= 1 && r.sorbos <= 3),
-        isTrue,
-      );
+      expect(todosLosRetos.every((r) => r.sorbos >= 1 && r.sorbos <= 3),
+          isTrue);
     });
   });
 
@@ -73,11 +63,9 @@ void main() {
     test('no se repite ninguna carta hasta agotar la baraja', () {
       final p = nueva(rondas: null, nivel: NivelReto.atrevido);
       final total = p.retoActual.juego == TipoJuego.noHayHuevos
-          ? retosPara(
-              TipoJuego.noHayHuevos,
-              NivelReto.atrevido,
-              fuente: retosDePrueba,
-            ).length
+          ? retosPara(TipoJuego.noHayHuevos, NivelReto.atrevido,
+                  fuente: retosDePrueba)
+              .length
           : 0;
       final vistas = <String>{};
       for (var i = 0; i < total; i++) {
@@ -103,11 +91,7 @@ void main() {
 
     test('ids duplicados en la fuente solo cuentan una vez', () {
       const r = Reto(
-        id: 'x',
-        juego: TipoJuego.noHayHuevos,
-        nivel: NivelReto.suave,
-        texto: 'a',
-      );
+          id: 'x', juego: TipoJuego.noHayHuevos, nivel: NivelReto.suave, texto: 'a');
       final p = nueva(retos: [r, r, r], rondas: null);
       expect(p.retoActual.id, 'x');
     });
@@ -117,22 +101,14 @@ void main() {
     });
 
     test('formatea el texto segun el juego', () {
-      expect(
-        formatearTextoCarta(TipoJuego.noHayHuevos, 'baila'),
-        '¿A que no hay huevos a... baila?',
-      );
-      expect(
-        formatearTextoCarta(TipoJuego.yoNunca, 'he ido'),
-        'Yo nunca he ido',
-      );
-      expect(
-        formatearTextoCarta(TipoJuego.masProbable, 'llegue tarde'),
-        '¿Quién es más probable que llegue tarde?',
-      );
-      expect(
-        formatearTextoCarta(TipoJuego.verdadOReto, 'Reto: canta'),
-        'Reto: canta',
-      );
+      expect(formatearTextoCarta(TipoJuego.noHayHuevos, 'baila'),
+          '¿A que no hay huevos a... baila?');
+      expect(formatearTextoCarta(TipoJuego.yoNunca, 'he ido'),
+          'Yo nunca he ido');
+      expect(formatearTextoCarta(TipoJuego.masProbable, 'llegue tarde'),
+          '¿Quién es más probable que llegue tarde?');
+      expect(formatearTextoCarta(TipoJuego.verdadOReto, 'Reto: canta'),
+          'Reto: canta');
     });
   });
 

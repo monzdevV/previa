@@ -32,11 +32,8 @@ class PantallaBloqueados extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  e.toString(),
-                  textAlign: TextAlign.center,
-                  style: textos.bodyMedium,
-                ),
+                Text(e.toString(),
+                    textAlign: TextAlign.center, style: textos.bodyMedium),
                 const SizedBox(height: EspaciadoPrevia.m),
                 OutlinedButton(
                   onPressed: () => ref.invalidate(bloqueadosProvider),
@@ -85,10 +82,7 @@ class PantallaBloqueados extends ConsumerWidget {
   }
 
   Future<void> _desbloquear(
-    BuildContext context,
-    WidgetRef ref,
-    UsuarioBloqueado p,
-  ) async {
+      BuildContext context, WidgetRef ref, UsuarioBloqueado p) async {
     final mensajero = ScaffoldMessenger.of(context);
     try {
       await ref.read(repositorioSeguridadProvider).desbloquear(p.id);

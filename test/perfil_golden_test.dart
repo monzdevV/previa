@@ -73,8 +73,9 @@ void main() {
           theme: temaDePrueba(),
           home: const PantallaPerfil(),
           builder: (context, child) => MediaQuery(
-            data: MediaQuery.of(context)
-                .copyWith(padding: const EdgeInsets.only(top: 47, bottom: 34)),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(padding: const EdgeInsets.only(top: 47, bottom: 34)),
             child: child!,
           ),
         ),
