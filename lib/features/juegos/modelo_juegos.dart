@@ -32,7 +32,12 @@ enum TipoJuego {
 /// asume una baraja y un turno, no tenga que saber de ellos.
 enum MiniJuego {
   impostor('El impostor', 'Uno no sabe la palabra. Descubridlo.'),
-  ruleta('La ruleta', 'Gira y que decida el azar.');
+  ruleta('La ruleta', 'Gira y que decida el azar.'),
+  reyes('Reyes', 'Una carta, una regla. Al cuarto rey, fin.'),
+  palabraProhibida(
+    'Palabra prohibida',
+    'Por equipos: describe sin decir las prohibidas.',
+  );
 
   const MiniJuego(this.titulo, this.descripcion);
   final String titulo;

@@ -5,8 +5,12 @@ import 'almacen_jugadores.dart';
 import 'editor_jugadores.dart';
 import 'modelo_juegos.dart';
 import 'motor/impostor.dart';
+import 'motor/palabra_prohibida.dart';
 import 'motor/partida.dart';
+import 'motor/reyes.dart';
 import 'pantalla_impostor.dart';
+import 'pantalla_palabra_prohibida.dart';
+import 'pantalla_reyes.dart';
 import 'pantalla_ruleta.dart';
 
 /// Preparación de los minijuegos: jugadores y, según el juego, sus opciones.
@@ -32,6 +36,7 @@ class _PantallaPreparacionMiniState extends State<PantallaPreparacionMini> {
   /// Índice de la categoría elegida; `null` = una al azar en cada ronda.
   int? _categoria;
   bool _sinAlcohol = false;
+  int _rondas = rondasPorDefectoTabu;
 
   @override
   void initState() {
@@ -52,8 +57,12 @@ class _PantallaPreparacionMiniState extends State<PantallaPreparacionMini> {
     });
   }
 
-  int get _minimo =>
-      widget.juego == MiniJuego.impostor ? minJugadoresImpostor : minJugadores;
+  int get _minimo => switch (widget.juego) {
+    MiniJuego.impostor => minJugadoresImpostor,
+    MiniJuego.palabraProhibida => minJugadoresTabu,
+    MiniJuego.reyes => minJugadoresReyes,
+    MiniJuego.ruleta => minJugadores,
+  };
 
   bool get _listo => _jugadores.length >= _minimo;
 
@@ -69,6 +78,14 @@ class _PantallaPreparacionMiniState extends State<PantallaPreparacionMini> {
       MiniJuego.ruleta => PantallaRuleta(
         jugadores: _jugadores,
         sinAlcohol: _sinAlcohol,
+      ),
+      MiniJuego.reyes => PantallaReyes(
+        jugadores: _jugadores,
+        sinAlcohol: _sinAlcohol,
+      ),
+      MiniJuego.palabraProhibida => PantallaPalabraProhibida(
+        jugadores: _jugadores,
+        rondas: _rondas,
       ),
     };
     await Navigator.of(context)
@@ -111,6 +128,30 @@ class _PantallaPreparacionMiniState extends State<PantallaPreparacionMini> {
                       label: Text(categoriasImpostor[i].nombre),
                       selected: _categoria == i,
                       onSelected: (_) => setState(() => _categoria = i),
+                    ),
+                ],
+              ),
+            ] else if (widget.juego == MiniJuego.palabraProhibida) ...[
+              Semantics(
+                header: true,
+                child: Text('Rondas', style: texto.titleLarge),
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
+              Text(
+                'Dos equipos al azar. Cada ronda juega un turno de 60 s '
+                'cada equipo.',
+                style: texto.bodyMedium,
+              ),
+              const SizedBox(height: EspaciadoPrevia.s),
+              Wrap(
+                spacing: EspaciadoPrevia.s,
+                runSpacing: EspaciadoPrevia.s,
+                children: [
+                  for (final n in const [1, 2, 3, 4, 5])
+                    ChoiceChip(
+                      label: Text('$n'),
+                      selected: _rondas == n,
+                      onSelected: (_) => setState(() => _rondas = n),
                     ),
                 ],
               ),

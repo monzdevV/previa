@@ -308,6 +308,8 @@ class _PintorDosOpciones extends _PintorCartas {
 List<Color> coloresMini(MiniJuego j) => switch (j) {
   MiniJuego.impostor => const [Color(0xFF2E8B6E), Color(0xFF123A3A)],
   MiniJuego.ruleta => const [Color(0xFFD64F7F), Color(0xFF4A1B6B)],
+  MiniJuego.reyes => const [Color(0xFFC9892B), Color(0xFF5A1F2E)],
+  MiniJuego.palabraProhibida => const [Color(0xFF3F7FD6), Color(0xFF2A1B5C)],
 };
 
 /// Ilustración de los minijuegos; mismo criterio que [IlustracionJuego].
@@ -321,6 +323,8 @@ class IlustracionMini extends StatelessWidget {
     final CustomPainter pintor = switch (juego) {
       MiniJuego.impostor => _PintorImpostor(coloresMini(juego)),
       MiniJuego.ruleta => _PintorRuleta(coloresMini(juego)),
+      MiniJuego.reyes => _PintorReyes(coloresMini(juego)),
+      MiniJuego.palabraProhibida => _PintorProhibida(coloresMini(juego)),
     };
     return ExcludeSemantics(
       child: RepaintBoundary(
@@ -425,6 +429,113 @@ class _PintorRuleta extends CustomPainter {
       ..lineTo(centro.dx, centro.dy - r + r * 0.12)
       ..close();
     canvas.drawPath(flecha, Paint()..color = Colors.white);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+/// Tres cartas en abanico, la del centro con una corona de rey.
+class _PintorReyes extends CustomPainter {
+  _PintorReyes(this.cols);
+  final List<Color> cols;
+
+  void _carta(Canvas c, Offset centro, double alto, double giro) {
+    c.save();
+    c.translate(centro.dx, centro.dy);
+    c.rotate(giro);
+    final r = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: Offset.zero, width: alto * 0.68, height: alto),
+      Radius.circular(alto * 0.08),
+    );
+    c.drawRRect(r, Paint()..color = const Color(0xFFF6F0EA));
+    c.drawRRect(
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = Colors.black26,
+    );
+    c.restore();
+  }
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    _fondo(canvas, s, cols);
+    final alto = s.height * 0.72;
+    final y = s.height * 0.55;
+    _carta(canvas, Offset(s.width * 0.36, y), alto, -0.22);
+    _carta(canvas, Offset(s.width * 0.64, y), alto, 0.22);
+    _carta(canvas, Offset(s.width * 0.5, y - alto * 0.04), alto, 0);
+    // Corona: base y tres puntas.
+    final cx = s.width * 0.5;
+    final cy = y;
+    final w = alto * 0.36;
+    final corona = Path()
+      ..moveTo(cx - w / 2, cy + w * 0.25)
+      ..lineTo(cx - w / 2, cy - w * 0.2)
+      ..lineTo(cx - w / 4, cy)
+      ..lineTo(cx, cy - w * 0.32)
+      ..lineTo(cx + w / 4, cy)
+      ..lineTo(cx + w / 2, cy - w * 0.2)
+      ..lineTo(cx + w / 2, cy + w * 0.25)
+      ..close();
+    canvas.drawPath(corona, Paint()..color = const Color(0xFFE8A13A));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
+}
+
+/// Una carta con la palabra objetivo (barra oscura), cuatro barras rojas de
+/// palabras prohibidas y un aspa en la esquina.
+class _PintorProhibida extends CustomPainter {
+  _PintorProhibida(this.cols);
+  final List<Color> cols;
+
+  @override
+  void paint(Canvas canvas, Size s) {
+    _fondo(canvas, s, cols);
+    final alto = s.height * 0.84;
+    final ancho = alto * 0.95;
+    final r = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(s.width / 2, s.height * 0.5),
+        width: ancho,
+        height: alto,
+      ),
+      Radius.circular(alto * 0.08),
+    );
+    canvas.drawRRect(r, Paint()..color = const Color(0xFFF6F0EA));
+    final x0 = r.left + ancho * 0.12;
+    final largo = ancho * 0.76;
+    final barra = alto * 0.09;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(x0, r.top + alto * 0.12, largo, barra),
+        Radius.circular(barra / 2),
+      ),
+      Paint()..color = cols.last,
+    );
+    for (var i = 0; i < 4; i++) {
+      final y = r.top + alto * (0.36 + i * 0.14);
+      final l = largo * (0.7 - (i % 2) * 0.15);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x0, y, l, barra * 0.7),
+          Radius.circular(barra / 2),
+        ),
+        Paint()..color = const Color(0xFFE2524B),
+      );
+    }
+    final p = Paint()
+      ..color = const Color(0xFFE2524B)
+      ..strokeWidth = alto * 0.05
+      ..strokeCap = StrokeCap.round;
+    final c = Offset(r.right - alto * 0.12, r.top + alto * 0.14);
+    final d = alto * 0.07;
+    canvas.drawLine(c + Offset(-d, -d), c + Offset(d, d), p);
+    canvas.drawLine(c + Offset(-d, d), c + Offset(d, -d), p);
   }
 
   @override
