@@ -13,6 +13,9 @@ import '../../data/models/local.dart';
 import '../../data/repositories/repositorio_auth.dart';
 import '../../data/repositories/repositorio_social.dart';
 import '../juegos/no_hay_huevos.dart' show StickerNoHayHuevos;
+import '../../data/repositories/repositorio_ofertas.dart' show soyDuenoProvider;
+import '../ofertas/pantalla_lanzar_oferta.dart';
+import '../ofertas/tarjeta_oferta.dart';
 import '../map/proveedores_mapa.dart' show posicionDispositivoProvider;
 import '../profile/proveedores_perfil.dart';
 import 'pantalla_sala.dart';
@@ -510,6 +513,19 @@ class _TarjetaLocalState extends ConsumerState<_TarjetaLocal> {
                   ],
                 ),
               ),
+              // Las ofertas en vivo son para quien esta dentro: solo se avisa
+              // a quien ha dicho "estoy aqui" (el servidor lo vuelve a
+              // comprobar, esto solo evita pedirlas a quien no las vera).
+              if (_l.miEstado == EstadoNoche.aqui)
+                Positioned(
+                  top: widget.extraArriba + EspaciadoPrevia.m,
+                  left: EspaciadoPrevia.m,
+                  right: 120,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: PastillaOfertaEnVivo(localId: _l.id),
+                  ),
+                ),
               // Como un sello: solo en los sitios a los que vas, porque el
               // juego va de gente que esta en el mismo local.
               if (_l.voy)
@@ -1008,11 +1024,34 @@ class _HojaDelLocal extends ConsumerWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ],
+            if (local.miEstado == EstadoNoche.aqui) ...[
+              const SizedBox(height: EspaciadoPrevia.m),
+              SeccionOfertas(localId: local.id),
+            ],
             const SizedBox(height: EspaciadoPrevia.m),
             Wrap(
               spacing: EspaciadoPrevia.s,
               runSpacing: EspaciadoPrevia.s,
               children: [
+                if (ref.watch(soyDuenoProvider(local.id)).valueOrNull ?? false)
+                  FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => PantallaLanzarOferta(
+                            localId: local.id,
+                            nombreLocal: local.nombre,
+                          ),
+                        ),
+                      );
+                    },
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 46),
+                    ),
+                    icon: const Icon(Icons.bolt_rounded, size: 19),
+                    label: const Text('LANZAR OFERTA'),
+                  ),
                 FilledButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop();

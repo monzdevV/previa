@@ -11,8 +11,9 @@ Salen del informe legal del proyecto y se aplican en tres capas:
 
 1. **Producto**: solo hay plantillas de *entrada, mesa/zona, foto, guardarropa,
    comida y experiencias*. No existe plantilla de bebida.
-2. **Copy**: la app no dice "bebe", "barra libre" ni "2x1". El texto libre se
-   limita a 60 + 140 caracteres.
+2. **Copy**: la app no dice "bebe", "barra libre" ni "2x1". El MVP no admite
+   texto libre: solo plantillas revisadas (la base admite 60 + 140 caracteres
+   por si más adelante se abre, siempre pasando por el disparador).
 3. **Base de datos**: una categoría cerrada (`kind`) y un disparador que
    rechaza título o detalle con palabras de consumo de alcohol (barra libre,
    open bar, 2x1, copa, chupito, cubata, bebe...). Es una red de seguridad, no
