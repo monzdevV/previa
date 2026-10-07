@@ -42,10 +42,9 @@ class _PantallaPartidaState extends State<PantallaPartida> {
   }
 
   Partida _nuevaPartida() => Partida(
-        config: widget.config,
-        retos: widget.retos ??
-            retosPara(widget.config.juego, widget.config.nivel),
-      );
+    config: widget.config,
+    retos: widget.retos ?? retosPara(widget.config.juego, widget.config.nivel),
+  );
 
   @override
   void dispose() {
@@ -253,19 +252,19 @@ class _CabeceraTurno extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(EspaciadoPrevia.m),
           decoration: BoxDecoration(
-            color: ColoresPrevia.superficieAlta,
+            color: context.colores.superficieAlta,
             borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-            border: Border.all(color: ColoresPrevia.primarioSuave, width: 2),
+            border: Border.all(color: context.colores.primarioTexto, width: 2),
           ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 26,
-                backgroundColor: ColoresPrevia.primario,
+                backgroundColor: context.colores.primario,
                 child: Text(
                   jugador.nombre.characters.first.toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.colores.sobrePrimario,
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                   ),
@@ -356,14 +355,18 @@ class _ZonaCarta extends StatelessWidget {
 }
 
 BoxDecoration _decoracionCarta(List<Color> cols) => BoxDecoration(
-      borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: cols,
-      ),
-      boxShadow: ElevacionPrevia.flotante,
-    );
+  borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+  gradient: LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: cols,
+  ),
+  // Sombra propia: la app local no tiene tokens de elevación y la carta
+  // necesita despegarse del fondo en oscuro y en claro.
+  boxShadow: const [
+    BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
+  ],
+);
 
 const _coloresNivel = {
   NivelReto.suave: [Color(0xFF1F6F5C), Color(0xFF174F44)],
@@ -384,12 +387,13 @@ class _CartaReto extends StatelessWidget {
     final castigo = juego.puntua
         ? 'Si no: ${_textoCastigo(partida, sinAlcohol)}'
         : (juego == TipoJuego.yoNunca
-            ? 'Quien lo haya hecho: ${_textoCastigo(partida, sinAlcohol)}'
-            : 'El más votado: ${_textoCastigo(partida, sinAlcohol)}');
+              ? 'Quien lo haya hecho: ${_textoCastigo(partida, sinAlcohol)}'
+              : 'El más votado: ${_textoCastigo(partida, sinAlcohol)}');
     return Semantics(
       container: true,
       liveRegion: true,
-      label: 'Carta ${reto.nivel.etiqueta}. ${partida.textoMostrado}. $castigo.',
+      label:
+          'Carta ${reto.nivel.etiqueta}. ${partida.textoMostrado}. $castigo.',
       child: ExcludeSemantics(
         child: Container(
           constraints: const BoxConstraints(minHeight: 280),
@@ -466,7 +470,10 @@ class _CartaContacto extends StatelessWidget {
     return Container(
       constraints: const BoxConstraints(minHeight: 280),
       padding: const EdgeInsets.all(EspaciadoPrevia.l),
-      decoration: _decoracionCarta(const [Color(0xFF3E1030), Color(0xFF14110F)]),
+      decoration: _decoracionCarta(const [
+        Color(0xFF3E1030),
+        Color(0xFF14110F),
+      ]),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -485,10 +492,7 @@ class _CartaContacto extends StatelessWidget {
             ),
           ),
           const SizedBox(height: EspaciadoPrevia.l),
-          FilledButton(
-            onPressed: onOk,
-            child: const Text('Sí, adelante'),
-          ),
+          FilledButton(onPressed: onOk, child: const Text('Sí, adelante')),
           const SizedBox(height: EspaciadoPrevia.s),
           OutlinedButton(
             onPressed: onNo,
@@ -547,10 +551,10 @@ class _Botonera extends StatelessWidget {
               Text(
                 _textoCastigo(partida, sinAlcohol),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: ColoresPrevia.textoSuave,
+                  color: context.colores.textoSuave,
                 ),
               ),
             ],
@@ -582,8 +586,11 @@ class _Pausa extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: EspaciadoPrevia.xl),
-        const Icon(Icons.water_drop_outlined,
-            size: 64, color: ColoresPrevia.acento),
+        Icon(
+          Icons.water_drop_outlined,
+          size: 64,
+          color: context.colores.acento,
+        ),
         const SizedBox(height: EspaciadoPrevia.m),
         Semantics(
           header: true,
@@ -612,10 +619,10 @@ class _Pausa extends StatelessWidget {
                 Text(
                   lista ? '0' : '$segundos',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 64,
                     fontWeight: FontWeight.w800,
-                    color: ColoresPrevia.texto,
+                    color: context.colores.texto,
                   ),
                 ),
                 const SizedBox(height: EspaciadoPrevia.s),
@@ -663,7 +670,7 @@ class _InsigniaTitulo extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(EspaciadoPrevia.m),
           decoration: BoxDecoration(
-            color: ColoresPrevia.superficieAlta,
+            color: context.colores.superficieAlta,
             borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
             border: Border.all(color: color, width: 2),
           ),
@@ -688,22 +695,22 @@ class _InsigniaTitulo extends StatelessWidget {
   }
 }
 
-List<Widget> _titulos(Partida p) => [
-      if (p.valiente != null)
-        _InsigniaTitulo(
-          titulo: 'Valiente del día',
-          nombre: p.valiente!.nombre,
-          icono: Icons.local_fire_department,
-          color: ColoresPrevia.aviso,
-        ),
-      if (p.gallina != null)
-        _InsigniaTitulo(
-          titulo: 'La gallina de la noche',
-          nombre: p.gallina!.nombre,
-          icono: Icons.egg_alt_outlined,
-          color: ColoresPrevia.primarioSuave,
-        ),
-    ];
+List<Widget> _titulos(BuildContext context, Partida p) => [
+  if (p.valiente != null)
+    _InsigniaTitulo(
+      titulo: 'Valiente del día',
+      nombre: p.valiente!.nombre,
+      icono: Icons.local_fire_department,
+      color: context.colores.aviso,
+    ),
+  if (p.gallina != null)
+    _InsigniaTitulo(
+      titulo: 'La gallina de la noche',
+      nombre: p.gallina!.nombre,
+      icono: Icons.egg_alt_outlined,
+      color: context.colores.primarioTexto,
+    ),
+];
 
 class _FilaRanking extends StatelessWidget {
   const _FilaRanking({required this.posicion, required this.jugador});
@@ -716,7 +723,8 @@ class _FilaRanking extends StatelessWidget {
     final texto = Theme.of(context).textTheme;
     return Semantics(
       container: true,
-      label: 'Puesto $posicion, ${jugador.nombre}: ${jugador.puntos} puntos, '
+      label:
+          'Puesto $posicion, ${jugador.nombre}: ${jugador.puntos} puntos, '
           '${jugador.cumplidos} cumplidos, ${jugador.rechazos} veces no hay huevos',
       child: ExcludeSemantics(
         child: Padding(
@@ -760,7 +768,7 @@ class _HojaMarcador extends StatelessWidget {
               child: Text('Marcador', style: texto.headlineMedium),
             ),
             const SizedBox(height: EspaciadoPrevia.m),
-            for (final t in _titulos(partida)) ...[
+            for (final t in _titulos(context, partida)) ...[
               t,
               const SizedBox(height: EspaciadoPrevia.s),
             ],
@@ -820,7 +828,7 @@ class _PantallaFinal extends StatelessWidget {
             if (puntua) ...[
               _Podio(ranking: ranking.take(3).toList()),
               const SizedBox(height: EspaciadoPrevia.l),
-              for (final t in _titulos(partida)) ...[
+              for (final t in _titulos(context, partida)) ...[
                 t,
                 const SizedBox(height: EspaciadoPrevia.s),
               ],
@@ -868,17 +876,15 @@ class _Podio extends StatelessWidget {
       if (ranking.length > 2) 2,
     ];
     const altos = [120.0, 88.0, 64.0];
-    const colores = [
-      ColoresPrevia.aviso,
+    final colores = [
+      context.colores.aviso,
       Color(0xFFC9C2BB),
       Color(0xFFC98A5B),
     ];
     return Semantics(
       container: true,
-      label: 'Podio. ${[
-        for (var i = 0; i < ranking.length; i++)
-          'Puesto ${i + 1}: ${ranking[i].nombre}, ${ranking[i].puntos} puntos'
-      ].join('. ')}',
+      label:
+          'Podio. ${[for (var i = 0; i < ranking.length; i++) 'Puesto ${i + 1}: ${ranking[i].nombre}, ${ranking[i].puntos} puntos'].join('. ')}',
       child: ExcludeSemantics(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -897,8 +903,10 @@ class _Podio extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      Text('${ranking[i].puntos} pts',
-                          style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        '${ranking[i].puntos} pts',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                       const SizedBox(height: EspaciadoPrevia.xs),
                       Container(
                         height: altos[i],

@@ -4,10 +4,15 @@
 // y probar por separado: el contenido solo construye [Reto]s y el motor solo
 // los consume.
 
-/// Los juegos disponibles. "No hay huevos" es el principal; el resto son
+/// Nombre del juego estrella. El huevo es un emoji a proposito: es la gracia
+/// del nombre y lo que lo hace reconocible como sticker. Es el mismo en las
+/// cartas de la previa y en el reto del local (ver no_hay_huevos.dart).
+const nombreDelJuego = 'No hay 🥚';
+
+/// Los juegos disponibles. [noHayHuevos] es el principal; el resto son
 /// complementos para rellenar una previa.
 enum TipoJuego {
-  noHayHuevos('No hay huevos', 'Cumple el reto o bebe.'),
+  noHayHuevos(nombreDelJuego, 'Cumple el reto o bebe.'),
   yoNunca('Yo nunca', 'Quien lo haya hecho, bebe.'),
   masProbable('¿Quién es más probable?', 'Señalad a la vez. Vota el grupo.'),
   verdadOReto('Verdad o reto', 'Confiesa o cúmplelo.');
@@ -15,6 +20,10 @@ enum TipoJuego {
   const TipoJuego(this.titulo, this.descripcion);
   final String titulo;
   final String descripcion;
+
+  /// El titulo para el lector de pantalla: el emoji se leeria "huevo" en
+  /// singular y sin gracia.
+  String get tituloLeido => titulo.replaceAll('🥚', 'huevos');
 }
 
 /// Intensidad del contenido. El grupo la elige al empezar y solo se mezclan

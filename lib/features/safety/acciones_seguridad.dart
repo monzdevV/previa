@@ -20,7 +20,7 @@ Future<bool> _confirmar(
   final r = await showDialog<bool>(
     context: context,
     builder: (contexto) => AlertDialog(
-      backgroundColor: ColoresPrevia.superficieAlta,
+      backgroundColor: context.colores.superficieAlta,
       title: Text(titulo),
       content: Text(detalle),
       actions: [
@@ -31,8 +31,9 @@ Future<bool> _confirmar(
         FilledButton(
           onPressed: () => Navigator.of(contexto).pop(true),
           style: FilledButton.styleFrom(
-            backgroundColor: ColoresPrevia.error,
-            minimumSize: const Size(0, 44),
+            backgroundColor: context.colores.error,
+            foregroundColor: Theme.of(context).colorScheme.onError,
+            minimumSize: const Size(0, 48),
           ),
           child: Text(accion),
         ),
@@ -45,7 +46,7 @@ Future<bool> _confirmar(
 Future<String?> _elegirMotivo(BuildContext context) {
   return showModalBottomSheet<String>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
@@ -163,7 +164,7 @@ Future<void> mostrarHojaPersona(
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: ColoresPrevia.fondo,
+    backgroundColor: context.colores.fondo,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(
         top: Radius.circular(EspaciadoPrevia.radioGrande),
@@ -188,9 +189,9 @@ Future<void> mostrarHojaPersona(
             },
           ),
           ListTile(
-            leading: const Icon(Icons.block, color: ColoresPrevia.error),
-            title: const Text('Bloquear',
-                style: TextStyle(color: ColoresPrevia.error)),
+            leading: Icon(Icons.block, color: context.colores.error),
+            title: Text('Bloquear',
+                style: TextStyle(color: context.colores.error)),
             onTap: () {
               Navigator.of(contexto).pop();
               flujoBloquear(context, ref, perfilId: perfilId, nombre: nombre);

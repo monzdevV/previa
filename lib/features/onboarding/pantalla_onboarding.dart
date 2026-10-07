@@ -252,7 +252,7 @@ class _PaginaTarjeta extends StatelessWidget {
                 Text(
                   tarjeta.etiqueta,
                   style: textos.labelLarge?.copyWith(
-                    color: ColoresPrevia.acento,
+                    color: context.colores.acento,
                     letterSpacing: 1.5,
                     fontSize: 13,
                   ),
@@ -266,7 +266,7 @@ class _PaginaTarjeta extends StatelessWidget {
                 Text(
                   tarjeta.texto,
                   style: textos.bodyLarge?.copyWith(
-                    color: ColoresPrevia.textoSuave,
+                    color: context.colores.textoSuave,
                   ),
                 ),
                 if (tarjeta.tipo == TipoIlustracion.seguridad) ...[
@@ -309,8 +309,8 @@ class _IndicadorPagina extends StatelessWidget {
               width: i == actual ? 28 : 8,
               decoration: BoxDecoration(
                 color: i == actual
-                    ? ColoresPrevia.primarioSuave
-                    : ColoresPrevia.bordeCampo,
+                    ? context.colores.primarioTexto
+                    : context.colores.borde,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

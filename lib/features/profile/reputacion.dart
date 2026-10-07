@@ -92,8 +92,8 @@ class EstrellasMedia extends StatelessWidget {
                         : Icons.star_outline_rounded),
               size: tamano,
               color: media >= i - 0.5
-                  ? ColoresPrevia.aviso
-                  : ColoresPrevia.textoTenue,
+                  ? context.colores.aviso
+                  : context.colores.textoTenue,
             ),
         ],
       ),
@@ -103,7 +103,9 @@ class EstrellasMedia extends StatelessWidget {
 
 /// Numero que sube hasta su valor al aparecer.
 ///
-/// Con "reducir movimiento" se muestra directamente el valor final.
+/// Corto (menos de 300 ms) y con la curva de la casa: es un remate, no algo
+/// que haya que esperar. Con "reducir movimiento" se muestra directamente el
+/// valor final. Los decimales van con coma, como se escriben en España.
 class ContadorAnimado extends StatelessWidget {
   const ContadorAnimado({
     super.key,
@@ -116,16 +118,184 @@ class ContadorAnimado extends StatelessWidget {
   final int decimales;
   final TextStyle? estilo;
 
+  static String formatear(double v, int decimales) =>
+      v.toStringAsFixed(decimales).replaceAll('.', ',');
+
   @override
   Widget build(BuildContext context) {
-    final sinMovimiento = MediaQuery.disableAnimationsOf(context);
+    final sinMovimiento = MovimientoPrevia.reducido(context);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: sinMovimiento ? valor : 0, end: valor),
       duration: sinMovimiento
           ? Duration.zero
-          : const Duration(milliseconds: 700),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, _) => Text(v.toStringAsFixed(decimales), style: estilo),
+          : const Duration(milliseconds: 280),
+      curve: MovimientoPrevia.curva,
+      builder: (_, v, _) => Text(
+        formatear(v, decimales),
+        style: (estilo ?? const TextStyle()).copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tu reputacion, en grande y con sus insignias.
+///
+/// Va justo debajo de la cara: antes de quedar con alguien se mira quien es
+/// y despues que tal le han valorado. La nota manda (letra gorda, cifras
+/// tabulares) y las insignias explican de donde sale. Sin valoraciones no se
+/// pinta un cero, que seria mentira: se dice que aun no hay.
+class TarjetaReputacion extends StatelessWidget {
+  const TarjetaReputacion({super.key, required this.perfil});
+
+  final Perfil perfil;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    final tiene = perfil.tieneReputacion;
+    final n = perfil.numeroValoraciones;
+    final media = perfil.reputacion ?? 0;
+    final valoraciones = n == 1 ? 'valoración' : 'valoraciones';
+    final detalle = TextStyle(
+      color: c.textoSuave,
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final resumen = tiene
+        ? 'Reputación ${ContadorAnimado.formatear(media, 1)} sobre 5, '
+              '$n $valoraciones'
+        : 'Aún sin valoraciones';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+        EspaciadoPrevia.m,
+        EspaciadoPrevia.m,
+        EspaciadoPrevia.m,
+        EspaciadoPrevia.s,
+      ),
+      decoration: BoxDecoration(
+        color: c.superficie,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            container: true,
+            label: resumen,
+            child: ExcludeSemantics(
+              child: tiene
+                  ? Row(
+                      children: [
+                        ContadorAnimado(
+                          valor: media,
+                          decimales: 1,
+                          estilo: TextStyle(
+                            fontFamily: LetraPrevia.titular,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 48,
+                            height: 1,
+                            letterSpacing: -1.4,
+                            color: c.texto,
+                          ),
+                        ),
+                        const SizedBox(width: EspaciadoPrevia.m),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              EstrellasMedia(media: media, tamano: 20),
+                              const SizedBox(height: 4),
+                              Text('$n $valoraciones', style: detalle),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  // Sin nota no hay cifra que enseñar: titular corto y la
+                  // frase entera debajo, sin cortarla.
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Titular('Aún sin valorar', tamano: 24),
+                            ),
+                            EstrellasMedia(media: 0, tamano: 18),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Te valorarán al terminar tus previas.',
+                          style: detalle,
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: EspaciadoPrevia.xs),
+          Wrap(
+            spacing: EspaciadoPrevia.s,
+            children: [
+              for (final i in insigniasDe(perfil)) _PastillaInsignia(i),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Una insignia en pastilla. Se ve pequeña, pero el toque ocupa 48 de alto;
+/// al tocarla cuenta como se consigue.
+class _PastillaInsignia extends StatelessWidget {
+  const _PastillaInsignia(this.insignia);
+
+  final InsigniaReputacion insignia;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    return Tooltip(
+      message: insignia.descripcion,
+      triggerMode: TooltipTriggerMode.tap,
+      excludeFromSemantics: true,
+      child: Semantics(
+        label: '${insignia.texto}. ${insignia.descripcion}',
+        excludeSemantics: true,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Align(
+            widthFactor: 1,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(10, 6, 12, 6),
+              decoration: BoxDecoration(
+                color: c.superficieAlta,
+                borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(insignia.icono, size: 16, color: c.primarioTexto),
+                  const SizedBox(width: 6),
+                  Text(
+                    insignia.texto,
+                    style: TextStyle(
+                      color: c.texto,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

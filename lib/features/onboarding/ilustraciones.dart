@@ -65,7 +65,7 @@ class _IlustracionState extends State<Ilustracion>
             child: AnimatedBuilder(
               animation: _bucle,
               builder: (_, _) => CustomPaint(
-                painter: _Pintor(widget.tipo, _bucle.value),
+                painter: _Pintor(widget.tipo, _bucle.value, context.colores),
               ),
             ),
           ),
@@ -76,12 +76,16 @@ class _IlustracionState extends State<Ilustracion>
 }
 
 class _Pintor extends CustomPainter {
-  _Pintor(this.tipo, this.t);
+  _Pintor(this.tipo, this.t, this.colores);
 
   final TipoIlustracion tipo;
   final double t;
 
-  static const _degradado = [ColoresPrevia.primario, ColoresPrevia.acento];
+  /// Se pasa por constructor porque un painter no tiene `context` y la paleta
+  /// cambia con el modo claro/oscuro.
+  final ColoresPrevia colores;
+
+  List<Color> get _degradado => [colores.primario, colores.acento];
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -95,8 +99,8 @@ class _Pintor extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            ColoresPrevia.primario.withValues(alpha: 0.28),
-            ColoresPrevia.primario.withValues(alpha: 0),
+            colores.primario.withValues(alpha: 0.28),
+            colores.primario.withValues(alpha: 0),
           ],
         ).createShader(Rect.fromCircle(center: centro, radius: r)),
     );
@@ -115,7 +119,7 @@ class _Pintor extends CustomPainter {
 
   void _chincheta(Canvas canvas, Offset c, double tam) {
     final pintura = Paint()
-      ..shader = const LinearGradient(colors: _degradado).createShader(
+      ..shader = LinearGradient(colors: _degradado).createShader(
         Rect.fromCircle(center: c, radius: tam * 1.5),
       );
     final camino = Path()
@@ -129,7 +133,7 @@ class _Pintor extends CustomPainter {
     canvas.drawCircle(
       Offset(c.dx, c.dy - tam * 0.05),
       tam * 0.38,
-      Paint()..color = ColoresPrevia.fondo,
+      Paint()..color = colores.fondo,
     );
   }
 
@@ -165,21 +169,21 @@ class _Pintor extends CustomPainter {
 
   void _previa(Canvas canvas, Offset c, double r) {
     _ondas(canvas, c.translate(0, r * 0.25), r * 0.95,
-        ColoresPrevia.primarioSuave);
+        colores.primarioSuave);
     // Tres personas alrededor de la chincheta: "gente cerca de ti".
     final flota = math.sin(t * 2 * math.pi) * 3;
     _persona(canvas, c.translate(-r * 0.62, r * 0.35 + flota), r * 0.17,
-        ColoresPrevia.superficieAlta);
+        colores.superficieAlta);
     _persona(canvas, c.translate(r * 0.62, r * 0.35 - flota), r * 0.17,
-        ColoresPrevia.superficieAlta);
-    _persona(canvas, c.translate(0, r * 0.72), r * 0.2, ColoresPrevia.borde);
+        colores.superficieAlta);
+    _persona(canvas, c.translate(0, r * 0.72), r * 0.2, colores.borde);
     _chincheta(canvas, c.translate(0, -r * 0.12 + flota), r * 0.36);
   }
 
   void _privacidad(Canvas canvas, Offset c, double r) {
     // Cuadricula tipo mapa.
     final calle = Paint()
-      ..color = ColoresPrevia.borde
+      ..color = colores.borde
       ..strokeWidth = 2;
     for (var i = -2; i <= 2; i++) {
       canvas.drawLine(Offset(c.dx + i * r * 0.4, c.dy - r * 0.9),
@@ -192,7 +196,7 @@ class _Pintor extends CustomPainter {
     canvas.drawCircle(
       c,
       rad,
-      Paint()..color = ColoresPrevia.primario.withValues(alpha: 0.25),
+      Paint()..color = colores.primario.withValues(alpha: 0.25),
     );
     const trozos = 28;
     for (var i = 0; i < trozos; i += 2) {
@@ -205,11 +209,11 @@ class _Pintor extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
           ..strokeCap = StrokeCap.round
-          ..color = ColoresPrevia.primarioSuave,
+          ..color = colores.primarioSuave,
       );
     }
     // Punto tenue en el centro: sugiere que el lugar exacto no se revela.
-    canvas.drawCircle(c, 5, Paint()..color = ColoresPrevia.textoTenue);
+    canvas.drawCircle(c, 5, Paint()..color = colores.textoTenue);
   }
 
   void _seguridad(Canvas canvas, Offset c, double r) {
@@ -228,7 +232,7 @@ class _Pintor extends CustomPainter {
     canvas.drawPath(
       escudo,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _degradado,
@@ -240,13 +244,13 @@ class _Pintor extends CustomPainter {
         style: TextStyle(
           fontSize: s * 0.7,
           fontWeight: FontWeight.w800,
-          color: ColoresPrevia.fondo,
+          color: colores.fondo,
         ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
     texto.paint(canvas, c - Offset(texto.width / 2, texto.height / 2));
-    _ondas(canvas, c, r * 1.05, ColoresPrevia.acento);
+    _ondas(canvas, c, r * 1.05, colores.acento);
   }
 
   void _permiso(Canvas canvas, Offset c, double r) {
@@ -255,19 +259,19 @@ class _Pintor extends CustomPainter {
       Rect.fromCenter(center: c, width: r * 1.7, height: r * 1.3),
       Radius.circular(r * 0.2),
     );
-    canvas.drawRRect(tarjeta, Paint()..color = ColoresPrevia.superficieAlta);
+    canvas.drawRRect(tarjeta, Paint()..color = colores.superficieAlta);
     canvas.drawRRect(
       tarjeta,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..color = ColoresPrevia.bordeCampo,
+        ..color = colores.borde,
     );
     final centroMapa = c.translate(0, -r * 0.12);
     canvas.drawCircle(
       centroMapa,
       r * (0.4 + 0.03 * math.sin(t * 2 * math.pi)),
-      Paint()..color = ColoresPrevia.acento.withValues(alpha: 0.22),
+      Paint()..color = colores.acento.withValues(alpha: 0.22),
     );
     _chincheta(canvas, centroMapa.translate(0, -r * 0.05), r * 0.2);
     // Dos botones esquematicos, como en un dialogo de permisos.
@@ -276,17 +280,17 @@ class _Pintor extends CustomPainter {
         Rect.fromLTWH(c.dx - r * 0.75, c.dy + r * 0.38, r * 0.66, r * 0.16),
         Radius.circular(r * 0.08),
       ),
-      Paint()..color = ColoresPrevia.borde,
+      Paint()..color = colores.borde,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(c.dx + r * 0.09, c.dy + r * 0.38, r * 0.66, r * 0.16),
         Radius.circular(r * 0.08),
       ),
-      Paint()..color = ColoresPrevia.primario,
+      Paint()..color = colores.primario,
     );
   }
 
   @override
-  bool shouldRepaint(_Pintor viejo) => viejo.t != t || viejo.tipo != tipo;
+  bool shouldRepaint(_Pintor viejo) => viejo.t != t || viejo.tipo != tipo || viejo.colores != colores;
 }

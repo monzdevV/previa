@@ -63,7 +63,7 @@ flutter run
 | | |
 |---|---|
 | Esquema de base de datos | ✅ 8 tablas, 24 políticas de seguridad |
-| Pruebas de seguridad | ✅ 16 de 16 |
+| Pruebas de seguridad | ✅ 34 de 34 (16 del nucleo + 18 de la capa social) |
 | Autenticación y perfil | ✅ registro, login, verificación +18 |
 | Análisis estático | ✅ sin incidencias |
 | Pruebas unitarias | ✅ 5 de 5 |

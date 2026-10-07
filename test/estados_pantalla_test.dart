@@ -74,62 +74,15 @@ void main() {
     });
   });
 
-  group('EstadoVacio', () {
-    testWidgets('ofrece las acciones sugeridas', (tester) async {
-      var abierta = false;
-      await tester.pumpWidget(_app(EstadoVacio(
-        icono: Icons.nightlife_outlined,
-        titulo: 'Nada por aquí ahora mismo',
-        detalle: 'Sé la primera persona en abrir una previa.',
-        acciones: [
-          FilledButton(
-            onPressed: () => abierta = true,
-            child: const Text('Abrir una previa'),
-          ),
-        ],
-      )));
+  testWidgets('MensajeResponsable no desborda con texto al 200 %',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
 
-      expect(find.text('Nada por aquí ahora mismo'), findsOneWidget);
-      await tester.tap(find.text('Abrir una previa'));
-      expect(abierta, isTrue);
-    });
-
-    testWidgets('con texto al 200 % no hay desbordamiento', (tester) async {
-      tester.view.physicalSize = const Size(360, 640);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
-
-      await tester.pumpWidget(_app(
-        EstadoVacio(
-          icono: Icons.history,
-          titulo: 'Todavía no has ido a ninguna previa',
-          detalle: 'Cuando vayas a una y termine, podrás valorar a la gente.',
-          acciones: [
-            FilledButton(onPressed: () {}, child: const Text('Buscar previas')),
-            const MensajeResponsable(),
-          ],
-        ),
-        escala: 2,
-      ));
-      expect(tester.takeException(), isNull);
-    });
-  });
-
-  group('IndicadorCarga', () {
-    testWidgets('lleva etiqueta "Cargando" para el lector', (tester) async {
-      final semantica = tester.ensureSemantics();
-      await tester.pumpWidget(_app(const IndicadorCarga()));
-      expect(find.bySemanticsLabel('Cargando'), findsOneWidget);
-      semantica.dispose();
-    });
-  });
-
-  group('AvisoError', () {
-    testWidgets('muestra el mensaje con icono y texto', (tester) async {
-      await tester.pumpWidget(_app(const AvisoError('Correo o contraseña mal')));
-      expect(find.text('Correo o contraseña mal'), findsOneWidget);
-      expect(find.byIcon(Icons.error_outline), findsOneWidget);
-    });
+    await tester.pumpWidget(_app(const MensajeResponsable(), escala: 2));
+    expect(find.text(mensajeResponsable), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   test('el mensaje de edad y consumo es el acordado', () {

@@ -1,5 +1,6 @@
-import 'dart:typed_data';
+import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -18,6 +19,18 @@ final estadoSesionProvider = StreamProvider<AuthState>(
   (ref) => ref.watch(clienteSupabaseProvider).auth.onAuthStateChange,
 );
 
+/// Identificador de quien tiene la sesion abierta, o null si no hay nadie.
+///
+/// Los repositorios dependen de esto y no de [estadoSesionProvider] porque
+/// la sesion emite tambien al renovar el token cada hora, y eso reconstruiria
+/// todas las pantallas sin motivo. Un `Provider` solo avisa si el valor
+/// cambia, asi que aqui solo salta al entrar, salir o cambiar de cuenta, que
+/// es justo cuando hay que tirar los datos de la cuenta anterior.
+final uidActualProvider = Provider<String?>((ref) {
+  ref.watch(estadoSesionProvider);
+  return ref.watch(clienteSupabaseProvider).auth.currentUser?.id;
+});
+
 /// Perfil de la persona que ha iniciado sesion, o null si no hay sesion.
 final miPerfilProvider = FutureProvider<Perfil?>((ref) async {
   ref.watch(estadoSesionProvider);
@@ -31,6 +44,49 @@ class ErrorPrevia implements Exception {
   @override
   String toString() => mensaje;
 }
+
+/// Codigo de Postgres para "esa columna no existe".
+const _columnaInexistente = '42703';
+
+// Sin `is_moderator`: el rol de la app no tiene permiso de lectura sobre esa
+// columna, y pedirla tumbaba la lectura entera del perfil. Si eres moderador
+// se pregunta aparte con `soyModerador`.
+const _columnasDePerfil =
+    'id, username, display_name, avatar_url, bio, onboarded, '
+    'reputation, ratings_count, instagram, city, is_demo';
+
+/// Lee un perfil pidiendo tambien sus redes.
+///
+/// Las columnas `tiktok` y `x_handle` llegan con la migracion `vas_y_redes`.
+/// Si el servidor aun no la tiene, se repite la lectura sin ellas en lugar de
+/// dejar la app sin perfil: es la unica diferencia entre un servidor y otro,
+/// y vive solo aqui.
+Future<Map<String, dynamic>?> leerPerfil(
+  SupabaseClient cliente,
+  String id,
+) async {
+  try {
+    return await cliente
+        .from('profiles')
+        .select('$_columnasDePerfil, tiktok, x_handle')
+        .eq('id', id)
+        .maybeSingle();
+  } on PostgrestException catch (e) {
+    debugPrint('leerPerfil: ${e.code} ${e.message}');
+    if (!_esColumnaInexistente(e)) rethrow;
+    return cliente
+        .from('profiles')
+        .select(_columnasDePerfil)
+        .eq('id', id)
+        .maybeSingle();
+  }
+}
+
+/// PostgREST no siempre traslada el codigo de Postgres tal cual, asi que se
+/// mira tambien el mensaje.
+bool _esColumnaInexistente(PostgrestException e) =>
+    e.code == _columnaInexistente ||
+    (e.message.contains('column') && e.message.contains('does not exist'));
 
 class RepositorioAuth {
   RepositorioAuth(this._cliente);
@@ -46,10 +102,18 @@ class RepositorioAuth {
   /// `handle_new_user` crea el perfil con ella, y otro disparador rechaza
   /// a los menores de 18. La comprobacion de aqui solo sirve para dar un
   /// mensaje inmediato; la que manda es la del servidor.
-  Future<void> registrar({
+  ///
+  /// Devuelve si ya hay sesion. Con la confirmacion por correo activada en
+  /// Supabase no la hay hasta pulsar el enlace, y la pantalla tiene que
+  /// decirlo en vez de mandar a un inicio que rebota al login sin explicar.
+  ///
+  /// El nombre de usuario ya no se pide: es la pregunta que mas gente
+  /// abandona en un registro ("ese ya esta cogido") y no hace falta para
+  /// entrar. Se inventa a partir del nombre y se cambia luego en el perfil.
+  /// Si choca con uno existente se reintenta con otro sufijo sin molestar.
+  Future<bool> registrar({
     required String correo,
     required String contrasena,
-    required String username,
     required String nombre,
     required DateTime fechaNacimiento,
   }) async {
@@ -57,25 +121,109 @@ class RepositorioAuth {
       throw const ErrorPrevia('Previa es solo para mayores de 18 años.');
     }
 
+    const intentos = 3;
+    for (var intento = 1; ; intento++) {
+      try {
+        final respuesta = await _cliente.auth.signUp(
+          email: correo.trim(),
+          password: contrasena,
+          data: {
+            'username': usernameDesde(nombre),
+            'display_name': nombre.trim(),
+            'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
+          },
+        );
+        return respuesta.session != null;
+      } on AuthException catch (e) {
+        if (intento < intentos && _esUsernameCogido(e.message)) continue;
+        throw ErrorPrevia(_traducir(e.message));
+      }
+    }
+  }
+
+  /// Vuelve a mandar el enlace de confirmacion del registro.
+  Future<void> reenviarConfirmacion(String correo) async {
     try {
-      await _cliente.auth.signUp(
-        email: correo.trim(),
-        password: contrasena,
-        data: {
-          'username': username.trim().toLowerCase(),
-          'display_name': nombre.trim(),
-          'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
-        },
-      );
+      await _cliente.auth.resend(type: OtpType.signup, email: correo.trim());
     } on AuthException catch (e) {
       throw ErrorPrevia(_traducir(e.message));
     }
   }
 
-  Future<void> entrar({required String correo, required String contrasena}) async {
+  /// Un nombre de usuario valido para la restriccion de `profiles`
+  /// (`^[a-z0-9_]+$`, de 3 a 20) sacado del nombre que ha escrito la persona.
+  ///
+  /// El sufijo de cuatro cifras hace que el choque sea raro sin tener que
+  /// preguntar antes al servidor, que obligaria a abrir la tabla de perfiles
+  /// a quien aun no tiene cuenta.
+  @visibleForTesting
+  static String usernameDesde(String nombre, {Random? azar}) {
+    const tildes = {
+      'á': 'a',
+      'à': 'a',
+      'ä': 'a',
+      'â': 'a',
+      'é': 'e',
+      'è': 'e',
+      'ë': 'e',
+      'ê': 'e',
+      'í': 'i',
+      'ì': 'i',
+      'ï': 'i',
+      'î': 'i',
+      'ó': 'o',
+      'ò': 'o',
+      'ö': 'o',
+      'ô': 'o',
+      'ú': 'u',
+      'ù': 'u',
+      'ü': 'u',
+      'û': 'u',
+      'ñ': 'n',
+      'ç': 'c',
+    };
+    final limpio = nombre
+        .trim()
+        .toLowerCase()
+        .split('')
+        .map((letra) => tildes[letra] ?? letra)
+        .join()
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    // Sin nada aprovechable (un nombre solo de emojis, por ejemplo) se usa
+    // la marca en lugar de dejar un usuario que sea solo numeros.
+    final base = limpio.isEmpty ? 'previa' : limpio;
+    final sufijo = 1000 + (azar ?? Random()).nextInt(9000);
+    final corte = base.length > 16 ? base.substring(0, 16) : base;
+    return '$corte$sufijo';
+  }
+
+  /// Supabase no deja pasar el texto de los disparadores: un choque en el
+  /// `unique` de `username` llega como "Database error saving new user".
+  /// El de menores de edad llega igual, pero la edad ya se ha comprobado
+  /// antes de llamar, asi que aqui solo puede ser el usuario repetido.
+  static bool _esUsernameCogido(String mensaje) {
+    final m = mensaje.toLowerCase();
+    return m.contains('duplicate') ||
+        m.contains('username') ||
+        m.contains('database error saving new user');
+  }
+
+  Future<void> entrar({
+    required String correo,
+    required String contrasena,
+  }) async {
     try {
+      // La pantalla permite escribir el usuario de la cuenta de demostración.
+      // Supabase autentica por email, por eso se resuelve solo este alias local.
+      final identificador = correo.trim().toLowerCase();
+      final email = identificador == 'admin'
+          ? 'admin@previa.app'
+          : identificador;
       await _cliente.auth.signInWithPassword(
-        email: correo.trim(),
+        email: email,
         password: contrasena,
       );
     } on AuthException catch (e) {
@@ -96,25 +244,26 @@ class RepositorioAuth {
   Future<Perfil?> miPerfil() async {
     final id = usuarioActual?.id;
     if (id == null) return null;
-
-    final fila = await _cliente
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, onboarded, '
-            'reputation, ratings_count')
-        .eq('id', id)
-        .maybeSingle();
-
+    final fila = await leerPerfil(_cliente, id);
     return fila == null ? null : Perfil.desdeJson(fila);
   }
 
   Future<Perfil> perfilDe(String id) async {
-    final fila = await _cliente
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, bio, onboarded, '
-            'reputation, ratings_count')
-        .eq('id', id)
-        .single();
+    final fila = await leerPerfil(_cliente, id);
+    if (fila == null) throw const ErrorPrevia('Ese perfil no existe.');
     return Perfil.desdeJson(fila);
+  }
+
+  /// Si quien tiene la sesion modera. Va por funcion porque la columna no
+  /// se puede leer; sin la funcion (migracion `vas_y_redes` sin aplicar) se
+  /// responde que no, que es lo seguro: la moderacion ya la protege el
+  /// servidor, esto solo decide si se enseña la entrada.
+  Future<bool> soyModerador() async {
+    try {
+      return await _cliente.rpc('soy_moderador') as bool? ?? false;
+    } on PostgrestException {
+      return false;
+    }
   }
 
   /// La edad la calcula el servidor a partir de una fecha que el cliente
@@ -134,8 +283,13 @@ class RepositorioAuth {
     String? nombre,
     String? bio,
     String? avatarUrl,
-    bool quitarAvatar = false,
     DateTime? fechaNacimiento,
+    String? instagram,
+    String? tiktok,
+    String? xUsuario,
+    String? ciudad,
+    String? username,
+    bool quitarAvatar = false,
   }) async {
     final id = usuarioActual?.id;
     if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
@@ -147,97 +301,102 @@ class RepositorioAuth {
     final cambios = <String, dynamic>{
       if (nombre != null) 'display_name': nombre.trim(),
       if (bio != null) 'bio': bio.trim(),
-      // null en un campo opcional significa "no tocar"; para borrar la foto
-      // hace falta pedirlo de forma explicita.
       if (quitarAvatar) 'avatar_url': null else 'avatar_url': ?avatarUrl,
       if (fechaNacimiento != null)
         'birth_date': fechaNacimiento.toIso8601String().substring(0, 10),
+      // Se guarda vacio como nulo: una cadena en blanco en la base de datos
+      // obliga a comprobar dos cosas cada vez que se lee.
+      if (instagram != null)
+        'instagram': instagram.trim().replaceAll('@', '').isEmpty
+            ? null
+            : instagram.trim().replaceAll('@', ''),
+      if (ciudad != null) 'city': ciudad.trim().isEmpty ? null : ciudad.trim(),
+      if (username != null && username.trim().isNotEmpty)
+        'username': username.trim().toLowerCase(),
     };
-    if (cambios.isEmpty) return;
+    // TikTok y X llegan con la migracion `vas_y_redes`: van aparte para que,
+    // si aun no esta aplicada, el resto del perfil se guarde igual.
+    final redes = <String, dynamic>{
+      if (tiktok != null) 'tiktok': _usuarioDeRed(tiktok),
+      if (xUsuario != null) 'x_handle': _usuarioDeRed(xUsuario),
+    };
+    if (cambios.isEmpty && redes.isEmpty) return;
 
-    await _cliente.from('profiles').update(cambios).eq('id', id);
-  }
-
-  /// Sube la foto de perfil y devuelve su URL publica.
-  ///
-  /// Siempre se escribe en la misma ruta (`<uid>/foto`): asi cada persona
-  /// ocupa un unico fichero y no quedan fotos antiguas huerfanas. Como la
-  /// URL no cambia, se le anade la hora para saltarse la cache del
-  /// dispositivo y de la CDN cuando se sube una foto nueva.
-  Future<String> subirAvatar(Uint8List bytes, String tipoMime) async {
-    final id = usuarioActual?.id;
-    if (id == null) throw const ErrorPrevia('No hay sesión iniciada.');
-
-    final ruta = '$id/foto';
     try {
-      await _cliente.storage.from('avatars').uploadBinary(
-            ruta,
-            bytes,
-            fileOptions: FileOptions(contentType: tipoMime, upsert: true),
-          );
-    } on StorageException catch (e) {
-      throw ErrorPrevia(e.statusCode == '413'
-          ? 'La foto pesa demasiado. Elige una de menos de 2 MB.'
-          : 'No se ha podido subir la foto. Inténtalo de nuevo.');
+      try {
+        await _cliente
+            .from('profiles')
+            .update({...cambios, ...redes})
+            .eq('id', id);
+      } on PostgrestException catch (e) {
+        if (redes.isEmpty || !_esColumnaInexistente(e)) rethrow;
+        if (cambios.isNotEmpty) {
+          await _cliente.from('profiles').update(cambios).eq('id', id);
+        }
+      }
+    } on PostgrestException catch (e) {
+      // 23505: unique_violation. El unico unico que se toca aqui es el
+      // nombre de usuario.
+      if (e.code == '23505' || e.message.contains('duplicate')) {
+        throw const ErrorPrevia('Ese nombre de usuario ya está cogido.');
+      }
+      if (e.message.contains('fecha de nacimiento')) {
+        throw const ErrorPrevia(
+          'Tu fecha de nacimiento ya está fijada y no se puede cambiar.',
+        );
+      }
+      rethrow;
     }
-
-    final url = _cliente.storage.from('avatars').getPublicUrl(ruta);
-    return '$url?v=${DateTime.now().millisecondsSinceEpoch}';
   }
 
-  Future<void> borrarAvatar() async {
+  /// Vacio se guarda como nulo, y sin la arroba que la gente suele poner.
+  static String? _usuarioDeRed(String valor) {
+    final limpio = valor.trim().replaceAll('@', '');
+    return limpio.isEmpty ? null : limpio;
+  }
+
+  /// Borra las fotos de perfil que haya en tu carpeta del almacen.
+  ///
+  /// Es lo que hace que "Quitar foto" quite la foto de verdad y no solo el
+  /// enlace. Si falla (red, permisos) no se lanza: el perfil ya no la
+  /// enseña y la siguiente subida la sobrescribe.
+  Future<void> borrarMisAvatares() async {
     final id = usuarioActual?.id;
     if (id == null) return;
-    await _cliente.storage.from('avatars').remove(['$id/foto']);
+    try {
+      final ficheros = await _cliente.storage.from('avatares').list(path: id);
+      final rutas = [
+        for (final f in ficheros)
+          if (f.name.startsWith('avatar')) '$id/${f.name}',
+      ];
+      if (rutas.isNotEmpty) {
+        await _cliente.storage.from('avatares').remove(rutas);
+      }
+    } catch (e) {
+      debugPrint('borrarMisAvatares: $e');
+    }
   }
 
   /// RGPD, articulos 15 y 20: derecho de acceso y portabilidad.
   Future<Map<String, dynamic>> exportarMisDatos() async {
-    try {
-      final datos = await _cliente.rpc('exportar_mis_datos');
-      return Map<String, dynamic>.from(datos as Map);
-    } on PostgrestException {
-      throw const ErrorPrevia(
-          'No se han podido preparar tus datos. Inténtalo de nuevo.');
-    } catch (_) {
-      throw const ErrorPrevia(
-          'No se han podido exportar tus datos. Comprueba tu conexión.');
-    }
+    final datos = await _cliente.rpc('exportar_mis_datos');
+    return Map<String, dynamic>.from(datos as Map);
   }
 
   /// RGPD, articulo 17: derecho de supresion.
   Future<void> eliminarMiCuenta() async {
-    // La foto hay que quitarla desde la API de Storage: si la borrara la base
-    // de datos por SQL, desapareceria la fila pero el fichero quedaria huerfano.
-    // Si falla no bloqueamos el borrado de la cuenta: prima el derecho de
-    // supresion.
-    try {
-      await borrarAvatar();
-    } catch (_) {}
-
-    try {
-      await _cliente.rpc('eliminar_mi_cuenta');
-    } on PostgrestException {
-      throw const ErrorPrevia(
-          'No se ha podido eliminar la cuenta. Inténtalo de nuevo; si sigue '
-          'fallando, escríbenos.');
-    } catch (_) {
-      throw const ErrorPrevia(
-          'No se ha podido eliminar la cuenta. Comprueba tu conexión.');
-    }
-
-    // La cuenta ya no existe: el token del servidor es invalido y un signOut
-    // global devolveria 401. Se cierra solo la sesion local, y si aun asi
-    // falla no se le cuenta al usuario: el borrado ya se hizo.
-    try {
-      await _cliente.auth.signOut(scope: SignOutScope.local);
-    } catch (_) {}
+    await _cliente.rpc('eliminar_mi_cuenta');
+    await salir();
   }
 
   static bool esMayorDeEdad(DateTime fechaNacimiento) {
     final hoy = DateTime.now();
     var edad = hoy.year - fechaNacimiento.year;
-    final cumpleEsteAno = DateTime(hoy.year, fechaNacimiento.month, fechaNacimiento.day);
+    final cumpleEsteAno = DateTime(
+      hoy.year,
+      fechaNacimiento.month,
+      fechaNacimiento.day,
+    );
     if (hoy.isBefore(cumpleEsteAno)) edad--;
     return edad >= 18;
   }
@@ -247,7 +406,12 @@ class RepositorioAuth {
     if (m.contains('invalid login')) {
       return 'Correo o contraseña incorrectos.';
     }
-    if (m.contains('already registered') || m.contains('already been registered')) {
+    if (m.contains('email not confirmed')) {
+      return 'Aún no has confirmado tu correo. Busca el enlace en tu bandeja '
+          '(mira también en spam).';
+    }
+    if (m.contains('already registered') ||
+        m.contains('already been registered')) {
       return 'Ese correo ya tiene cuenta. Prueba a iniciar sesión.';
     }
     if (m.contains('password') && m.contains('least')) {

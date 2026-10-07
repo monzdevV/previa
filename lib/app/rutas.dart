@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,14 +9,23 @@ import '../data/repositories/repositorio_auth.dart';
 import '../features/auth/pantalla_bienvenida.dart';
 import '../features/auth/pantalla_entrar.dart';
 import '../features/auth/pantalla_registro.dart';
+import '../features/feed/pantalla_publicar.dart';
+import '../features/juegos/pantalla_hub_juegos.dart';
 import '../features/map/pantalla_inicio.dart';
 import '../features/onboarding/pantalla_onboarding.dart';
 import '../features/onboarding/servicio_onboarding.dart';
+import '../features/social/pantalla_buscar.dart';
+import '../features/social/pantalla_locales.dart';
+import '../features/social/pantalla_mis_noches.dart';
+import '../features/social/pantalla_avisos.dart';
+import '../features/social/pantalla_mensajes.dart';
+import '../features/social/pantalla_perfil_publico.dart';
 import '../features/chat/pantalla_chat.dart';
-import '../features/juegos/pantalla_hub_juegos.dart';
 import '../features/party/pantalla_crear_previa.dart';
 import '../features/party/pantalla_detalle_previa.dart';
 import '../features/profile/pantalla_ajustes.dart';
+import '../features/profile/pantalla_moderacion.dart';
+import '../features/profile/pantallas_legales.dart';
 import '../features/profile/pantalla_editar_perfil.dart';
 import '../features/ratings/pantalla_por_valorar.dart';
 import '../features/ratings/pantalla_valorar.dart';
@@ -27,7 +36,6 @@ abstract final class Rutas {
   static const bienvenida = '/bienvenida';
   static const entrar = '/entrar';
   static const registro = '/registro';
-  static const onboarding = '/bienvenida-tarjetas';
   static const inicio = '/';
   static const crearPrevia = '/crear';
   static const previa = '/previa';
@@ -35,7 +43,19 @@ abstract final class Rutas {
   static const editarPerfil = '/editar-perfil';
   static const porValorar = '/por-valorar';
   static const ajustes = '/ajustes';
+  static const buscar = '/buscar';
+  static const publicar = '/publicar';
+  static const locales = '/locales';
+  static const misNoches = '/mis-noches';
+  static const privacidad = '/privacidad';
+  static const condiciones = '/condiciones';
+  static const moderacion = '/moderacion';
+  static const perfilDe = '/perfil';
+  static const mensajes = '/mensajes';
+  static const avisos = '/avisos';
+  static const conversacion = '/conversacion';
   static const juegos = '/juegos';
+  static const onboarding = '/bienvenida-tarjetas';
 }
 
 /// Puente entre el flujo de sesion de Supabase y go_router, que espera un
@@ -75,8 +95,8 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
           ruta == Rutas.registro;
 
       if (!haySesion && !enZonaPublica) return Rutas.bienvenida;
-      // Primera vez en este dispositivo: onboarding antes del inicio, tanto
-      // con sesion recien creada como con una sesion ya guardada.
+      // Primera vez en este dispositivo: las tarjetas de bienvenida van antes
+      // del inicio, tanto con una sesion recien creada como con una guardada.
       if (haySesion &&
           (enZonaPublica || ruta == Rutas.inicio) &&
           !await ServicioOnboarding.yaVisto()) {
@@ -86,130 +106,110 @@ final enrutadorProvider = Provider<GoRouter>((ref) {
       return null;
     },
 
+    // Las rutas usan `builder` y no `pageBuilder` a proposito: la pagina
+    // que crea go_router es una MaterialPage, que toma la transicion del
+    // tema (`TransicionPrevia`, en lib/app/movimiento.dart). Asi la misma
+    // animacion vale para estas rutas y para los `Navigator.push` sueltos
+    // (bloqueados, juegos), y respeta "reducir movimiento" en todas.
     routes: [
       GoRoute(
         path: Rutas.bienvenida,
-        pageBuilder: (_, e) => _pagina(e, const PantallaBienvenida()),
+        builder: (_, _) => const PantallaBienvenida(),
       ),
-      GoRoute(
-        path: Rutas.entrar,
-        pageBuilder: (_, e) => _pagina(e, const PantallaEntrar()),
-      ),
+      GoRoute(path: Rutas.entrar, builder: (_, _) => const PantallaEntrar()),
       GoRoute(
         path: Rutas.registro,
-        pageBuilder: (_, e) => _pagina(e, const PantallaRegistro()),
+        builder: (_, _) => const PantallaRegistro(),
       ),
-      GoRoute(
-        path: Rutas.onboarding,
-        pageBuilder: (_, e) => _pagina(e, const PantallaOnboarding()),
-      ),
-      GoRoute(
-        path: Rutas.inicio,
-        pageBuilder: (_, e) => _pagina(e, const PantallaInicio()),
-      ),
+      GoRoute(path: Rutas.inicio, builder: (_, _) => const PantallaInicio()),
       GoRoute(
         path: Rutas.crearPrevia,
-        pageBuilder: (_, e) => _pagina(e, const PantallaCrearPrevia()),
+        builder: (_, _) => const PantallaCrearPrevia(),
       ),
       GoRoute(
         path: Rutas.misSolicitudes,
-        pageBuilder: (_, e) => _pagina(e, const PantallaMisSolicitudes()),
+        builder: (_, _) => const PantallaMisSolicitudes(),
       ),
       GoRoute(
         path: Rutas.editarPerfil,
-        pageBuilder: (_, e) => _pagina(e, const PantallaEditarPerfil()),
+        builder: (_, _) => const PantallaEditarPerfil(),
       ),
       GoRoute(
         path: '${Rutas.previa}/:id',
-        pageBuilder: (_, estado) => _pagina(
-          estado,
-          PantallaDetallePrevia(previaId: estado.pathParameters['id']!),
-        ),
+        builder: (_, estado) =>
+            PantallaDetallePrevia(previaId: estado.pathParameters['id']!),
         routes: [
           GoRoute(
             path: 'solicitudes',
-            pageBuilder: (_, estado) => _pagina(
-              estado,
-              PantallaSolicitudes(previaId: estado.pathParameters['id']!),
-            ),
+            builder: (_, estado) =>
+                PantallaSolicitudes(previaId: estado.pathParameters['id']!),
           ),
           GoRoute(
             path: 'chat',
-            pageBuilder: (_, estado) => _pagina(
-              estado,
-              PantallaChat(
-                previaId: estado.pathParameters['id']!,
-                titulo: estado.uri.queryParameters['titulo'],
-              ),
+            builder: (_, estado) => PantallaChat(
+              previaId: estado.pathParameters['id']!,
+              titulo: estado.uri.queryParameters['titulo'],
             ),
           ),
           GoRoute(
             path: 'valorar',
-            pageBuilder: (_, estado) => _pagina(
-              estado,
-              PantallaValorar(
-                previaId: estado.pathParameters['id']!,
-                titulo: estado.uri.queryParameters['titulo'],
-              ),
+            builder: (_, estado) => PantallaValorar(
+              previaId: estado.pathParameters['id']!,
+              titulo: estado.uri.queryParameters['titulo'],
             ),
           ),
         ],
       ),
       GoRoute(
         path: Rutas.porValorar,
-        pageBuilder: (_, e) => _pagina(e, const PantallaPorValorar()),
+        builder: (_, _) => const PantallaPorValorar(),
+      ),
+      GoRoute(path: Rutas.ajustes, builder: (_, _) => const PantallaAjustes()),
+      GoRoute(
+        path: Rutas.moderacion,
+        builder: (_, _) => const PantallaModeracion(),
       ),
       GoRoute(
-        path: Rutas.ajustes,
-        pageBuilder: (_, e) => _pagina(e, const PantallaAjustes()),
+        path: Rutas.privacidad,
+        builder: (_, _) => const PantallaPrivacidad(),
+      ),
+      GoRoute(
+        path: Rutas.condiciones,
+        builder: (_, _) => const PantallaCondiciones(),
+      ),
+      GoRoute(path: Rutas.buscar, builder: (_, _) => const PantallaBuscar()),
+      GoRoute(
+        path: Rutas.mensajes,
+        builder: (_, _) => const PantallaMensajes(),
+      ),
+      GoRoute(path: Rutas.avisos, builder: (_, _) => const PantallaAvisos()),
+      GoRoute(
+        path: '${Rutas.conversacion}/:id',
+        builder: (_, estado) =>
+            PantallaConversacion(otroId: estado.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '${Rutas.perfilDe}/:id',
+        builder: (_, estado) =>
+            PantallaPerfilPublico(perfilId: estado.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: Rutas.onboarding,
+        builder: (_, _) => const PantallaOnboarding(),
       ),
       GoRoute(
         path: Rutas.juegos,
-        pageBuilder: (_, e) =>
-            _pagina(e, const PantallaHubJuegos(conAtras: true)),
+        builder: (_, _) => const PantallaHubJuegos(conAtras: true),
+      ),
+      GoRoute(path: Rutas.locales, builder: (_, _) => const PantallaLocales()),
+      GoRoute(
+        path: Rutas.misNoches,
+        builder: (_, _) => const PantallaMisNoches(),
+      ),
+      GoRoute(
+        path: Rutas.publicar,
+        builder: (_, _) => const PantallaPublicar(),
       ),
     ],
   );
 });
-
-/// Pagina con transicion comun a toda la app: fundido con un ligero
-/// desplazamiento vertical (estilo "fade-through").
-///
-/// Se centraliza aqui para que todas las pantallas se muevan igual; antes
-/// cada una usaba la transicion por defecto de la plataforma. Con "reducir
-/// movimiento" del sistema la pantalla aparece sin animar.
-CustomTransitionPage<void> _pagina(GoRouterState estado, Widget hijo) {
-  return CustomTransitionPage<void>(
-    key: estado.pageKey,
-    child: hijo,
-    transitionDuration: const Duration(milliseconds: 280),
-    reverseTransitionDuration: const Duration(milliseconds: 220),
-    transitionsBuilder: (context, animacion, secundaria, child) {
-      if (MediaQuery.disableAnimationsOf(context)) return child;
-
-      final curva = CurvedAnimation(
-        parent: animacion,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic,
-      );
-      // La pantalla que queda debajo se atenua un poco para dar profundidad.
-      final atenuada = Tween<double>(
-        begin: 1,
-        end: 0.85,
-      ).animate(CurvedAnimation(parent: secundaria, curve: Curves.easeOut));
-      return FadeTransition(
-        opacity: atenuada,
-        child: FadeTransition(
-          opacity: curva,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.04),
-              end: Offset.zero,
-            ).animate(curva),
-            child: child,
-          ),
-        ),
-      );
-    },
-  );
-}

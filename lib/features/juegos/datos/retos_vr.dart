@@ -48,7 +48,8 @@ const List<Reto> retosVr = [
     id: 'vr-suave-007',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.suave,
-    texto: 'Verdad: ¿has mentido alguna vez para librarte de una cita? ¿Cómo fue?',
+    texto:
+        'Verdad: ¿has mentido alguna vez para librarte de una cita? ¿Cómo fue?',
     sorbos: 2,
   ),
   Reto(
@@ -235,7 +236,8 @@ const List<Reto> retosVr = [
     id: 'vr-atrevido-013',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.atrevido,
-    texto: 'Reto: haz un baile sensual de cinco segundos, vestido y con dignidad',
+    texto:
+        'Reto: haz un baile sensual de cinco segundos, vestido y con dignidad',
     sorbos: 3,
   ),
   Reto(
@@ -256,7 +258,8 @@ const List<Reto> retosVr = [
     id: 'vr-atrevido-016',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.atrevido,
-    texto: 'Reto: haz un ranking de los ligues que has tenido sin decir nombres',
+    texto:
+        'Reto: haz un ranking de los ligues que has tenido sin decir nombres',
     sorbos: 2,
   ),
   Reto(
@@ -371,7 +374,8 @@ const List<Reto> retosVr = [
     id: 'vr-sinfiltro-010',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.sinFiltro,
-    texto: 'Verdad: ¿qué es lo más loco que has buscado en el móvil de tu pareja?',
+    texto:
+        'Verdad: ¿qué es lo más loco que has buscado en el móvil de tu pareja?',
     sorbos: 2,
   ),
   Reto(
@@ -414,14 +418,16 @@ const List<Reto> retosVr = [
     id: 'vr-sinfiltro-016',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.sinFiltro,
-    texto: 'Reto: haz una confesión que haga reír a todos sobre tu vida amorosa',
+    texto:
+        'Reto: haz una confesión que haga reír a todos sobre tu vida amorosa',
     sorbos: 2,
   ),
   Reto(
     id: 'vr-sinfiltro-017',
     juego: TipoJuego.verdadOReto,
     nivel: NivelReto.sinFiltro,
-    texto: 'Reto: cuéntanos un cotilleo del que te arrepientas, sin dar nombres',
+    texto:
+        'Reto: cuéntanos un cotilleo del que te arrepientas, sin dar nombres',
     sorbos: 3,
   ),
   Reto(

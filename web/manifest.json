@@ -3,10 +3,9 @@
     "short_name": "Previa",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0B0B12",
-    "theme_color": "#7C4DFF",
-    "description": "Red social de proximidad para encontrar y organizar previas antes de salir de fiesta. Solo para mayores de 18 años.",
-    "lang": "es",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "description": "Previas con plazas libres cerca de ti, a qué local va la gente esta noche y la noche contada en fotos.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
@@ -32,5 +31,6 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "lang": "es-ES"
 }

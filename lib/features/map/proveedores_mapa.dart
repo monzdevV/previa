@@ -1,3 +1,4 @@
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -5,6 +6,15 @@ import '../../core/entorno.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
 import '../../data/services/servicio_ubicacion.dart';
+
+/// De donde salen las teselas del mapa base.
+///
+/// Se inyecta en lugar de construirse en la pantalla para que las pruebas
+/// puedan retratar el mapa sin red: sin esto, cada golden del mapa depende
+/// de que responda un servidor de teselas.
+final proveedorTeselasProvider = Provider<TileProvider>(
+  (ref) => NetworkTileProvider(),
+);
 
 /// Donde esta mirando el usuario. Empieza en su posicion real y cambia si
 /// arrastra el mapa, porque buscar en otra zona es un caso de uso legitimo:
@@ -27,16 +37,17 @@ final posicionDispositivoProvider = FutureProvider<LatLng>((ref) async {
 
 /// Criterios de filtrado que el usuario maneja desde la hoja de filtros.
 class Filtros {
-  /// Límites del control de distancia de la hoja de filtros.
-  static const int radioMinimoMetros = 500;
-  static const int radioMaximoMetros = 20000;
-
   const Filtros({
     this.radioMetros = Entorno.radioBusquedaPorDefecto,
     this.horas = Entorno.horasPorDefecto,
     this.plazasMinimas = 1,
     this.ambiente = const {},
   });
+
+  /// Limites de la distancia que se puede pedir (los del deslizador de la
+  /// hoja de filtros).
+  static const radioMinimoMetros = 500;
+  static const radioMaximoMetros = 20000;
 
   final int radioMetros;
   final int horas;
@@ -58,6 +69,8 @@ class Filtros {
   );
 
   /// Hay algo filtrado aparte de la distancia (horas, plazas o ambiente).
+  /// Es la causa mas probable de no ver nada, y se ofrece quitarlo sin tocar
+  /// la distancia que el usuario eligio.
   bool get hayFiltrosAparteDelRadio =>
       horas != Entorno.horasPorDefecto ||
       plazasMinimas != 1 ||
@@ -76,7 +89,7 @@ class Filtros {
       ambiente.isEmpty || previa.ambiente.any(ambiente.contains);
 
   String get radioLegible => radioMetros >= 1000
-      ? '${(radioMetros / 1000).toStringAsFixed(radioMetros % 1000 == 0 ? 0 : 1)} km'
+      ? '${(radioMetros / 1000).toStringAsFixed(radioMetros % 1000 == 0 ? 0 : 1).replaceAll('.', ',')} km'
       : '$radioMetros m';
 }
 
@@ -90,8 +103,7 @@ class FiltrosNotifier extends Notifier<Filtros> {
       state = state.copiarCon(plazasMinimas: plazas);
   void restablecer() => state = const Filtros();
 
-  /// Quita horas, plazas y ambiente pero respeta la distancia que el usuario
-  /// ya haya ampliado: devolverla a 5 km deshace justo lo que buscaba.
+  /// Quita horas, plazas y ambiente pero respeta la distancia elegida.
   void quitarFiltrosSalvoRadio() =>
       state = Filtros(radioMetros: state.radioMetros);
 
@@ -112,8 +124,19 @@ final filtrosProvider = NotifierProvider<FiltrosNotifier, Filtros>(
 /// Riverpod rehace la consulta solo.
 final previasCercaProvider = FutureProvider<List<Previa>>((ref) async {
   final elegido = ref.watch(centroBusquedaProvider);
-  final LatLng centro =
-      elegido ?? await ref.watch(posicionDispositivoProvider.future);
+  // Sin ubicacion se busca en la ciudad por defecto en vez de fallar: el
+  // aviso de ubicacion ya explica el problema, y un mapa vacio con un error
+  // encima no deja ni mirar que hay.
+  LatLng centro;
+  if (elegido != null) {
+    centro = elegido;
+  } else {
+    try {
+      centro = await ref.watch(posicionDispositivoProvider.future);
+    } catch (_) {
+      centro = ServicioUbicacion.centroPorDefecto;
+    }
+  }
   final filtros = ref.watch(filtrosProvider);
 
   final encontradas = await ref

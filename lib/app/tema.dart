@@ -1,58 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 
-/// Identidad visual de Previa.
+import 'colores.dart';
+import 'movimiento.dart';
+
+export '../data/models/cara.dart';
+export 'avatar.dart';
+export 'colores.dart';
+export 'componentes.dart';
+export 'cristal.dart';
+export 'movimiento.dart';
+
+/// Sistema visual de Previa.
 ///
-/// La aplicacion se usa de noche, casi siempre en la calle o en un piso con
-/// poca luz, y a menudo con la pantalla al minimo de brillo. Por eso el tema
-/// base es oscuro y no hay variante clara: no es una omision, es una decision.
-/// La paleta es calida (marrones y coral, como una sala a media luz) y no
-/// azulada: el azul frio cansa la vista de madrugada y se ve "de oficina".
-abstract final class ColoresPrevia {
-  /// Fondo principal. Casi negro con un punto de marron calido para que no
-  /// resulte frio ni plano.
-  static const fondo = Color(0xFF14110F);
-
-  /// Superficies elevadas: tarjetas, hojas inferiores, dialogos. Cada nivel
-  /// es un escalon mas claro: en oscuro la elevacion se ve por el tono.
-  static const superficie = Color(0xFF1E1A17);
-  static const superficieAlta = Color(0xFF29241F);
-
-  /// Color de marca y UNICO color de accion. Coral profundo: todo lo pulsable
-  /// importante lo lleva y nada mas, asi se sabe donde tocar. Es lo bastante
-  /// oscuro para que el texto blanco encima cumpla AA (>=4,5:1).
-  static const primario = Color(0xFFC93C55);
-
-  /// Version clara del primario para texto e iconos sobre fondo oscuro
-  /// (enlaces, botones de texto), donde el primario puro no daria contraste.
-  static const primarioSuave = Color(0xFFFF8A9B);
-
-  /// Acento para lo que esta vivo: plazas libres, mensajes sin leer, la previa
-  /// seleccionada. Es de estado, no de accion.
-  static const acento = Color(0xFF4FD8A0);
-
-  /// Avisos y errores.
-  static const aviso = Color(0xFFFFB347);
-  static const error = Color(0xFFFF6B7A);
-
-  /// Texto.
-  static const texto = Color(0xFFF6F0EA);
-  static const textoSuave = Color(0xFFBDB2A9);
-
-  /// Texto secundario (pistas, notas al pie). Debe dar >=4,5:1 sobre fondo,
-  /// superficie y superficieAlta (lo fija test/contraste_tema_test.dart) y
-  /// seguir leyendose como "apagado" frente a textoSuave.
-  static const textoTenue = Color(0xFF9A8F86);
-
-  /// Bordes DECORATIVOS (tarjetas, separadores): casi invisibles a proposito.
-  /// No usar en controles interactivos, para eso esta [bordeCampo].
-  static const borde = Color(0xFF332D27);
-
-  /// Borde de componentes de interfaz (campos de texto, chips, botones con
-  /// contorno). WCAG 1.4.11 exige >=3:1 frente al fondo contiguo.
-  static const bordeCampo = Color(0xFF7A7269);
-}
-
+/// El liston son las apps que la gente ya usa cada noche: Instagram, TikTok,
+/// BeReal y Discord. De ahi salen las tres reglas que mandan sobre el resto:
+/// la imagen ocupa el marco, las caras estan siempre presentes, y todo se
+/// maneja con el pulgar.
+///
+/// La voz sale del mundo de las discotecas (la referencia fijada es Nyxell):
+/// titulares enormes en mayusculas con una letra gorda y redondeada, bloques
+/// de color plano, cintas de texto que corren y botones en pastilla.
 abstract final class EspaciadoPrevia {
   static const xs = 4.0;
   static const s = 8.0;
@@ -61,243 +28,361 @@ abstract final class EspaciadoPrevia {
   static const xl = 32.0;
   static const xxl = 48.0;
 
+  /// Esquinas generosas: es lo que separa una tarjeta de una app social de
+  /// una celda de hoja de calculo.
   static const radio = 16.0;
   static const radioGrande = 24.0;
+
+  /// Para pastillas y avatares, que son redondos.
+  static const pastilla = 999.0;
 }
 
-/// Duraciones y curvas de movimiento, centralizadas para que toda la app se
-/// sienta igual: cortas (nunca hay que esperar) y con salida suave, que a poca
-/// luz resulta menos brusca que un corte seco.
-abstract final class MovimientoPrevia {
-  static const rapido = Duration(milliseconds: 180);
-  static const normal = Duration(milliseconds: 280);
-  static const curva = Curves.easeOutCubic;
+/// La letra de los titulares. Gorda y redondeada, va siempre en mayusculas
+/// (ver `Titular`) y nunca en parrafos: el cuerpo es la del sistema.
+abstract final class LetraPrevia {
+  static const titular = 'Rubik';
 }
 
-/// Sombras por nivel. En un tema oscuro la sombra casi no se nota, asi que la
-/// elevacion se expresa sobre todo con el tono de la superficie; la sombra
-/// solo ayuda a separar del mapa los elementos que flotan encima.
-abstract final class ElevacionPrevia {
-  static const flotante = [
-    BoxShadow(color: Color(0x66000000), blurRadius: 16, offset: Offset(0, 4)),
-  ];
-  static const hoja = [
-    BoxShadow(color: Color(0x80000000), blurRadius: 24, offset: Offset(0, -4)),
-  ];
+/// Bloques de color plano para secciones y fichas, como carteles pegados.
+///
+/// Son los mismos en claro y en oscuro: un bloque es un objeto de color, no
+/// un fondo que tenga que adaptarse. Encima siempre va [tintaSobreBloque],
+/// que en todos ellos pasa el contraste de texto.
+abstract final class BloquesPrevia {
+  static const amarillo = Color(0xFFFFE500);
+  static const menta = Color(0xFF3DD6B5);
+  static const azul = Color(0xFF4B93FF);
+  static const rojo = Color(0xFFFF5A4E);
+  static const lila = Color(0xFFB794FF);
+
+  static const todos = [amarillo, menta, azul, rojo, lila];
+
+  static const tintaSobreBloque = Color(0xFF120F12);
+
+  /// El color de un elemento de una lista, rotando para que dos seguidos
+  /// nunca se repitan.
+  static Color deIndice(int i) => todos[i % todos.length];
 }
 
-ThemeData construirTemaPrevia() {
-  final esquema = ColorScheme.fromSeed(
-    seedColor: ColoresPrevia.primario,
-    brightness: Brightness.dark,
-  ).copyWith(
-    surface: ColoresPrevia.fondo,
-    primary: ColoresPrevia.primario,
-    onPrimary: Colors.white,
-    secondary: ColoresPrevia.acento,
-    error: ColoresPrevia.error,
-    onSurface: ColoresPrevia.texto,
-    surfaceContainer: ColoresPrevia.superficie,
-    surfaceContainerHigh: ColoresPrevia.superficieAlta,
+/// El tema, construido desde una paleta.
+///
+/// [caraDelSistema] solo lo usan las pruebas: la app deja que la plataforma
+/// elija su propia cara, pero el entorno de goldens no carga ninguna y hay
+/// que nombrarla para que el retrato sea fiel.
+ThemeData construirTemaPrevia({
+  Brightness brillo = Brightness.dark,
+  String? caraDelSistema,
+}) {
+  final c = brillo == Brightness.dark
+      ? ColoresPrevia.oscuro
+      : ColoresPrevia.claro;
+
+  final esquema = ColorScheme(
+    brightness: brillo,
+    primary: c.primario,
+    onPrimary: c.sobrePrimario,
+    secondary: c.secundario,
+    onSecondary: c.sobrePrimario,
+    tertiary: c.disponible,
+    surface: c.superficie,
+    onSurface: c.texto,
+    error: c.error,
+    // Blanco sobre el rojo claro del modo oscuro se queda en 3,3:1; negro
+    // pasa de 6. En claro el rojo es oscuro y el blanco si llega.
+    onError: brillo == Brightness.dark ? c.sobrePrimario : Colors.white,
+    outline: c.bordeCampo,
+    outlineVariant: c.borde,
   );
 
-  const fuente = 'Roboto';
+  // Anillo de foco para quien navega con teclado, mando o acceso por
+  // interruptor. La capa de foco de Material es un velo casi invisible sobre
+  // el amarillo; esto es un contorno de verdad. Solo aparece con foco.
+  WidgetStateProperty<BorderSide?> anilloFoco(BorderSide normal) =>
+      WidgetStateProperty.resolveWith(
+        (estados) => estados.contains(WidgetState.focused)
+            ? BorderSide(color: c.texto, width: 3)
+            : normal,
+      );
 
-  RoundedRectangleBorder forma(double radio) =>
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(radio));
+  final contorno = OutlineInputBorder(
+    borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+    borderSide: BorderSide(color: c.borde),
+  );
+
+  TextStyle titular(double tamano, {FontWeight peso = FontWeight.w900}) =>
+      TextStyle(
+        fontFamily: LetraPrevia.titular,
+        fontSize: tamano,
+        height: 1.0,
+        fontWeight: peso,
+        letterSpacing: -0.02 * tamano,
+        color: c.texto,
+      );
 
   return ThemeData(
     useMaterial3: true,
-    brightness: Brightness.dark,
+    brightness: brillo,
     colorScheme: esquema,
-    scaffoldBackgroundColor: ColoresPrevia.fondo,
-    fontFamily: fuente,
-    // Explícitos para que un cambio futuro del tema no encoja los objetivos
-    // táctiles sin darnos cuenta.
+    scaffoldBackgroundColor: c.fondo,
+    splashFactory: InkSparkle.splashFactory,
+    fontFamily: caraDelSistema,
+    extensions: [c],
+
+    // Explicitos para que un cambio futuro no encoja los objetivos tactiles
+    // sin que nadie se de cuenta: 48 dp es el minimo para el pulgar.
     materialTapTargetSize: MaterialTapTargetSize.padded,
     visualDensity: VisualDensity.standard,
+    focusColor: c.primario.withValues(alpha: 0.24),
 
-    // Sin esto Android usa el zoom por defecto del sistema, que a veces es
-    // brusco. Desvanecer con un ligero avance es mas calmado y no marea.
+    // Una transicion para toda la app (ver TransicionPrevia).
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.android: TransicionPrevia(),
+        TargetPlatform.iOS: TransicionPrevia(),
+        TargetPlatform.macOS: TransicionPrevia(),
+        TargetPlatform.windows: TransicionPrevia(),
+        TargetPlatform.linux: TransicionPrevia(),
+        TargetPlatform.fuchsia: TransicionPrevia(),
       },
     ),
 
-    appBarTheme: const AppBarTheme(
-      backgroundColor: Colors.transparent,
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: c.primarioTexto,
+      selectionColor: c.primario.withValues(alpha: 0.4),
+      selectionHandleColor: c.primarioTexto,
+    ),
+
+    appBarTheme: AppBarTheme(
+      backgroundColor: c.fondo,
+      foregroundColor: c.texto,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
-      scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(
-        color: ColoresPrevia.texto,
-        fontSize: 20,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-      ),
+      titleTextStyle: titular(24),
     ),
 
-    // Escala tipografica: pocos tamaños, con saltos claros. Titulo > cuerpo
-    // > apoyo, y el peso (no solo el tamaño) marca la jerarquia.
-    textTheme: const TextTheme(
-      displaySmall: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -1,
-        height: 1.1,
-        color: ColoresPrevia.texto,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 26,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        height: 1.2,
-        color: ColoresPrevia.texto,
-      ),
-      titleLarge: TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.2,
-        height: 1.25,
-        color: ColoresPrevia.texto,
-      ),
+    // Titulares en Rubik; lo que se lee de corrido, en la del sistema.
+    textTheme: TextTheme(
+      displayLarge: titular(64),
+      displayMedium: titular(48),
+      displaySmall: titular(36),
+      headlineMedium: titular(28),
+      titleLarge: titular(19, peso: FontWeight.w800).copyWith(height: 1.15),
       titleMedium: TextStyle(
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w600,
-        height: 1.3,
-        color: ColoresPrevia.texto,
+        color: c.texto,
       ),
-      bodyLarge: TextStyle(fontSize: 16, color: ColoresPrevia.texto, height: 1.4),
-      bodyMedium: TextStyle(fontSize: 14, color: ColoresPrevia.textoSuave, height: 1.4),
-      bodySmall: TextStyle(fontSize: 12, color: ColoresPrevia.textoTenue, height: 1.35),
-      labelLarge: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+      bodyLarge: TextStyle(
+        fontSize: 15,
+        height: 1.45,
+        fontWeight: FontWeight.w400,
+        color: c.texto,
+      ),
+      bodyMedium: TextStyle(
+        fontSize: 14,
+        height: 1.45,
+        fontWeight: FontWeight.w400,
+        color: c.textoSuave,
+      ),
+      labelLarge: const TextStyle(
+        fontFamily: LetraPrevia.titular,
+        fontSize: 15,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.2,
+      ),
+      labelMedium: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: c.textoSuave,
+      ),
     ),
 
-    // Tarjeta limpia: sin borde marcado, solo un escalon de tono sobre el
-    // fondo; el borde decorativo queda como hilo casi invisible.
     cardTheme: CardThemeData(
-      color: ColoresPrevia.superficie,
-      elevation: 0,
-      shadowColor: Colors.black,
+      color: c.superficie,
       surfaceTintColor: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        side: const BorderSide(color: ColoresPrevia.borde),
       ),
       margin: EdgeInsets.zero,
     ),
 
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: ColoresPrevia.primario,
-        foregroundColor: Colors.white,
-        minimumSize: const Size.fromHeight(54),
-        elevation: 0,
-        shape: forma(EspaciadoPrevia.radio),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-      ),
+        backgroundColor: c.primario,
+        foregroundColor: c.sobrePrimario,
+        disabledBackgroundColor: c.superficieActiva,
+        disabledForegroundColor: c.textoTenue,
+        minimumSize: const Size.fromHeight(52),
+        padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.l),
+        // Sin textStyle propio: heredan labelLarge del textTheme, que ya
+        // lleva la letra de titulares. Fijarlo aqui la perdia.
+        shape: const StadiumBorder(),
+      ).copyWith(side: anilloFoco(BorderSide.none)),
     ),
-
     outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: ColoresPrevia.texto,
-        minimumSize: const Size.fromHeight(54),
-        side: const BorderSide(color: ColoresPrevia.bordeCampo),
-        shape: forma(EspaciadoPrevia.radio),
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-      ),
+      style:
+          OutlinedButton.styleFrom(
+            foregroundColor: c.texto,
+            minimumSize: const Size.fromHeight(52),
+            // Contorno grueso en el color del texto: la pastilla vacia es la
+            // pareja del boton relleno, no un boton de segunda.
+            side: BorderSide(color: c.texto, width: 2),
+            shape: const StadiumBorder(),
+          ).copyWith(
+            side: WidgetStateProperty.resolveWith(
+              (estados) => estados.contains(WidgetState.disabled)
+                  ? BorderSide(color: c.bordeCampo, width: 2)
+                  : estados.contains(WidgetState.focused)
+                  ? BorderSide(color: c.primarioTexto, width: 3)
+                  : BorderSide(color: c.texto, width: 2),
+            ),
+          ),
     ),
-
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: ColoresPrevia.primarioSuave,
-        // Objetivo táctil mínimo de 48 dp (WCAG 2.5.5 / guía de Material).
+        foregroundColor: c.primarioTexto,
+        // Objetivo tactil minimo de 48 dp (WCAG 2.5.5 / Material).
         minimumSize: const Size(64, 48),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-      ),
+        shape: const StadiumBorder(),
+      ).copyWith(side: anilloFoco(BorderSide.none)),
     ),
-
     iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-    ),
-
-    // El FAB pequeño de Material mide 40 dp; se sube a 48 para el botón
-    // "Mi posición" sin cambiar su aspecto de botón secundario.
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      smallSizeConstraints: const BoxConstraints.tightFor(width: 48, height: 48),
-      elevation: 2,
-      highlightElevation: 4,
-      extendedTextStyle:
-          const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-      shape: forma(EspaciadoPrevia.radio),
+      style: IconButton.styleFrom(minimumSize: const Size(48, 48))
+          .copyWith(side: anilloFoco(BorderSide.none)),
     ),
 
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: ColoresPrevia.superficie,
+      fillColor: c.superficie,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: EspaciadoPrevia.m,
         vertical: EspaciadoPrevia.m,
       ),
-      hintStyle: const TextStyle(color: ColoresPrevia.textoTenue),
-      labelStyle: const TextStyle(color: ColoresPrevia.textoSuave),
-      // Borde con contraste >=3:1 (WCAG 1.4.11): sin él el campo vacío no
-      // se distingue del fondo para quien tiene baja visión.
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.bordeCampo),
+      hintStyle: TextStyle(color: c.textoTenue),
+      labelStyle: TextStyle(color: c.textoSuave),
+      prefixIconColor: c.textoTenue,
+      suffixIconColor: c.textoTenue,
+      border: contorno,
+      // Fino pero con 3:1 frente al fondo (WCAG 1.4.11): sin el, un campo
+      // vacio era un rectangulo casi negro sobre negro.
+      enabledBorder: contorno.copyWith(
+        borderSide: BorderSide(color: c.bordeCampo),
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.bordeCampo),
+      disabledBorder: contorno.copyWith(borderSide: BorderSide(color: c.borde)),
+      focusedBorder: contorno.copyWith(
+        borderSide: BorderSide(color: c.primarioTexto, width: 2),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.primarioSuave, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-        borderSide: const BorderSide(color: ColoresPrevia.error, width: 2),
+      errorBorder: contorno.copyWith(borderSide: BorderSide(color: c.error)),
+      focusedErrorBorder: contorno.copyWith(
+        borderSide: BorderSide(color: c.error, width: 2),
       ),
     ),
 
-    // Chip seleccionado = color de accion relleno, blanco encima (AA). Asi
-    // "activo" se distingue sin depender solo del borde.
     chipTheme: ChipThemeData(
-      backgroundColor: ColoresPrevia.superficieAlta,
-      selectedColor: ColoresPrevia.primario,
-      checkmarkColor: Colors.white,
-      labelStyle: const TextStyle(
-        color: ColoresPrevia.texto,
+      backgroundColor: c.superficieAlta,
+      selectedColor: c.primario,
+      secondaryLabelStyle: TextStyle(
+        fontFamily: LetraPrevia.titular,
+        color: c.sobrePrimario,
         fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
-      secondaryLabelStyle: const TextStyle(
-        color: Colors.white,
+      labelStyle: TextStyle(
+        fontFamily: LetraPrevia.titular,
+        color: c.texto,
         fontSize: 13,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
-      side: const BorderSide(color: ColoresPrevia.bordeCampo),
-      shape: forma(EspaciadoPrevia.radioGrande),
-      showCheckmark: true,
+      checkmarkColor: c.sobrePrimario,
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+      ),
     ),
 
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: ColoresPrevia.superficie,
+    // Interruptores, casillas y radios: amarillo con negro encima, como el
+    // resto de lo elegido. Apagados, con el borde de control (3:1).
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (e) =>
+            e.contains(WidgetState.selected) ? c.sobrePrimario : c.textoSuave,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : c.superficieAlta,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : c.bordeCampo,
+      ),
+    ),
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (e) => e.contains(WidgetState.selected) ? c.primario : null,
+      ),
+      checkColor: WidgetStatePropertyAll(c.sobrePrimario),
+      side: BorderSide(color: c.bordeCampo, width: 2),
+    ),
+    radioTheme: RadioThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (e) =>
+            e.contains(WidgetState.selected) ? c.primarioTexto : c.bordeCampo,
+      ),
+    ),
+    listTileTheme: ListTileThemeData(
+      iconColor: c.textoSuave,
+      textColor: c.texto,
+      minTileHeight: 56,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: c.primarioTexto,
+      linearTrackColor: c.superficieActiva,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: c.superficieAlta,
       surfaceTintColor: Colors.transparent,
-      showDragHandle: true,
-      dragHandleColor: ColoresPrevia.bordeCampo,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
+      ),
+      titleTextStyle: titular(22),
+      contentTextStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        fontSize: 15,
+        height: 1.45,
+        color: c.textoSuave,
+      ),
+    ),
+    tooltipTheme: TooltipThemeData(
+      decoration: BoxDecoration(
+        color: c.texto,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.s),
+      ),
+      textStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.fondo,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: c.fondo,
+      indicatorColor: Colors.transparent,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+      iconTheme: WidgetStateProperty.resolveWith(
+        (states) => IconThemeData(
+          size: 27,
+          color: states.contains(WidgetState.selected) ? c.texto : c.textoTenue,
+        ),
+      ),
+    ),
+
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: c.superficie,
+      dragHandleColor: c.superficieActiva,
+      dragHandleSize: const Size(36, 4),
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: c.superficie,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(EspaciadoPrevia.radioGrande),
@@ -305,25 +390,76 @@ ThemeData construirTemaPrevia() {
       ),
     ),
 
-    dialogTheme: DialogThemeData(
-      backgroundColor: ColoresPrevia.superficieAlta,
-      surfaceTintColor: Colors.transparent,
-      shape: forma(EspaciadoPrevia.radioGrande),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: c.primario,
+      foregroundColor: c.sobrePrimario,
+      elevation: 0,
+      // El FAB pequeño de Material mide 40 dp; se sube al minimo de 48.
+      smallSizeConstraints: const BoxConstraints.tightFor(
+        width: 48,
+        height: 48,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+      ),
     ),
 
-    progressIndicatorTheme: const ProgressIndicatorThemeData(
-      color: ColoresPrevia.primarioSuave,
-    ),
-
+    // Flotante, con borde y separada del filo: el aviso de Sonner que usan
+    // los otros proyectos del autor, no la franja pegada abajo de Material.
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: ColoresPrevia.superficieAlta,
-      contentTextStyle: const TextStyle(color: ColoresPrevia.texto, fontSize: 14),
-      actionTextColor: ColoresPrevia.primarioSuave,
+      backgroundColor: c.superficieAlta,
+      contentTextStyle: TextStyle(
+        fontFamily: caraDelSistema,
+        color: c.texto,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+      actionTextColor: c.primarioTexto,
       behavior: SnackBarBehavior.floating,
-      elevation: 4,
-      shape: forma(EspaciadoPrevia.radio),
+      elevation: 0,
+      insetPadding: const EdgeInsets.fromLTRB(
+        EspaciadoPrevia.m,
+        0,
+        EspaciadoPrevia.m,
+        EspaciadoPrevia.m,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+        side: BorderSide(color: c.borde),
+      ),
     ),
 
-    dividerTheme: const DividerThemeData(color: ColoresPrevia.borde, thickness: 1),
+    dividerTheme: DividerThemeData(color: c.borde, thickness: 1, space: 1),
   );
+}
+
+/// Estado de ocupacion de una previa.
+enum Ocupacion {
+  abierta,
+  llenandose,
+  completa;
+
+  static Ocupacion desde(int libres) {
+    if (libres <= 0) return Ocupacion.completa;
+    if (libres <= 2) return Ocupacion.llenandose;
+    return Ocupacion.abierta;
+  }
+
+  bool get viva => this != Ocupacion.completa;
+
+  Color color(ColoresPrevia c) => switch (this) {
+    Ocupacion.abierta => c.disponible,
+    Ocupacion.llenandose => c.aviso,
+    Ocupacion.completa => c.textoTenue,
+  };
+}
+
+extension HolguraDeLaBarra on BuildContext {
+  /// Relleno inferior para lo que se desplaza en una pestaña principal.
+  ///
+  /// La barra de pestañas flota encima del contenido (es de vidrio y deja
+  /// pasar el feed por debajo), asi que el final de cada lista tiene que
+  /// dejarle sitio o el ultimo elemento queda tapado.
+  double get holguraInferior =>
+      MediaQuery.paddingOf(this).bottom + EspaciadoPrevia.m;
 }

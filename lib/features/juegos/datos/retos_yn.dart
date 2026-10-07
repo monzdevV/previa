@@ -216,7 +216,8 @@ const List<Reto> retosYn = [
     id: 'yn-atrevido-007',
     juego: TipoJuego.yoNunca,
     nivel: NivelReto.atrevido,
-    texto: 'he tenido un rollo de una noche y al día siguiente fingí no conocerle',
+    texto:
+        'he tenido un rollo de una noche y al día siguiente fingí no conocerle',
     sorbos: 2,
   ),
   Reto(
@@ -286,7 +287,8 @@ const List<Reto> retosYn = [
     id: 'yn-atrevido-017',
     juego: TipoJuego.yoNunca,
     nivel: NivelReto.atrevido,
-    texto: 'he hecho una llamada o un mensaje de madrugada de los que se lamentan',
+    texto:
+        'he hecho una llamada o un mensaje de madrugada de los que se lamentan',
     sorbos: 3,
   ),
   Reto(
@@ -349,7 +351,8 @@ const List<Reto> retosYn = [
     id: 'yn-sinfiltro-001',
     juego: TipoJuego.yoNunca,
     nivel: NivelReto.sinFiltro,
-    texto: 'me he enrollado con alguien y al día siguiente no recordaba su nombre',
+    texto:
+        'me he enrollado con alguien y al día siguiente no recordaba su nombre',
     sorbos: 3,
   ),
   Reto(
@@ -475,14 +478,16 @@ const List<Reto> retosYn = [
     id: 'yn-sinfiltro-019',
     juego: TipoJuego.yoNunca,
     nivel: NivelReto.sinFiltro,
-    texto: 'he subido una story de fiesta de la que me arrepentí al día siguiente',
+    texto:
+        'he subido una story de fiesta de la que me arrepentí al día siguiente',
     sorbos: 3,
   ),
   Reto(
     id: 'yn-sinfiltro-020',
     juego: TipoJuego.yoNunca,
     nivel: NivelReto.sinFiltro,
-    texto: 'me he dado cuenta de que me gustaba alguien justo cuando tenía pareja',
+    texto:
+        'me he dado cuenta de que me gustaba alguien justo cuando tenía pareja',
     sorbos: 2,
   ),
   Reto(

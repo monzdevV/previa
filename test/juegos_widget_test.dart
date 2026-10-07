@@ -38,10 +38,10 @@ void main() {
   testWidgets('flujo completo: hub, preparacion, partida y final', (t) async {
     pantallaGrande(t);
     await t.pumpWidget(app(const PantallaHubJuegos()));
-    expect(find.text('No hay huevos'), findsOneWidget);
-    expect(find.text('Yo nunca'), findsOneWidget);
+    expect(find.text(nombreDelJuego.toUpperCase()), findsOneWidget);
+    expect(find.text('YO NUNCA'), findsOneWidget);
 
-    await t.tap(find.text('No hay huevos'));
+    await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
 
     // Con menos de 2 jugadores no se puede empezar.
@@ -106,7 +106,7 @@ void main() {
       'juegos_jugadores': ['Luz', 'Mar'],
     });
     await t.pumpWidget(app(const PantallaHubJuegos()));
-    await t.tap(find.text('No hay huevos'));
+    await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
     expect(find.widgetWithText(InputChip, 'Luz'), findsOneWidget);
 
@@ -115,7 +115,7 @@ void main() {
     await t.pumpWidget(app(
       const PantallaHubJuegos(jugadoresIniciales: ['Zoe', 'Noa', 'Zoe']),
     ));
-    await t.tap(find.text('No hay huevos'));
+    await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
     expect(find.widgetWithText(InputChip, 'Zoe'), findsOneWidget);
     expect(find.widgetWithText(InputChip, 'Luz'), findsNothing);
@@ -175,9 +175,15 @@ void main() {
       const PantallaHubJuegos(jugadoresIniciales: ['Alexandra', 'Bartolome']),
       escala: 2.0,
     ));
-    await t.ensureVisible(find.text('No hay huevos'));
+    // Al 200% la tarjeta queda por debajo y la lista aun no la ha
+    // construido: hay que bajar hasta ella.
+    await t.scrollUntilVisible(
+      find.text(nombreDelJuego.toUpperCase()),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await t.pumpAndSettle();
-    await t.tap(find.text('No hay huevos'));
+    await t.tap(find.text(nombreDelJuego.toUpperCase()));
     await t.pumpAndSettle();
   });
 

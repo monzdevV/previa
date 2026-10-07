@@ -8,11 +8,11 @@ import 'modelo_juegos.dart';
 /// propósito (noche, poca luz) y sin texto encima, así no hay problema de
 /// contraste: el texto va en la zona de superficie de la tarjeta.
 List<Color> coloresJuego(TipoJuego j) => switch (j) {
-      TipoJuego.noHayHuevos => const [Color(0xFFE2524B), Color(0xFF7A1F3D)],
-      TipoJuego.yoNunca => const [Color(0xFF3FA08A), Color(0xFF1B3F5C)],
-      TipoJuego.masProbable => const [Color(0xFFE8A13A), Color(0xFF8A3A2A)],
-      TipoJuego.verdadOReto => const [Color(0xFF8E5BD6), Color(0xFF3B1E6B)],
-    };
+  TipoJuego.noHayHuevos => const [Color(0xFFE2524B), Color(0xFF7A1F3D)],
+  TipoJuego.yoNunca => const [Color(0xFF3FA08A), Color(0xFF1B3F5C)],
+  TipoJuego.masProbable => const [Color(0xFFE8A13A), Color(0xFF8A3A2A)],
+  TipoJuego.verdadOReto => const [Color(0xFF8E5BD6), Color(0xFF3B1E6B)],
+};
 
 /// Ilustración de cada juego dibujada con CustomPainter (la app no lleva
 /// assets). Es decorativa: se excluye del árbol de semántica.
@@ -52,14 +52,15 @@ void _fondo(Canvas c, Size s, List<Color> cols) {
     Offset(s.width * 0.85, s.height * 0.1),
     s.height * 0.7,
     Paint()
-      ..shader = RadialGradient(
-        colors: [Colors.white.withValues(alpha: 0.18), Colors.transparent],
-      ).createShader(
-        Rect.fromCircle(
-          center: Offset(s.width * 0.85, s.height * 0.1),
-          radius: s.height * 0.7,
-        ),
-      ),
+      ..shader =
+          RadialGradient(
+            colors: [Colors.white.withValues(alpha: 0.18), Colors.transparent],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(s.width * 0.85, s.height * 0.1),
+              radius: s.height * 0.7,
+            ),
+          ),
   );
 }
 
@@ -68,11 +69,7 @@ class _PintorHuevos extends CustomPainter {
   final List<Color> cols;
 
   void _huevo(Canvas c, Offset centro, double alto, {bool roto = false}) {
-    final r = Rect.fromCenter(
-      center: centro,
-      width: alto * 0.74,
-      height: alto,
-    );
+    final r = Rect.fromCenter(center: centro, width: alto * 0.74, height: alto);
     final p = Paint()
       ..shader = const RadialGradient(
         center: Alignment(-0.3, -0.4),
@@ -143,9 +140,24 @@ class _PintorVasos extends CustomPainter {
   void paint(Canvas canvas, Size s) {
     _fondo(canvas, s, cols);
     final h = s.height;
-    _vaso(canvas, Offset(s.width * 0.34, h * 0.88), h * 0.6, const Color(0xFFFFC94D));
-    _vaso(canvas, Offset(s.width * 0.56, h * 0.88), h * 0.72, const Color(0xFFFF8A9B));
-    _vaso(canvas, Offset(s.width * 0.76, h * 0.88), h * 0.5, const Color(0xFF7FE3C0));
+    _vaso(
+      canvas,
+      Offset(s.width * 0.34, h * 0.88),
+      h * 0.6,
+      const Color(0xFFFFC94D),
+    );
+    _vaso(
+      canvas,
+      Offset(s.width * 0.56, h * 0.88),
+      h * 0.72,
+      const Color(0xFFFF8A9B),
+    );
+    _vaso(
+      canvas,
+      Offset(s.width * 0.76, h * 0.88),
+      h * 0.5,
+      const Color(0xFF7FE3C0),
+    );
   }
 
   @override
@@ -182,7 +194,8 @@ class _PintorSenalar extends CustomPainter {
       );
       // Línea de "señalar" hacia el elegido (la persona 0).
       if (i != 0) {
-        final destino = centro +
+        final destino =
+            centro +
             Offset(math.cos(-math.pi / 2), math.sin(-math.pi / 2)) *
                 radio *
                 1.15;
@@ -206,7 +219,14 @@ class _PintorCartas extends CustomPainter {
   _PintorCartas(this.cols);
   final List<Color> cols;
 
-  void _carta(Canvas c, Offset centro, Size t, double ang, String signo, Color col) {
+  void _carta(
+    Canvas c,
+    Offset centro,
+    Size t,
+    double ang,
+    String signo,
+    Color col,
+  ) {
     c.save();
     c.translate(centro.dx, centro.dy);
     c.rotate(ang);
@@ -234,8 +254,22 @@ class _PintorCartas extends CustomPainter {
   void paint(Canvas canvas, Size s) {
     _fondo(canvas, s, cols);
     final t = Size(s.height * 0.55, s.height * 0.78);
-    _carta(canvas, Offset(s.width * 0.42, s.height * 0.52), t, -0.25, '?', const Color(0xFF3B1E6B));
-    _carta(canvas, Offset(s.width * 0.6, s.height * 0.5), t, 0.22, '!', const Color(0xFFB8324B));
+    _carta(
+      canvas,
+      Offset(s.width * 0.42, s.height * 0.52),
+      t,
+      -0.25,
+      '?',
+      const Color(0xFF3B1E6B),
+    );
+    _carta(
+      canvas,
+      Offset(s.width * 0.6, s.height * 0.5),
+      t,
+      0.22,
+      '!',
+      const Color(0xFFB8324B),
+    );
   }
 
   @override

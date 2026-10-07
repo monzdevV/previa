@@ -1,19 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:previa/data/models/previa.dart';
 import 'package:previa/features/map/proveedores_mapa.dart';
 
 Previa _previaCon({List<String> ambiente = const []}) => Previa(
-      id: 'p1',
-      titulo: 'Previa de prueba',
-      zona: 'Centro',
-      ubicacion: const LatLng(37.38, -6.0),
-      empiezaEn: DateTime.now().add(const Duration(hours: 3)),
-      plazasLibres: 3,
-      anfitrionId: 'a1',
-      anfitrionNombre: 'Ana',
-      ambiente: ambiente,
-    );
+  id: 'p1',
+  titulo: 'Previa de prueba',
+  zona: 'Centro',
+  ubicacion: const LatLng(37.38, -6.0),
+  empiezaEn: DateTime.now().add(const Duration(hours: 3)),
+  plazasLibres: 3,
+  anfitrionId: 'a1',
+  anfitrionNombre: 'Ana',
+  ambiente: ambiente,
+);
 
 void main() {
   group('Filtros.encaja', () {
@@ -73,7 +74,35 @@ void main() {
     });
 
     test('kilometros con resto, con un decimal', () {
-      expect(const Filtros(radioMetros: 2500).radioLegible, '2.5 km');
+      expect(const Filtros(radioMetros: 2500).radioLegible, '2,5 km');
+    });
+  });
+
+  group('Filtros aparte del radio', () {
+    test('la distancia sola no cuenta como filtro', () {
+      expect(
+        const Filtros(radioMetros: 1000).hayFiltrosAparteDelRadio,
+        isFalse,
+      );
+    });
+
+    test('horas, plazas o ambiente si cuentan', () {
+      expect(const Filtros(horas: 2).hayFiltrosAparteDelRadio, isTrue);
+      expect(const Filtros(plazasMinimas: 3).hayFiltrosAparteDelRadio, isTrue);
+      expect(const Filtros(ambiente: {'pop'}).hayFiltrosAparteDelRadio, isTrue);
+    });
+
+    test('quitarlos respeta la distancia elegida', () {
+      final contenedor = ProviderContainer();
+      addTearDown(contenedor.dispose);
+      contenedor.read(filtrosProvider.notifier)
+        ..fijarRadio(2000)
+        ..fijarHoras(3)
+        ..alternarAmbiente('techno')
+        ..quitarFiltrosSalvoRadio();
+      final filtros = contenedor.read(filtrosProvider);
+      expect(filtros.radioMetros, 2000);
+      expect(filtros.hayFiltrosAparteDelRadio, isFalse);
     });
   });
 }

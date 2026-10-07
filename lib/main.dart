@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app/modo_de_tema.dart';
 import 'app/rutas.dart';
 import 'app/tema.dart';
 import 'core/entorno.dart';
@@ -34,7 +35,9 @@ class AplicacionPrevia extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Previa',
       debugShowCheckedModeBanner: false,
-      theme: construirTemaPrevia(),
+      theme: construirTemaPrevia(brillo: Brightness.light),
+      darkTheme: construirTemaPrevia(brillo: Brightness.dark),
+      themeMode: ref.watch(modoDeTemaProvider),
 
       // La aplicacion es en español; no hay version en otros idiomas.
       locale: const Locale('es', 'ES'),
@@ -46,6 +49,20 @@ class AplicacionPrevia extends ConsumerWidget {
       ],
 
       routerConfig: ref.watch(enrutadorProvider),
+
+      // En un ordenador la app se ve como un movil centrado. Esta pensada
+      // para una mano y un pulgar: estirada a 1.500 px los titulares y las
+      // fichas pierden la forma, y el enlace de la beta se abre mucho en el
+      // portatil antes que en el telefono.
+      builder: (context, hijo) => ColoredBox(
+        color: const Color(0xFF000000),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: hijo,
+          ),
+        ),
+      ),
     );
   }
 }

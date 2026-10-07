@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../app/tema.dart';
 
+/// Lo minimo que pide el registro (y el servidor).
+const minimoContrasena = 6;
+
 /// Nivel de fortaleza orientativo de una contraseña.
 enum NivelContrasena {
   vacia('', 0),
@@ -26,7 +29,7 @@ enum NivelContrasena {
 /// validador de longitud mínima y el servidor.
 NivelContrasena nivelDeContrasena(String valor) {
   if (valor.isEmpty) return NivelContrasena.vacia;
-  if (valor.length < 6) return NivelContrasena.muyCorta;
+  if (valor.length < minimoContrasena) return NivelContrasena.muyCorta;
 
   var puntos = 0;
   if (valor.length >= 8) puntos++;
@@ -43,74 +46,98 @@ NivelContrasena nivelDeContrasena(String valor) {
   return NivelContrasena.fuerte;
 }
 
-/// Barra de 4 segmentos + etiqueta. El nivel se comunica también con texto
-/// (no solo con color) y se anuncia como región viva para lectores de pantalla.
+/// Barra de 4 segmentos y una frase debajo del campo de contraseña.
+///
+/// Sustituye al antiguo "Mínimo 6 caracteres / Perfecto": con el campo vacio
+/// dice el minimo, mientras falta dice cuanto falta (sin rojo: escribir aun
+/// no es equivocarse) y despues orienta sobre la seguridad. Ocupa siempre lo
+/// mismo, asi que el formulario no da saltos al escribir.
+///
+/// El nivel va tambien en texto, no solo en color, y se anuncia como region
+/// viva para el lector de pantalla. La frase usa el color de texto y el color
+/// queda en las barras, para que se lea con contraste AA en los dos temas.
 class IndicadorFuerzaContrasena extends StatelessWidget {
   const IndicadorFuerzaContrasena({super.key, required this.controlador});
 
   final TextEditingController controlador;
 
-  static Color _color(NivelContrasena n) => switch (n) {
-        NivelContrasena.vacia => ColoresPrevia.borde,
-        NivelContrasena.muyCorta || NivelContrasena.debil => ColoresPrevia.error,
-        NivelContrasena.media => ColoresPrevia.aviso,
-        NivelContrasena.buena || NivelContrasena.fuerte => ColoresPrevia.acento,
-      };
+  static Color _color(ColoresPrevia c, NivelContrasena n) => switch (n) {
+    NivelContrasena.vacia || NivelContrasena.muyCorta => c.textoTenue,
+    NivelContrasena.debil => c.error,
+    NivelContrasena.media => c.aviso,
+    NivelContrasena.buena || NivelContrasena.fuerte => c.acento,
+  };
+
+  static String _frase(NivelContrasena nivel, int largo) => switch (nivel) {
+    NivelContrasena.vacia => 'Mínimo $minimoContrasena caracteres',
+    NivelContrasena.muyCorta =>
+      minimoContrasena - largo == 1
+          ? 'Falta 1 carácter'
+          : 'Faltan ${minimoContrasena - largo} caracteres',
+    NivelContrasena.debil => 'Débil · prueba con números o símbolos',
+    _ => nivel.etiqueta,
+  };
 
   @override
   Widget build(BuildContext context) {
-    final reducir = MediaQuery.disableAnimationsOf(context);
+    final reducido = MovimientoPrevia.reducido(context);
 
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controlador,
       builder: (context, valor, _) {
+        final c = context.colores;
         final nivel = nivelDeContrasena(valor.text);
-        if (nivel == NivelContrasena.vacia) return const SizedBox.shrink();
-        final color = _color(nivel);
+        final color = _color(c, nivel);
+        final frase = _frase(nivel, valor.text.length);
 
         return Semantics(
-          liveRegion: true,
-          label: 'Seguridad de la contraseña: ${nivel.etiqueta}',
+          liveRegion: nivel != NivelContrasena.vacia,
+          label: nivel == NivelContrasena.vacia
+              ? frase
+              : 'Seguridad de la contraseña: $frase',
           excludeSemantics: true,
           child: Padding(
-            padding: const EdgeInsets.only(
-              top: EspaciadoPrevia.s,
-              left: EspaciadoPrevia.xs,
-              right: EspaciadoPrevia.xs,
+            padding: const EdgeInsets.fromLTRB(
+              EspaciadoPrevia.xs,
+              EspaciadoPrevia.s,
+              EspaciadoPrevia.xs,
+              0,
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      for (var i = 0; i < 4; i++) ...[
-                        if (i > 0) const SizedBox(width: 4),
-                        Expanded(
-                          child: AnimatedContainer(
-                            duration: reducir
-                                ? Duration.zero
-                                : const Duration(milliseconds: 250),
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: i < nivel.segmentos
-                                  ? color
-                                  : ColoresPrevia.borde,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
+                Row(
+                  children: [
+                    for (var i = 0; i < 4; i++) ...[
+                      if (i > 0) const SizedBox(width: EspaciadoPrevia.xs),
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: reducido
+                              ? Duration.zero
+                              : MovimientoPrevia.rapido,
+                          curve: MovimientoPrevia.curva,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: i < nivel.segmentos
+                                ? color
+                                : c.superficieActiva,
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(width: EspaciadoPrevia.m),
-                Text(
-                  nivel.etiqueta,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: color,
                       ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: EspaciadoPrevia.s - 2),
+                Text(
+                  frase,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: nivel.index >= NivelContrasena.media.index
+                        ? c.texto
+                        : c.textoSuave,
+                  ),
                 ),
               ],
             ),

@@ -13,6 +13,11 @@ class Perfil {
     this.bio,
     this.reputacion,
     this.numeroValoraciones = 0,
+    this.instagram,
+    this.tiktok,
+    this.xUsuario,
+    this.ciudad,
+    this.esModerador = false,
   });
 
   final String id;
@@ -24,6 +29,18 @@ class Perfil {
   final double? reputacion;
   final int numeroValoraciones;
 
+  /// Usuario de Instagram, sin arroba. Es opcional y publico.
+  final String? instagram;
+  final String? tiktok;
+
+  /// Usuario de X (antes Twitter), sin arroba.
+  final String? xUsuario;
+
+  final String? ciudad;
+
+  /// Solo se cambia desde el panel de Supabase; la aplicacion no la escribe.
+  final bool esModerador;
+
   /// Iniciales para el avatar cuando no hay foto.
   String get iniciales {
     final partes = nombre.trim().split(RegExp(r'\s+'));
@@ -34,33 +51,60 @@ class Perfil {
 
   bool get tieneReputacion => numeroValoraciones > 0 && reputacion != null;
 
+  bool get tieneRedes =>
+      (instagram?.isNotEmpty ?? false) ||
+      (tiktok?.isNotEmpty ?? false) ||
+      (xUsuario?.isNotEmpty ?? false);
+
   factory Perfil.desdeJson(Map<String, dynamic> json) => Perfil(
-        id: json['id'] as String,
-        username: json['username'] as String,
-        nombre: json['display_name'] as String,
-        onboarded: json['onboarded'] as bool? ?? false,
-        avatarUrl: json['avatar_url'] as String?,
-        bio: json['bio'] as String?,
-        reputacion: (json['reputation'] as num?)?.toDouble(),
-        numeroValoraciones: json['ratings_count'] as int? ?? 0,
-      );
+    id: json['id'] as String,
+    username: json['username'] as String,
+    nombre: json['display_name'] as String,
+    onboarded: json['onboarded'] as bool? ?? false,
+    avatarUrl: json['avatar_url'] as String?,
+    bio: json['bio'] as String?,
+    reputacion: (json['reputation'] as num?)?.toDouble(),
+    numeroValoraciones: json['ratings_count'] as int? ?? 0,
+    instagram: json['instagram'] as String?,
+    tiktok: json['tiktok'] as String?,
+    xUsuario: json['x_handle'] as String?,
+    ciudad: json['city'] as String?,
+    esModerador: json['is_moderator'] as bool? ?? false,
+  );
 
   Map<String, dynamic> aJson() => {
-        'username': username,
-        'display_name': nombre,
-        'avatar_url': avatarUrl,
-        'bio': bio,
-      };
+    'username': username,
+    'display_name': nombre,
+    'avatar_url': avatarUrl,
+    'bio': bio,
+    'instagram': instagram,
+    'tiktok': tiktok,
+    'x_handle': xUsuario,
+    'city': ciudad,
+  };
 
-  Perfil copiarCon({String? username, String? nombre, String? avatarUrl, String? bio}) =>
-      Perfil(
-        id: id,
-        username: username ?? this.username,
-        nombre: nombre ?? this.nombre,
-        onboarded: onboarded,
-        avatarUrl: avatarUrl ?? this.avatarUrl,
-        bio: bio ?? this.bio,
-        reputacion: reputacion,
-        numeroValoraciones: numeroValoraciones,
-      );
+  Perfil copiarCon({
+    String? username,
+    String? nombre,
+    String? avatarUrl,
+    String? bio,
+    String? instagram,
+    String? tiktok,
+    String? xUsuario,
+    String? ciudad,
+  }) => Perfil(
+    id: id,
+    username: username ?? this.username,
+    nombre: nombre ?? this.nombre,
+    onboarded: onboarded,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
+    bio: bio ?? this.bio,
+    reputacion: reputacion,
+    numeroValoraciones: numeroValoraciones,
+    instagram: instagram ?? this.instagram,
+    tiktok: tiktok ?? this.tiktok,
+    xUsuario: xUsuario ?? this.xUsuario,
+    ciudad: ciudad ?? this.ciudad,
+    esModerador: esModerador,
+  );
 }

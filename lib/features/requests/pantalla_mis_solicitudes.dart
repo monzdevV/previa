@@ -7,8 +7,7 @@ import '../../app/rutas.dart';
 import '../../app/tema.dart';
 import '../../data/models/previa.dart';
 import '../../data/repositories/repositorio_previas.dart';
-import '../party/componentes_previa.dart';
-import '../party/estados_pantalla.dart';
+import 'piezas_solicitudes.dart';
 
 final misSolicitudesProvider = FutureProvider<List<Solicitud>>(
   (ref) => ref.watch(repositorioPreviasProvider).misSolicitudes(),
@@ -25,17 +24,18 @@ class PantallaMisSolicitudes extends ConsumerStatefulWidget {
 
 class _PantallaMisSolicitudesState
     extends ConsumerState<PantallaMisSolicitudes> {
-  /// Solicitudes "canceladas" a falta de confirmar: se ocultan al instante y
-  /// solo se cancelan de verdad cuando el SnackBar se cierra sin pulsar
-  /// "Deshacer". Cancelar es reversible en la UI porque aún no hemos llamado
-  /// al servidor; una vez llamado, la previa podría llenarse y no habría vuelta.
+  /// Solicitudes canceladas a falta de confirmar: se ocultan al instante y
+  /// solo se cancelan de verdad cuando el aviso se cierra sin pulsar
+  /// "Deshacer". Mientras no se llama al servidor, cancelar tiene vuelta
+  /// atrás; una vez llamado, la previa podría llenarse y ya no la habría.
   final Set<String> _ocultas = {};
 
   void _cancelarConDeshacer(Solicitud s) {
     final mensajero = ScaffoldMessenger.of(context);
-    // Se captura ahora: el SnackBar sobrevive a esta pantalla y al cerrarse
-    // ya no podríamos usar `ref` si la pantalla se ha destruido.
+    // Se capturan ahora: el aviso sobrevive a esta pantalla y al cerrarse ya
+    // no se podría usar `ref` si la pantalla se ha destruido.
     final repo = ref.read(repositorioPreviasProvider);
+    final contenedor = ProviderScope.containerOf(context, listen: false);
     setState(() => _ocultas.add(s.id));
 
     mensajero.hideCurrentSnackBar();
@@ -54,21 +54,21 @@ class _PantallaMisSolicitudesState
         )
         .closed
         .then((motivo) async {
-      if (motivo == SnackBarClosedReason.action) return;
-      try {
-        await repo.cancelarSolicitud(s.id);
-        if (mounted) ref.invalidate(misSolicitudesProvider);
-      } catch (_) {
-        // Antes una excepción aquí no se veía: el usuario creía haber
-        // cancelado y la solicitud seguía viva. Se repone y se avisa.
-        if (mounted) setState(() => _ocultas.remove(s.id));
-        mensajero.showSnackBar(
-          const SnackBar(
-            content: Text('No se ha podido cancelar. Inténtalo de nuevo.'),
-          ),
-        );
-      }
-    });
+          if (motivo == SnackBarClosedReason.action) return;
+          try {
+            await repo.cancelarSolicitud(s.id);
+            contenedor.invalidate(misSolicitudesProvider);
+          } catch (_) {
+            // Si falla hay que decirlo: si no, uno cree haber cancelado y la
+            // solicitud sigue viva. Se repone en la lista.
+            if (mounted) setState(() => _ocultas.remove(s.id));
+            mensajero.showSnackBar(
+              const SnackBar(
+                content: Text('No se ha podido cancelar. Inténtalo otra vez.'),
+              ),
+            );
+          }
+        });
   }
 
   @override
@@ -78,41 +78,51 @@ class _PantallaMisSolicitudesState
     return Scaffold(
       appBar: AppBar(title: const Text('Mis solicitudes')),
       body: solicitudes.when(
-        loading: () => const IndicadorCarga(),
-        error: (e, _) => EstadoError(
-          mensaje: 'No se han podido cargar tus solicitudes',
-          detalle: 'Comprueba tu conexión e inténtalo otra vez.',
-          onReintentar: () => ref.invalidate(misSolicitudesProvider),
+        loading: () => const Cargando(),
+        error: (e, _) => Semantics(
+          liveRegion: true,
+          child: EstadoVacio(
+            icono: Icons.cloud_off_rounded,
+            titulo: 'Sin conexión',
+            detalle:
+                'No hemos podido traer tus solicitudes. '
+                'Comprueba tu conexión.',
+            accion: 'Reintentar',
+            onAccion: () => ref.invalidate(misSolicitudesProvider),
+          ),
         ),
         data: (todas) {
           final lista = todas.where((s) => !_ocultas.contains(s.id)).toList();
           if (lista.isEmpty) {
-            return EstadoVacio(
-              icono: Icons.waving_hand_outlined,
+            return const EstadoVacio(
+              pegatina: '🙋',
               titulo: 'Todavía no has pedido plaza',
-              detalle: 'Busca una previa en el mapa y pide sitio para tu grupo.',
-              acciones: [
-                FilledButton.icon(
-                  // La pantalla se abre con push desde el perfil: go a la raíz
-                  // lleva al mapa, que es donde se encuentra una previa.
-                  onPressed: () => context.go(Rutas.inicio),
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text('Buscar previas en el mapa'),
-                ),
-              ],
+              detalle:
+                  'Busca una previa en la pestaña Mapa y pide sitio para '
+                  'tu grupo.',
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(misSolicitudesProvider),
+            color: context.colores.primarioTexto,
+            backgroundColor: context.colores.superficie,
+            onRefresh: () async {
+              ref.invalidate(misSolicitudesProvider);
+              try {
+                await ref.read(misSolicitudesProvider.future);
+              } catch (_) {
+                // El fallo ya lo pinta el estado de error de la pantalla.
+              }
+            },
             child: ListView.separated(
               padding: const EdgeInsets.all(EspaciadoPrevia.l),
               itemCount: lista.length,
-              separatorBuilder: (_, _) => const SizedBox(height: EspaciadoPrevia.s),
-              itemBuilder: (_, i) => EntradaEscalonada(
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: EspaciadoPrevia.s),
+              itemBuilder: (_, i) => EntradaLista(
+                key: ValueKey(lista[i].id),
                 indice: i,
                 child: _Tarjeta(
-                  key: ValueKey(lista[i].id),
                   solicitud: lista[i],
                   onCancelar: () => _cancelarConDeshacer(lista[i]),
                 ),
@@ -126,37 +136,38 @@ class _PantallaMisSolicitudesState
 }
 
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({super.key, required this.solicitud, required this.onCancelar});
+  const _Tarjeta({required this.solicitud, required this.onCancelar});
 
   final Solicitud solicitud;
   final VoidCallback onCancelar;
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colores;
     final textos = Theme.of(context).textTheme;
     final empieza = solicitud.empiezaPrevia;
 
     final (etiqueta, color, explicacion) = switch (solicitud.estado) {
       EstadoSolicitud.pendiente => (
-          'Pendiente',
-          ColoresPrevia.aviso,
-          'Esperando a que el anfitrión responda.',
-        ),
+        'Pendiente',
+        c.aviso,
+        'Esperando a que el anfitrión responda.',
+      ),
       EstadoSolicitud.aceptada => (
-          'Aceptada',
-          ColoresPrevia.acento,
-          'Estás dentro. Ya puedes ver la dirección y el chat.',
-        ),
+        'Aceptada',
+        c.acento,
+        'Estás dentro. Ya puedes ver la dirección y el chat.',
+      ),
       EstadoSolicitud.rechazada => (
-          'Rechazada',
-          ColoresPrevia.textoTenue,
-          'Esta vez no ha podido ser.',
-        ),
+        'Rechazada',
+        c.textoSuave,
+        'Esta vez no ha podido ser.',
+      ),
       EstadoSolicitud.cancelada => (
-          'Cancelada',
-          ColoresPrevia.textoTenue,
-          'La cancelaste tú.',
-        ),
+        'Cancelada',
+        c.textoSuave,
+        'La cancelaste tú.',
+      ),
     };
 
     return Card(
@@ -172,38 +183,21 @@ class _Tarjeta extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(solicitud.tituloPrevia,
-                        style: textos.titleLarge,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      solicitud.tituloPrevia,
+                      style: textos.titleLarge,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(width: EspaciadoPrevia.s),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: EspaciadoPrevia.s,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius:
-                          BorderRadius.circular(EspaciadoPrevia.radioGrande),
-                      border: Border.all(color: color.withValues(alpha: 0.4)),
-                    ),
-                    child: Text(
-                      etiqueta,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  PastillaEstado(texto: etiqueta, color: color),
                 ],
               ),
 
-              const SizedBox(height: EspaciadoPrevia.xs),
-              // Iconos en lugar de emojis: un lector de pantalla leería
-              // "chincheta roja", "reloj", "personas" en medio de la frase.
+              const SizedBox(height: EspaciadoPrevia.s),
+              // Iconos y no emojis: un lector de pantalla leería "chincheta
+              // roja", "reloj" y "personas" en medio de la frase.
               Wrap(
                 spacing: EspaciadoPrevia.m,
                 runSpacing: EspaciadoPrevia.xs,
@@ -213,7 +207,7 @@ class _Tarjeta extends StatelessWidget {
                   if (empieza != null)
                     _Dato(
                       Icons.schedule,
-                      DateFormat("d MMM · HH:mm", "es_ES").format(empieza),
+                      DateFormat('d MMM · HH:mm', 'es_ES').format(empieza),
                     ),
                   _Dato(
                     Icons.group_outlined,
@@ -226,16 +220,29 @@ class _Tarjeta extends StatelessWidget {
               ),
 
               const SizedBox(height: EspaciadoPrevia.s),
-              Text(explicacion,
-                  style: textos.bodyMedium?.copyWith(fontSize: 12, color: color)),
+              Text(
+                explicacion,
+                style: textos.bodyMedium?.copyWith(
+                  fontSize: 13,
+                  color: c.textoSuave,
+                ),
+              ),
 
               if (solicitud.estaPendiente) ...[
-                const SizedBox(height: EspaciadoPrevia.s),
+                const SizedBox(height: EspaciadoPrevia.xs),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: onCancelar,
-                    child: const Text('Cancelar solicitud'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: c.error,
+                      minimumSize: const Size(0, 48),
+                    ),
+                    child: Text(
+                      'Cancelar solicitud',
+                      semanticsLabel:
+                          'Cancelar la solicitud a ${solicitud.tituloPrevia}',
+                    ),
                   ),
                 ),
               ],
@@ -263,14 +270,16 @@ class _Dato extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         ExcludeSemantics(
-          child: Icon(icono, size: 14, color: ColoresPrevia.textoSuave),
+          child: Icon(icono, size: 15, color: context.colores.textoSuave),
         ),
         const SizedBox(width: EspaciadoPrevia.xs),
         Flexible(
           child: Text(
             texto,
             semanticsLabel: leer,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
         ),
       ],

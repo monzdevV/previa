@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-21T00:00:00Z",
+  "title": "Design System: Previa",
+  "extensions": {
+    "colorMeta": {
+      "ambar-sodio": {
+        "role": "primary",
+        "displayName": "Ámbar de vapor de sodio",
+        "canonical": "#E8A33D",
+        "tonalRamp": ["#2A1C06", "#4A310B", "#6B4711", "#8D5E17", "#B07A21", "#E8A33D", "#F2C27E", "#FAE3C2"]
+      },
+      "ambar-suave": {
+        "role": "primary",
+        "displayName": "Ámbar apagado",
+        "canonical": "#F2C27E",
+        "tonalRamp": ["#33230F", "#55391A", "#775026", "#9A6832", "#BE8241", "#E0A65E", "#F2C27E", "#FBE6CB"]
+      },
+      "fondo": {
+        "role": "neutral",
+        "displayName": "Carta",
+        "canonical": "#0E1619",
+        "tonalRamp": ["#050A0B", "#0E1619", "#162226", "#1E2E32", "#27383C", "#3D5157", "#7E8C87", "#E8E4D9"]
+      },
+      "fondo-profundo": {
+        "role": "neutral",
+        "displayName": "Carta profunda",
+        "canonical": "#070D0F",
+        "tonalRamp": ["#020506", "#070D0F", "#0E1619", "#162226", "#1E2E32", "#27383C", "#5C6F6B", "#C9D2CE"]
+      },
+      "superficie": {
+        "role": "neutral",
+        "displayName": "Celda",
+        "canonical": "#162226",
+        "tonalRamp": ["#070D0F", "#0E1619", "#162226", "#1E2E32", "#27383C", "#3D5157", "#7E8C87", "#C9D2CE"]
+      },
+      "superficie-alta": {
+        "role": "neutral",
+        "displayName": "Celda alta",
+        "canonical": "#1E2E32",
+        "tonalRamp": ["#070D0F", "#0E1619", "#162226", "#1E2E32", "#27383C", "#3D5157", "#7E8C87", "#C9D2CE"]
+      },
+      "superficie-activa": {
+        "role": "neutral",
+        "displayName": "Celda teñida",
+        "canonical": "#27383C",
+        "tonalRamp": ["#0E1619", "#162226", "#1E2E32", "#27383C", "#35494E", "#4B6165", "#7E8C87", "#C9D2CE"]
+      },
+      "letra-mapa": {
+        "role": "neutral",
+        "displayName": "Letra de mapa",
+        "canonical": "#E8E4D9",
+        "tonalRamp": ["#26251F", "#3E3C33", "#57544A", "#716D61", "#8C8879", "#A9A596", "#C9C5B8", "#E8E4D9"]
+      },
+      "letra-suave": {
+        "role": "neutral",
+        "displayName": "Letra suave",
+        "canonical": "#9AA6A1",
+        "tonalRamp": ["#1B201E", "#2E3633", "#414B48", "#56625E", "#6C7A76", "#849290", "#9AA6A1", "#C6CECB"]
+      },
+      "letra-tenue": {
+        "role": "neutral",
+        "displayName": "Letra tenue",
+        "canonical": "#7E8C87",
+        "tonalRamp": ["#161A19", "#262D2B", "#37403D", "#4A5551", "#5E6B67", "#6E7C78", "#7E8C87", "#B3BDBA"]
+      },
+      "filete": {
+        "role": "neutral",
+        "displayName": "Filete",
+        "canonical": "#2E3E3A",
+        "tonalRamp": ["#0B100F", "#141C1A", "#1F2B28", "#2E3E3A", "#3E524D", "#546B65", "#7E8C87", "#C0C9C6"]
+      },
+      "error": {
+        "role": "tertiary",
+        "displayName": "Rojo de fallo",
+        "canonical": "#E05B44",
+        "tonalRamp": ["#2B0D07", "#4A160D", "#6B2014", "#8D2C1C", "#B03D29", "#CE4C36", "#E05B44", "#F0A797"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Titular de bienvenida. Una vez por pantalla como mucho." },
+      "headline": { "displayName": "Hora", "purpose": "La hora del renglón, la mayor mancha de tinta de la línea (26 px en el índice)." },
+      "title": { "displayName": "Título", "purpose": "Nombre de la previa y encabezados de sección." },
+      "title-small": { "displayName": "Título menor", "purpose": "Subtítulos dentro de fichas." },
+      "body": { "displayName": "Cuerpo", "purpose": "Texto corrido en la cara del sistema; nunca condensada." },
+      "body-small": { "displayName": "Cuerpo menor", "purpose": "Descripción del renglón y notas al pie de ficha." },
+      "label": { "displayName": "Rótulo de botón", "purpose": "Texto de botón, siempre en mayúsculas escritas en el copy." },
+      "label-mapa": { "displayName": "Rótulo de mapa", "purpose": "Referencia de cuadrícula, distancia, ambiente, estados impresos." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "encendido-lamina", "value": "1600ms cubic-bezier(0.16, 1, 0.3, 1) (easeOutExpo), escalonado por celda", "purpose": "Encendido de las celdas vivas de la lámina de bienvenida; arranca legible y respeta disableAnimations." },
+      { "name": "detentes-lamina", "value": "snapSizes [0.16, 0.66, 0.94]", "purpose": "La lámina del índice solo descansa en mapa, mixto o índice; nunca a medias." },
+      { "name": "pulsacion-renglon", "value": "InkSparkle, splash #E8A33D a 10%, highlight #1E2E32", "purpose": "Respuesta táctil de un renglón del índice, sin transformar ni comprimir." }
+    ],
+    "breakpoints": [
+      { "name": "compacto", "value": "520px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "boton-primario",
+      "description": "La acción que compromete. Ámbar macizo, esquinas rectas, una por pantalla.",
+      "html": "<button class=\"ds-btn-primario\">CREAR MI CUENTA</button>",
+      "css": ".ds-btn-primario { display: block; width: 100%; min-height: 52px; background: #E8A33D; color: #070D0F; border: none; border-radius: 0; padding: 0 24px; font-family: 'Archivo Narrow', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.6px; cursor: pointer; transition: background 0.15s; } .ds-btn-primario:hover { background: #F2C27E; } .ds-btn-primario:focus-visible { outline: 2px solid #E8E4D9; outline-offset: 2px; } .ds-btn-primario:active { background: #B07A21; } .ds-btn-primario:disabled { background: #27383C; color: #7E8C87; cursor: default; }"
+    },
+    {
+      "name": "Botón de contorno",
+      "kind": "button",
+      "refersTo": "boton-contorno",
+      "description": "Secundario. Filete de 1 px y letra de mapa; no estrena ámbar.",
+      "html": "<button class=\"ds-btn-contorno\">YA TENGO CUENTA</button>",
+      "css": ".ds-btn-contorno { display: block; width: 100%; min-height: 52px; background: transparent; color: #E8E4D9; border: 1px solid #2E3E3A; border-radius: 0; padding: 0 24px; font-family: 'Archivo Narrow', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 0.6px; cursor: pointer; transition: background 0.15s; } .ds-btn-contorno:hover { background: #1E2E32; } .ds-btn-contorno:focus-visible { outline: 2px solid #E8E4D9; outline-offset: 2px; } .ds-btn-contorno:active { background: #27383C; }"
+    },
+    {
+      "name": "Campo de texto",
+      "kind": "input",
+      "refersTo": "campo-texto",
+      "description": "Relleno en celda con filete recto; al enfocar el filete sube a 2 px y se pinta de ámbar.",
+      "html": "<input class=\"ds-campo\" type=\"text\" placeholder=\"Zona o nombre de la previa\" />",
+      "css": ".ds-campo { width: 100%; box-sizing: border-box; background: #162226; color: #E8E4D9; border: 1px solid #2E3E3A; border-radius: 0; padding: 16px; font-size: 16px; line-height: 1.45; } .ds-campo::placeholder { color: #7E8C87; } .ds-campo:focus { outline: none; border: 2px solid #E8A33D; padding: 15px; }"
+    },
+    {
+      "name": "Ficha de filtro",
+      "kind": "chip",
+      "refersTo": "ficha-filtro",
+      "description": "Filtro del mapa. Seleccionada sube de superficie, nunca de color.",
+      "html": "<span class=\"ds-ficha\">TECHNO</span><span class=\"ds-ficha ds-ficha--activa\">TRANQUILA</span>",
+      "css": ".ds-ficha { display: inline-block; background: transparent; color: #E8E4D9; border: 1px solid #2E3E3A; border-radius: 0; padding: 6px 12px; margin-right: 8px; font-family: 'Archivo Narrow', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.4px; cursor: pointer; } .ds-ficha:hover { background: #1E2E32; } .ds-ficha:focus-visible { outline: 2px solid #E8E4D9; outline-offset: 2px; } .ds-ficha--activa { background: #27383C; }"
+    },
+    {
+      "name": "Renglón de índice",
+      "kind": "custom",
+      "refersTo": "renglon-indice",
+      "description": "El componente firma: nombre, puntos conductores, hora tabular, localizador de cuadrícula y marca de ocupación. Nunca una tarjeta.",
+      "html": "<div class=\"ds-renglon\"><div class=\"ds-renglon-linea\"><span class=\"ds-renglon-nombre\">Previa en Malasaña</span><span class=\"ds-renglon-puntos\"></span><span class=\"ds-renglon-hora\">23:30</span></div><div class=\"ds-renglon-pie\"><span class=\"ds-renglon-loc\">MALASAÑA R29 &nbsp;·&nbsp; 450 M</span><span class=\"ds-marca\"><svg width=\"22\" height=\"10\" viewBox=\"0 0 22 10\" aria-hidden=\"true\"><rect x=\"0\" y=\"0\" width=\"22\" height=\"10\" fill=\"#E8A33D\"/></svg><span class=\"ds-marca-texto\">5 PLAZAS</span></span></div></div>",
+      "css": ".ds-renglon { background: #0E1619; border-bottom: 1px solid #2E3E3A; padding: 16px; cursor: pointer; } .ds-renglon:hover { background: #1E2E32; } .ds-renglon-linea { display: flex; align-items: flex-end; gap: 8px; } .ds-renglon-nombre { font-family: 'Archivo Narrow', sans-serif; font-size: 19px; font-weight: 600; line-height: 1.18; color: #E8E4D9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .ds-renglon-puntos { flex: 1; height: 12px; background-image: radial-gradient(circle at 1px 9px, rgba(126,140,135,0.65) 1px, transparent 1.2px); background-size: 6px 12px; background-repeat: repeat-x; } .ds-renglon-hora { font-family: 'Archivo Narrow', sans-serif; font-size: 26px; font-weight: 700; line-height: 1.06; letter-spacing: -0.4px; font-feature-settings: 'tnum'; color: #E8E4D9; } .ds-renglon-pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; } .ds-renglon-loc { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1.2px; color: #9AA6A1; } .ds-marca { display: inline-flex; align-items: center; gap: 7px; } .ds-marca-texto { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; color: #E8A33D; }"
+    },
+    {
+      "name": "Marca de ocupación",
+      "kind": "custom",
+      "refersTo": "renglon-indice-agotado",
+      "description": "La ocupación como condición impresa: macizo si hay sitio de sobra, mordido si se está llenando, tachado si está completa.",
+      "html": "<div class=\"ds-ocupacion\"><span class=\"ds-oc ds-oc--viva\"><svg width=\"22\" height=\"10\" viewBox=\"0 0 22 10\"><rect width=\"22\" height=\"10\" fill=\"#E8A33D\"/></svg>5 PLAZAS</span><span class=\"ds-oc ds-oc--viva\"><svg width=\"22\" height=\"10\" viewBox=\"0 0 22 10\"><rect x=\"0.5\" y=\"0.5\" width=\"21\" height=\"9\" fill=\"none\" stroke=\"#E8A33D\"/><rect width=\"7.7\" height=\"10\" fill=\"#E8A33D\"/></svg>2 PLAZAS</span><span class=\"ds-oc ds-oc--muerta\"><svg width=\"22\" height=\"10\" viewBox=\"0 0 22 10\"><rect x=\"0.5\" y=\"0.5\" width=\"21\" height=\"9\" fill=\"none\" stroke=\"#7E8C87\"/><line x1=\"0\" y1=\"10\" x2=\"22\" y2=\"0\" stroke=\"#7E8C87\"/></svg>COMPLETA</span></div>",
+      "css": ".ds-ocupacion { display: flex; flex-direction: column; gap: 10px; background: #0E1619; padding: 16px; } .ds-oc { display: inline-flex; align-items: center; gap: 7px; font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 1.2px; } .ds-oc--viva { color: #E8A33D; } .ds-oc--muerta { color: #7E8C87; text-decoration: line-through; text-decoration-color: #7E8C87; }"
+    },
+    {
+      "name": "Placa de plazas",
+      "kind": "custom",
+      "refersTo": "placa-plazas",
+      "description": "Marca cuadrada de 30 px sobre la celda de la previa en el mapa. Sin halo; al resaltarse se encorcheta en letra de mapa, no cambia de color.",
+      "html": "<span class=\"ds-placa\">5</span><span class=\"ds-placa ds-placa--resaltada\">3</span><span class=\"ds-placa ds-placa--completa\">—</span>",
+      "css": ".ds-placa { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: 8px; background: #E8A33D; color: #070D0F; border: 1px solid #070D0F; border-radius: 0; font-family: 'Archivo Narrow', sans-serif; font-size: 15px; font-weight: 700; font-feature-settings: 'tnum'; cursor: pointer; } .ds-placa--resaltada { border: 2px solid #E8E4D9; } .ds-placa--completa { background: #162226; color: #7E8C87; }"
+    },
+    {
+      "name": "Dirección retenida",
+      "kind": "card",
+      "refersTo": "renglon-indice",
+      "description": "El vocabulario de lo retenido: la dirección se dibuja censurada en lugar de omitirse, y se dice la celda que sí se puede decir.",
+      "html": "<div class=\"ds-retenida\"><div class=\"ds-retenida-cab\"><span>DIRECCIÓN EXACTA</span><span class=\"ds-retenida-estado\">RETENIDA</span></div><div class=\"ds-retenida-barras\"><i style=\"width:96px\"></i><i style=\"width:54px\"></i><i style=\"width:128px\"></i><i style=\"width:38px\"></i><i style=\"width:72px\"></i></div><div class=\"ds-retenida-celda\">CELDA R29 &nbsp;·&nbsp; MALASAÑA</div><p class=\"ds-retenida-nota\">Se revela en cuanto el anfitrión acepte tu plaza.</p></div>",
+      "css": ".ds-retenida { background: #162226; border: 1px solid #2E3E3A; border-radius: 0; padding: 16px; } .ds-retenida-cab { display: flex; justify-content: space-between; font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1.2px; color: #9AA6A1; } .ds-retenida-estado { font-weight: 700; color: #7E8C87; } .ds-retenida-barras { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 12px 0; } .ds-retenida-barras i { display: block; height: 13px; background: #27383C; } .ds-retenida-celda { font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 1.2px; color: #E8E4D9; } .ds-retenida-nota { margin: 16px 0 0; font-size: 13px; line-height: 1.45; color: #9AA6A1; }"
+    },
+    {
+      "name": "Barra de navegación",
+      "kind": "nav",
+      "refersTo": "barra-navegacion",
+      "description": "Pestaña activa como celda teñida rectangular, nunca como pastilla.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item ds-nav-item--activo\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M20.5 3l-.16.03L15 5.1 9 3 3.38 4.9c-.22.07-.38.25-.38.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.62-1.9c.22-.07.38-.25.38-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z\"/></svg>MAPA</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z\"/></svg>CHATS</a></nav>",
+      "css": ".ds-nav { display: flex; background: #070D0F; } .ds-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: #7E8C87; text-decoration: none; font-family: 'Archivo Narrow', sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 1px; } .ds-nav-item:hover { color: #9AA6A1; } .ds-nav-item:focus-visible { outline: 2px solid #E8E4D9; outline-offset: -2px; } .ds-nav-item--activo { background: #27383C; color: #E8E4D9; }"
+    },
+    {
+      "name": "Marca de pliegue",
+      "kind": "custom",
+      "refersTo": "renglon-indice",
+      "description": "La agarradera de la lámina del índice: la raya por donde se dobla el plano, con el centro reforzado donde agarra el pulgar.",
+      "html": "<div class=\"ds-lamina\"><div class=\"ds-pliegue\"><span class=\"ds-pliegue-centro\"></span></div></div>",
+      "css": ".ds-lamina { background: #0E1619; border-top: 1px solid #E8E4D9; } .ds-pliegue { position: relative; height: 22px; background-image: repeating-linear-gradient(to right, #2E3E3A 0 6px, transparent 6px 11px); background-size: 11px 1px; background-position: 0 50%; background-repeat: repeat-x; } .ds-pliegue-centro { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 36px; height: 2px; background: #7E8C87; } .ds-lamina:hover .ds-pliegue-centro { background: #E8E4D9; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El callejero plegable y su índice de calles",
+    "overview": "Previa no dibuja la noche: la indexa. Un callejero impreso nunca enseña un portal, enseña la celda de cuadrícula donde cae ese portal, y esa es exactamente la regla de privacidad del producto. El mundo visual y la restricción técnica dicen lo mismo, así que la interfaz puede explicar la privacidad sin un párrafo legal: se ve la celda, no la puerta.\n\nLa pantalla la manda el índice, no el mapa. Cada previa es un renglón —nombre a la izquierda, puntos conductores cruzando el ancho, hora en condensada tabular cerrando la línea, y debajo la referencia de cuadrícula con la distancia—, y los renglones se encadenan con filetes a sangre en lugar de encerrarse en tarjetas, porque encajonar cada previa rompe la lectura vertical que hace instantánea la comparación. El mapa vive detrás como lámina plegada y sube con el pulgar por detentes. Sobre la carta acromática tinta-pizarra solo hay una tinta viva, un ámbar de vapor de sodio, y solo aparece donde significa algo: lo que está disponible ahora y la acción que compromete.\n\nSe rechaza explícitamente el reparto por defecto de la categoría —mapa de chinchetas arriba, feed de tarjetas redondeadas debajo— y se rechaza el registro festivo: nada infantil, nada de emojis, nada de confeti. La densidad es alta y la temperatura baja; el objetivo declarado es una decisión de un vistazo a las dos de la mañana, con el móvil a una mano.",
+    "keyCharacteristics": [
+      "Radio cero real en toda la interfaz; nada redondo, ni siquiera el avatar del anfitrión.",
+      "Carta acromática con un solo color vivo, el ámbar de vapor de sodio.",
+      "Índice de renglones con puntos conductores y filetes, no rejilla de tarjetas.",
+      "Estados como marcas impresas: filete en reposo, macizo al estar vivo, tachado si está agotado.",
+      "Referencia de cuadrícula donde iría una dirección, derivada siempre de la posición ya difuminada.",
+      "Condensada con cifras tabulares para display, rótulos y números; cuerpo en la cara del sistema."
+    ],
+    "rules": [
+      { "name": "La regla del único ámbar", "body": "El ámbar está reservado a dos cosas: hay sitio ahora, o pulsa esto y te comprometes. Nada más se pinta de ámbar. El aviso, la reputación, el estado pendiente, tu propia posición en el mapa y el radio de búsqueda son letra de mapa a propósito: gastar el ámbar en ellos hace que deje de responder a \"¿queda sitio?\".", "section": "colors" },
+      { "name": "La regla de la celda teñida", "body": "Lo activo no estrena color: sube de tinta sobre el mismo gris. La pestaña seleccionada, la previa resaltada y la ficha de filtro puesta se distinguen subiendo de superficie o encorchetándose en letra de mapa, nunca coloreándose.", "section": "colors" },
+      { "name": "La regla de la condensada reservada", "body": "La condensada entra en display, rótulos y cifras. El cuerpo se queda en la cara del sistema. Un párrafo en condensada convierte la app en un cartel y pierde el soporte de accesibilidad de la plataforma.", "section": "typography" },
+      { "name": "La regla de las cifras tabulares", "body": "Horas, plazas y capacidades llevan tabularFigures. Se leen en columna y no pueden bailar de ancho al cambiar de dígito.", "section": "typography" },
+      { "name": "La regla de la hora dominante", "body": "En un renglón la hora es la mayor mancha de tinta, por encima del nombre. Lo que falta para empezar no se repite en el renglón: decirlo dos veces roba el ancho que necesita la referencia de cuadrícula cuando el sistema agranda la letra.", "section": "typography" },
+      { "name": "La regla del plano sin sombra", "body": "Ninguna superficie proyecta sombra. Si algo tiene que separarse de lo que hay debajo, se separa con un filete de 1 px o subiendo un escalón de superficie.", "section": "elevation" },
+      { "name": "La regla del dato impreso", "body": "Nada brilla sobre el mapa. Una marca con halo se lee como un efecto; lo que hace falta es que se lea como un dato impreso encima.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do poner a cero cualquier radio nuevo: radio y radioGrande valen 0 y el valor no se negocia por componente.",
+      "Do reservar el ámbar #E8A33D a lo disponible ahora y a la acción que compromete; para lo demás hay tres niveles de letra de mapa.",
+      "Do encadenar listados con un divisor a sangre y renglones de acolchado 16, no con tarjetas.",
+      "Do usar cifras tabulares en cualquier hora, plaza o capacidad.",
+      "Do expresar los estados como marcas impresas: filete en reposo, macizo si está vivo, tachado si está agotado.",
+      "Do derivar toda referencia de cuadrícula de la posición ya difuminada, y dibujar en el mapa exactamente esas mismas celdas.",
+      "Do dejar la condensada para display, rótulos y cifras, y el cuerpo en la cara del sistema.",
+      "Do probar cada pantalla con la letra del sistema agrandada: el localizador admite dos líneas precisamente por eso."
+    ],
+    "donts": [
+      "Don't redondear nada, ni siquiera avatares, indicadores de pestaña o placas del mapa.",
+      "Don't añadir sombras, halos ni desenfoques; la profundidad es tonal y el separador es un filete de 1 px.",
+      "Don't marcar una previa del mapa con una chincheta ni con una celda cuadrada: el difuminado del servidor es un radio y solo el círculo dice la verdad sobre el área.",
+      "Don't gastar ámbar en avisos, reputación, estados pendientes, tu propia posición o el radio de búsqueda.",
+      "Don't introducir un segundo color vivo: lo activo sube de superficie o se encorcheta en letra de mapa.",
+      "Don't escribir párrafos en condensada ni cuerpo de texto fuera de la cara del sistema.",
+      "Don't usar emojis ni registro festivo en ningún copy ni icono; la señal de error declarada del producto es \"que parezca infantil\".",
+      "Don't repetir el mismo dato dos veces en un renglón (la hora y lo que falta para empezar): el ancho que sobra es el que necesita la referencia de cuadrícula.",
+      "Don't dibujar una barra maciza a todo el ancho para la acción anclada: el macizo está reservado a las plazas vivas, y si no hay acción a la que llevar, la banda no se dibuja."
+    ]
+  }
+}

@@ -2,63 +2,39 @@ import 'package:flutter/material.dart';
 
 import '../../app/tema.dart';
 
-/// Aspecto de una previa según su ambiente: gradiente + icono.
+/// Cartel de una previa según su ambiente: un bloque de color plano y un
+/// icono grande.
 ///
-/// Las previas no tienen foto (por privacidad del piso), así que el ambiente es
-/// lo único que puede dar personalidad a la tarjeta. Se genera con gradientes
-/// en vez de imágenes para no pesar nada y funcionar sin conexión.
+/// Las previas no llevan foto (es la casa de alguien y su portal no se
+/// enseña), así que el ambiente es lo único que puede darle cara a la
+/// tarjeta. Se resuelve con los mismos bloques de la pestaña Noche y no con
+/// degradados: el degradado está reservado a la marca y la acción principal.
 class EstiloAmbiente {
-  const EstiloAmbiente(this.colores, this.icono);
+  const EstiloAmbiente(this.bloque, this.icono);
 
-  final List<Color> colores;
+  final Color bloque;
   final IconData icono;
 }
 
-// Colores locales de esta carpeta (no existen en ColoresPrevia). Todos son
-// oscuros/saturados para que el texto blanco encima mantenga el contraste.
-const _porDefecto = EstiloAmbiente([
-  Color(0xFF3A1F8F),
-  Color(0xFF7C4DFF),
-], Icons.nightlife);
+const _porDefecto = EstiloAmbiente(BloquesPrevia.amarillo, Icons.nightlife);
 
+// Solo hay cinco bloques para diez ambientes: se reparten para que los que
+// suelen ir juntos (techno y terraza, reggaeton y latino) no coincidan, y es
+// el icono el que termina de distinguirlos.
 const _estilos = <String, EstiloAmbiente>{
-  'reggaeton': EstiloAmbiente([
-    Color(0xFF8E0E5B),
-    Color(0xFFD9480F),
-  ], Icons.speaker_group),
-  'techno': EstiloAmbiente([
-    Color(0xFF1B1464),
-    Color(0xFF00708F),
-  ], Icons.graphic_eq),
-  'tranqui': EstiloAmbiente([Color(0xFF0F4C5C), Color(0xFF2F7D62)], Icons.spa),
-  'indie': EstiloAmbiente([
-    Color(0xFF5A2A82),
-    Color(0xFFB0426F),
-  ], Icons.headphones),
-  'latino': EstiloAmbiente([
-    Color(0xFFA3270F),
-    Color(0xFFB9780B),
-  ], Icons.music_note),
-  'pop': EstiloAmbiente([
-    Color(0xFFA51C82),
-    Color(0xFF5B3DD6),
-  ], Icons.star_rounded),
-  'rock': EstiloAmbiente([
-    Color(0xFF33090F),
-    Color(0xFF9E1B2D),
-  ], Icons.electric_bolt),
-  'cachondeo': EstiloAmbiente([
-    Color(0xFF8A5200),
-    Color(0xFFC2427A),
-  ], Icons.celebration),
-  'cartas': EstiloAmbiente([Color(0xFF0E4D3A), Color(0xFF1B6E52)], Icons.style),
-  'terraza': EstiloAmbiente([
-    Color(0xFF0B5D7A),
-    Color(0xFFB5692A),
-  ], Icons.wb_twilight),
+  'reggaeton': EstiloAmbiente(BloquesPrevia.rojo, Icons.speaker_group),
+  'techno': EstiloAmbiente(BloquesPrevia.azul, Icons.graphic_eq),
+  'tranqui': EstiloAmbiente(BloquesPrevia.menta, Icons.spa),
+  'indie': EstiloAmbiente(BloquesPrevia.lila, Icons.headphones),
+  'latino': EstiloAmbiente(BloquesPrevia.amarillo, Icons.music_note),
+  'pop': EstiloAmbiente(BloquesPrevia.lila, Icons.star_rounded),
+  'rock': EstiloAmbiente(BloquesPrevia.rojo, Icons.electric_bolt),
+  'cachondeo': EstiloAmbiente(BloquesPrevia.amarillo, Icons.celebration),
+  'cartas': EstiloAmbiente(BloquesPrevia.menta, Icons.style),
+  'terraza': EstiloAmbiente(BloquesPrevia.azul, Icons.wb_twilight),
 };
 
-/// Estilo de la primera etiqueta conocida; si no hay, el violeta de marca.
+/// Estilo de la primera etiqueta conocida; si no hay, el amarillo de marca.
 EstiloAmbiente estiloDeAmbiente(List<String> ambiente) {
   for (final a in ambiente) {
     final estilo = _estilos[a];
@@ -71,11 +47,12 @@ EstiloAmbiente estiloDeAmbiente(List<String> ambiente) {
 /// las dos pantallas no se desincronicen y la transición se rompa en silencio.
 String tagCabeceraPrevia(String previaId) => 'cabecera-previa-$previaId';
 
-/// Ilustración generada del ambiente. Puramente decorativa: se excluye de la
-/// semántica (el ambiente ya se lee en las etiquetas de texto).
+/// El bloque de color del ambiente, sin texto.
 ///
-/// No lleva texto dentro para poder usarse como hijo de un [Hero] sin exigir
-/// un ancestro `Material` durante el vuelo.
+/// Sin texto a propósito: así puede volar dentro de un [Hero] sin pedir un
+/// `Material` por encima durante el vuelo. Lo que se escribe encima va fuera
+/// del Hero, en la pantalla que lo usa. Es decorativo: el ambiente ya se lee
+/// en las etiquetas.
 class CabeceraAmbiente extends StatelessWidget {
   const CabeceraAmbiente({
     super.key,
@@ -93,7 +70,7 @@ class CabeceraAmbiente extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final estilo = estiloDeAmbiente(ambiente);
-    final foco = Colors.white.withValues(alpha: 0.09);
+    const tinta = BloquesPrevia.tintaSobreBloque;
 
     return ExcludeSemantics(
       child: ClipRRect(
@@ -101,34 +78,22 @@ class CabeceraAmbiente extends StatelessWidget {
         child: Container(
           height: altura,
           width: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: estilo.colores,
-            ),
-          ),
-          // Círculos translúcidos = focos de sala; el icono grande, la firma.
+          color: estilo.bloque,
+          // El icono enorme y cortado por el borde hace de pegatina: se lee
+          // como ilustración, no como un botón.
           child: Stack(
             clipBehavior: Clip.hardEdge,
             children: [
               Positioned(
-                right: -altura * 0.2,
-                top: -altura * 0.4,
-                child: _Circulo(altura * 1.1, foco),
-              ),
-              Positioned(
-                left: altura * 0.35,
-                bottom: -altura * 0.55,
-                child: _Circulo(altura * 0.9, foco),
-              ),
-              Positioned(
-                right: EspaciadoPrevia.m,
-                bottom: -altura * 0.08,
-                child: Icon(
-                  estilo.icono,
-                  size: altura * 0.7,
-                  color: Colors.white.withValues(alpha: 0.2),
+                right: -altura * 0.12,
+                bottom: -altura * 0.22,
+                child: Transform.rotate(
+                  angle: -0.18,
+                  child: Icon(
+                    estilo.icono,
+                    size: altura * 0.95,
+                    color: tinta.withValues(alpha: 0.16),
+                  ),
                 ),
               ),
             ],
@@ -139,23 +104,10 @@ class CabeceraAmbiente extends StatelessWidget {
   }
 }
 
-class _Circulo extends StatelessWidget {
-  const _Circulo(this.diametro, this.color);
-  final double diametro;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: diametro,
-    height: diametro,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-  );
-}
-
 /// Pastilla con icono y texto: plazas, hora, zona, distancia.
 ///
-/// El texto hace `Flexible` y puede pasar a varias líneas: con `textScaler`
-/// grande no desborda la fila.
+/// El texto es `Flexible` y puede pasar a varias líneas: con la letra del
+/// sistema agrandada no desborda la fila.
 class ChipDato extends StatelessWidget {
   const ChipDato({
     super.key,
@@ -176,36 +128,37 @@ class ChipDato extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = color ?? ColoresPrevia.textoSuave;
+    final c = context.colores;
+    final tinta = color ?? c.textoSuave;
+
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: EspaciadoPrevia.s + 2,
-        vertical: EspaciadoPrevia.xs + 1,
+        horizontal: EspaciadoPrevia.s + EspaciadoPrevia.xs,
+        vertical: EspaciadoPrevia.xs + 2,
       ),
       decoration: BoxDecoration(
-        color: (color ?? ColoresPrevia.superficieAlta).withValues(
-          alpha: color == null ? 1 : 0.14,
-        ),
-        borderRadius: BorderRadius.circular(EspaciadoPrevia.radioGrande),
-        border: Border.all(
-          color: color == null
-              ? ColoresPrevia.borde
-              : c.withValues(alpha: 0.45),
-        ),
+        color: color == null
+            ? c.superficieAlta
+            : color!.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
+        border: color == null
+            ? null
+            : Border.all(color: color!.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ExcludeSemantics(child: Icon(icono, size: 15, color: c)),
-          const SizedBox(width: EspaciadoPrevia.xs + 1),
+          ExcludeSemantics(child: Icon(icono, size: 15, color: tinta)),
+          const SizedBox(width: EspaciadoPrevia.xs + 2),
           Flexible(
             child: Text(
               texto,
               semanticsLabel: leer,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: color ?? ColoresPrevia.texto,
+                fontWeight: FontWeight.w700,
+                color: color ?? c.texto,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ),
@@ -215,11 +168,11 @@ class ChipDato extends StatelessWidget {
   }
 }
 
-/// Barra de plazas: un segmento por plaza libre (hasta [maximo]).
+/// Barra de plazas: un segmento por plaza libre, hasta [maximo].
 ///
-/// No conocemos el aforo total (solo las libres), así que la barra enseña
-/// "cuánto sitio queda" y no un porcentaje. Decorativa: el dato ya está en
-/// el texto que la acompaña.
+/// No se conoce el aforo total (solo las libres), así que la barra enseña
+/// "cuánto sitio queda" y no un porcentaje. Es decorativa: el número ya va
+/// escrito al lado.
 class BarraPlazas extends StatelessWidget {
   const BarraPlazas({super.key, required this.libres, this.maximo = 10});
 
@@ -228,23 +181,24 @@ class BarraPlazas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = maximo;
-    final llenos = libres.clamp(0, total);
-    final color = libres <= 0 ? ColoresPrevia.textoTenue : ColoresPrevia.acento;
+    final c = context.colores;
+    final llenos = libres.clamp(0, maximo);
+    final color = libres <= 0 ? c.textoTenue : c.disponible;
+    final quieto = MovimientoPrevia.reducido(context);
 
     return ExcludeSemantics(
       child: Row(
         children: [
-          for (var i = 0; i < total; i++) ...[
-            if (i > 0) const SizedBox(width: 4),
+          for (var i = 0; i < maximo; i++) ...[
+            if (i > 0) const SizedBox(width: EspaciadoPrevia.xs),
             Expanded(
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
+                duration: quieto ? Duration.zero : MovimientoPrevia.rapido,
+                curve: MovimientoPrevia.curva,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: i < llenos ? color : ColoresPrevia.borde,
-                  borderRadius: BorderRadius.circular(3),
+                  color: i < llenos ? color : c.superficieActiva,
+                  borderRadius: BorderRadius.circular(EspaciadoPrevia.pastilla),
                 ),
               ),
             ),
@@ -255,41 +209,121 @@ class BarraPlazas extends StatelessWidget {
   }
 }
 
-/// Entrada escalonada: cada elemento aparece un poco después que el anterior.
+/// Entrada escalonada: aparece y sube 12 px, un escalón después que el
+/// anterior.
 ///
-/// Solo anima los primeros [limite] (luego sería ruido al hacer scroll) y se
-/// desactiva si el usuario pide reducir animaciones en el sistema.
+/// Usa los mismos números que el resto de listas de la app
+/// ([MovimientoPrevia.retrasoDe]): solo los seis primeros esperan, para que
+/// desplazar no se sienta lento. Quien pide menos movimiento lo ve todo ya
+/// colocado.
 class EntradaEscalonada extends StatelessWidget {
   const EntradaEscalonada({
     super.key,
     required this.indice,
     required this.child,
-    this.limite = 8,
   });
 
   final int indice;
-  final int limite;
   final Widget child;
+
+  static const _subida = 12.0;
+  static const _duracion = Duration(milliseconds: 260);
 
   @override
   Widget build(BuildContext context) {
-    if (indice >= limite || MediaQuery.disableAnimationsOf(context)) {
-      return child;
-    }
+    if (MovimientoPrevia.reducido(context)) return child;
+
+    // El retraso se mete dentro de la propia duración con un Interval: así no
+    // hacen falta temporizadores y la animación se puede asentar en pruebas.
+    final retraso = MovimientoPrevia.retrasoDe(indice);
+    final total = _duracion + retraso;
+    final inicio = retraso.inMicroseconds / total.inMicroseconds;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      // Más índice = más duración: el resultado visual es una cascada sin
-      // necesidad de controladores ni temporizadores.
-      duration: Duration(milliseconds: 280 + indice * 70),
-      curve: Curves.easeOutCubic,
+      duration: total,
+      curve: Interval(inicio, 1, curve: MovimientoPrevia.curva),
       builder: (context, t, hijo) => Opacity(
         opacity: t,
         child: Transform.translate(
-          offset: Offset(0, (1 - t) * 14),
+          offset: Offset(0, (1 - t) * _subida),
           child: hijo,
         ),
       ),
       child: child,
+    );
+  }
+}
+
+/// Número que cambia delante del usuario (plazas, personas del grupo).
+///
+/// Entra desde un poco más pequeño y nunca desde cero: un número que nace de
+/// un punto parece salir de la nada.
+class CifraAnimada extends StatelessWidget {
+  const CifraAnimada({
+    super.key,
+    required this.valor,
+    required this.estilo,
+    this.leer,
+  });
+
+  final int valor;
+  final TextStyle? estilo;
+  final String? leer;
+
+  @override
+  Widget build(BuildContext context) {
+    final quieto = MovimientoPrevia.reducido(context);
+    return AnimatedSwitcher(
+      duration: quieto ? Duration.zero : MovimientoPrevia.rapido,
+      switchInCurve: MovimientoPrevia.curva,
+      switchOutCurve: MovimientoPrevia.curva,
+      transitionBuilder: (hijo, anim) => FadeTransition(
+        opacity: anim,
+        child: ScaleTransition(
+          scale: Tween(begin: 0.85, end: 1.0).animate(anim),
+          child: hijo,
+        ),
+      ),
+      child: Text(
+        '$valor',
+        key: ValueKey(valor),
+        semanticsLabel: leer,
+        style: estilo?.copyWith(
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+}
+
+/// Botón de - / + de 56 dp, para el pulgar.
+class BotonPaso extends StatelessWidget {
+  const BotonPaso({
+    super.key,
+    required this.icono,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icono;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    return IconButton.filledTonal(
+      tooltip: tooltip,
+      style: IconButton.styleFrom(
+        minimumSize: const Size(56, 56),
+        backgroundColor: c.superficieAlta,
+        foregroundColor: c.texto,
+        disabledBackgroundColor: c.superficie,
+        disabledForegroundColor: c.textoTenue,
+      ),
+      onPressed: onPressed,
+      icon: Icon(icono),
     );
   }
 }

@@ -22,7 +22,9 @@ class PantallaHubJuegos extends StatelessWidget {
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: conAtras ? AppBar(title: const Text('Juegos de previa')) : null,
+      appBar: conAtras
+          ? AppBar(title: const Titular('Juegos de previa', tamano: 24))
+          : null,
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(EspaciadoPrevia.m),
@@ -30,9 +32,9 @@ class PantallaHubJuegos extends StatelessWidget {
             if (!conAtras) ...[
               Semantics(
                 header: true,
-                child: Text('Juegos de previa', style: texto.headlineMedium),
+                child: const Titular('Juegos de previa', tamano: 36),
               ),
-              const SizedBox(height: EspaciadoPrevia.xs),
+              const SizedBox(height: EspaciadoPrevia.s),
             ],
             Text(
               'Un solo móvil, pasándolo de mano en mano. Sin conexión.',
@@ -57,6 +59,10 @@ class PantallaHubJuegos extends StatelessWidget {
                   ),
                 ),
               ),
+              if (juego == TipoJuego.noHayHuevos) ...[
+                const SizedBox(height: EspaciadoPrevia.s),
+                const _TambienEnElLocal(),
+              ],
               const SizedBox(height: EspaciadoPrevia.m),
             ],
           ],
@@ -84,7 +90,8 @@ class _TarjetaJuego extends StatelessWidget {
     final altoIlustracion = principal ? 168.0 : 112.0;
     return Semantics(
       button: true,
-      label: '${juego.titulo}. ${juego.descripcion}'
+      label:
+          '${juego.tituloLeido}. ${juego.descripcion}'
           '${principal ? ' Juego principal.' : ''}',
       excludeSemantics: true,
       onTap: onTap,
@@ -106,21 +113,16 @@ class _TarjetaJuego extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            juego.titulo,
-                            style: principal
-                                ? texto.headlineMedium
-                                : texto.titleLarge,
-                          ),
+                          Titular(juego.titulo, tamano: principal ? 30 : 22),
                           const SizedBox(height: EspaciadoPrevia.xs),
                           Text(juego.descripcion, style: texto.bodyMedium),
                         ],
                       ),
                     ),
                     const SizedBox(width: EspaciadoPrevia.s),
-                    const Icon(
+                    Icon(
                       Icons.arrow_forward_rounded,
-                      color: ColoresPrevia.primarioSuave,
+                      color: context.colores.primarioTexto,
                     ),
                   ],
                 ),
@@ -128,6 +130,39 @@ class _TarjetaJuego extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// La otra cara de No hay 🥚: en el local el reto es con alguien que esta
+/// alli y se cumple con una foto. Se entra por el sticker de la sala, no
+/// desde aqui, porque hace falta saber en que local estas.
+class _TambienEnElLocal extends StatelessWidget {
+  const _TambienEnElLocal();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colores;
+    return Container(
+      padding: const EdgeInsets.all(EspaciadoPrevia.m),
+      decoration: BoxDecoration(
+        color: c.superficieAlta,
+        borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
+      ),
+      child: Row(
+        children: [
+          const Pegatina('📍', tamano: 28, giro: -0.12),
+          const SizedBox(width: EspaciadoPrevia.m),
+          Expanded(
+            child: Text(
+              'Ya en el local, busca el sticker $nombreDelJuego en la sala '
+              'del sitio al que vas: te toca un reto con alguien que está '
+              'allí.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -3,20 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/tema.dart';
 import '../../core/ambientes.dart';
+import 'filtros_rapidos.dart';
 import 'proveedores_mapa.dart';
 
 Future<void> mostrarHojaFiltros(BuildContext context) {
-  return showModalBottomSheet(
-    context: context,
-    backgroundColor: ColoresPrevia.fondo,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(EspaciadoPrevia.radioGrande),
-      ),
-    ),
-    builder: (_) => const _HojaFiltros(),
-  );
+  return mostrarHoja<void>(context, builder: (_) => const _HojaFiltros());
 }
 
 class _HojaFiltros extends ConsumerWidget {
@@ -28,11 +19,16 @@ class _HojaFiltros extends ConsumerWidget {
     final notificador = ref.read(filtrosProvider.notifier);
     final textos = Theme.of(context).textTheme;
 
-    // Con scroll: con el tamaño de letra del sistema al máximo el contenido
-    // no cabe en pantalla y sin esto se cortaría sin remedio.
+    // Con desplazamiento: en un movil de 640 de alto la hoja entera no cabe
+    // y el boton de ver resultados quedaba cortado.
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(EspaciadoPrevia.l),
+        padding: const EdgeInsets.fromLTRB(
+          EspaciadoPrevia.l,
+          0,
+          EspaciadoPrevia.l,
+          EspaciadoPrevia.l,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,7 +37,7 @@ class _HojaFiltros extends ConsumerWidget {
               children: [
                 Semantics(
                   header: true,
-                  child: Text('Filtros', style: textos.headlineMedium),
+                  child: const Titular('Filtros', tamano: 30),
                 ),
                 const Spacer(),
                 if (!filtros.sonLosPorDefecto)
@@ -51,19 +47,20 @@ class _HojaFiltros extends ConsumerWidget {
                   ),
               ],
             ),
+            const SizedBox(height: EspaciadoPrevia.m),
+            // Lo mas pedido, a un toque, antes que los deslizadores.
+            const FiltrosRapidos(),
             const SizedBox(height: EspaciadoPrevia.l),
 
             _Etiqueta('Distancia', filtros.radioLegible),
-            // semanticFormatterCallback: sin él el lector dice "25 %" en vez de
-            // "5 km", que es lo que el usuario necesita oír.
             Slider(
-              semanticFormatterCallback: (v) =>
-                  'Distancia máxima: ${Filtros(radioMetros: v.round()).radioLegible}',
               value: filtros.radioMetros.toDouble(),
               min: Filtros.radioMinimoMetros.toDouble(),
               max: Filtros.radioMaximoMetros.toDouble(),
               divisions: 39,
-              activeColor: ColoresPrevia.primario,
+              activeColor: context.colores.primario,
+              semanticFormatterCallback: (v) =>
+                  Filtros(radioMetros: v.round()).radioLegible,
               onChanged: (v) => notificador.fijarRadio(v.round()),
             ),
 
@@ -73,14 +70,13 @@ class _HojaFiltros extends ConsumerWidget {
               filtros.horas == 1 ? '1 hora' : '${filtros.horas} horas',
             ),
             Slider(
-              semanticFormatterCallback: (v) => v.round() == 1
-                  ? 'Empieza en la próxima hora'
-                  : 'Empieza en las próximas ${v.round()} horas',
               value: filtros.horas.toDouble(),
               min: 1,
               max: 24,
               divisions: 23,
-              activeColor: ColoresPrevia.primario,
+              activeColor: context.colores.primario,
+              semanticFormatterCallback: (v) =>
+                  v.round() == 1 ? '1 hora' : '${v.round()} horas',
               onChanged: (v) => notificador.fijarHoras(v.round()),
             ),
 
@@ -99,19 +95,12 @@ class _HojaFiltros extends ConsumerWidget {
               spacing: EspaciadoPrevia.s,
               children: [
                 for (final n in [1, 2, 3, 4, 5, 6])
-                  // El número solo ("3") no dice de qué es: se lee "Somos 3".
-                  Semantics(
-                    label: n == 1 ? 'Somos 1 persona' : 'Somos $n personas',
-                    excludeSemantics: true,
+                  ChoiceChip(
+                    label: Text('$n'),
+                    tooltip: n == 1 ? 'Solo yo' : 'Somos $n',
                     selected: filtros.plazasMinimas == n,
-                    button: true,
-                    onTap: () => notificador.fijarPlazas(n),
-                    child: ChoiceChip(
-                      label: Text('$n'),
-                      selected: filtros.plazasMinimas == n,
-                      selectedColor: ColoresPrevia.primario,
-                      onSelected: (_) => notificador.fijarPlazas(n),
-                    ),
+                    selectedColor: context.colores.primario,
+                    onSelected: (_) => notificador.fijarPlazas(n),
                   ),
               ],
             ),
@@ -137,8 +126,8 @@ class _HojaFiltros extends ConsumerWidget {
                   FilterChip(
                     label: Text(etiqueta),
                     selected: filtros.ambiente.contains(etiqueta),
-                    selectedColor: ColoresPrevia.primario,
-                    checkmarkColor: Colors.white,
+                    selectedColor: context.colores.primario,
+                    checkmarkColor: context.colores.sobrePrimario,
                     onSelected: (_) => notificador.alternarAmbiente(etiqueta),
                   ),
               ],
@@ -147,7 +136,7 @@ class _HojaFiltros extends ConsumerWidget {
             const SizedBox(height: EspaciadoPrevia.xl),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Ver resultados'),
+              child: const Text('VER RESULTADOS'),
             ),
           ],
         ),
@@ -166,12 +155,17 @@ class _Etiqueta extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+        Semantics(
+          header: true,
+          child: Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+        ),
         Text(
           valor,
-          style: const TextStyle(
-            color: ColoresPrevia.primarioSuave,
-            fontWeight: FontWeight.w700,
+          style: TextStyle(
+            // primarioTexto y no el amarillo: sobre la hoja clara el amarillo
+            // no se lee.
+            color: context.colores.primarioTexto,
+            fontWeight: FontWeight.w800,
             fontSize: 15,
           ),
         ),

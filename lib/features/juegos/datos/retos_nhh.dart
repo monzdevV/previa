@@ -77,7 +77,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-011',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Imita a un presentador de telediario dando la noticia de esta previa',
+    texto:
+        'Imita a un presentador de telediario dando la noticia de esta previa',
     sorbos: 1,
   ),
   Reto(
@@ -98,7 +99,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-014',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Haz un desfile de modelo por el salón como si fuera la Fashion Week',
+    texto:
+        'Haz un desfile de modelo por el salón como si fuera la Fashion Week',
     sorbos: 1,
   ),
   Reto(
@@ -193,7 +195,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-027',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Mantén el contacto visual con {otro} durante diez segundos sin reírte',
+    texto:
+        'Mantén el contacto visual con {otro} durante diez segundos sin reírte',
     sorbos: 1,
     contactoFisico: true,
     necesitaOtraPersona: true,
@@ -244,7 +247,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-034',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Haz tu mejor imitación de un famoso y que el grupo adivine quién es',
+    texto:
+        'Haz tu mejor imitación de un famoso y que el grupo adivine quién es',
     sorbos: 2,
   ),
   Reto(
@@ -294,7 +298,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-041',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Dile a {otro} cómo te lo imaginas de aquí a diez años, sin cortarte',
+    texto:
+        'Dile a {otro} cómo te lo imaginas de aquí a diez años, sin cortarte',
     sorbos: 1,
     necesitaOtraPersona: true,
   ),
@@ -316,14 +321,16 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-044',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Di el nombre de todos los presentes con un apodo inventado y absurdo',
+    texto:
+        'Di el nombre de todos los presentes con un apodo inventado y absurdo',
     sorbos: 1,
   ),
   Reto(
     id: 'nhh-suave-045',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Sorprende a {otro} con un choque de manos épico de los que se ensayan',
+    texto:
+        'Sorprende a {otro} con un choque de manos épico de los que se ensayan',
     sorbos: 1,
     contactoFisico: true,
     necesitaOtraPersona: true,
@@ -353,7 +360,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-049',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Haz un anuncio de cortes de pelo de los años ochenta con pose y todo',
+    texto:
+        'Haz un anuncio de cortes de pelo de los años ochenta con pose y todo',
     sorbos: 2,
   ),
   Reto(
@@ -374,7 +382,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-suave-052',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.suave,
-    texto: 'Haz una escena de novela venezolana con {otro} durante medio minuto',
+    texto:
+        'Haz una escena de novela venezolana con {otro} durante medio minuto',
     sorbos: 2,
     necesitaOtraPersona: true,
   ),
@@ -626,7 +635,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-atrevido-032',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.atrevido,
-    texto: 'Imita cómo ligas tú en una discoteca, con gestos y frases incluidas',
+    texto:
+        'Imita cómo ligas tú en una discoteca, con gestos y frases incluidas',
     sorbos: 2,
   ),
   Reto(
@@ -748,7 +758,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-atrevido-049',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.atrevido,
-    texto: 'Di quién del grupo tiene mejor estilo para ligar y cuál es su truco',
+    texto:
+        'Di quién del grupo tiene mejor estilo para ligar y cuál es su truco',
     sorbos: 3,
   ),
   Reto(
@@ -783,7 +794,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-atrevido-054',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.atrevido,
-    texto: 'Enseña la última persona que has bloqueado y di por qué sin nombrarla',
+    texto:
+        'Enseña la última persona que has bloqueado y di por qué sin nombrarla',
     sorbos: 2,
   ),
   Reto(
@@ -828,7 +840,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-atrevido-060',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.atrevido,
-    texto: 'Habla tres minutos como si fueras un coach de seducción de internet',
+    texto:
+        'Habla tres minutos como si fueras un coach de seducción de internet',
     sorbos: 2,
   ),
   Reto(
@@ -849,7 +862,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-003',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Cuenta tu peor escena de celos como si fuera una película dramática',
+    texto:
+        'Cuenta tu peor escena de celos como si fuera una película dramática',
     sorbos: 3,
   ),
   Reto(
@@ -898,7 +912,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-010',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Di si alguna vez has fingido una llamada para escaparte de una cita',
+    texto:
+        'Di si alguna vez has fingido una llamada para escaparte de una cita',
     sorbos: 2,
   ),
   Reto(
@@ -919,7 +934,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-013',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Dile a {otro} lo que más te irrita de salir de fiesta con él o ella',
+    texto:
+        'Dile a {otro} lo que más te irrita de salir de fiesta con él o ella',
     sorbos: 3,
     necesitaOtraPersona: true,
   ),
@@ -948,7 +964,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-017',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Enseña el chat con más mensajes sin leer y lee el último en voz alta',
+    texto:
+        'Enseña el chat con más mensajes sin leer y lee el último en voz alta',
     sorbos: 3,
   ),
   Reto(
@@ -997,7 +1014,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-024',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Di a quién llamarías ahora mismo si tuvieras un momento de debilidad',
+    texto:
+        'Di a quién llamarías ahora mismo si tuvieras un momento de debilidad',
     sorbos: 2,
   ),
   Reto(
@@ -1025,7 +1043,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-028',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Elige a alguien del grupo y dile a la cara tu mejor y tu peor defecto',
+    texto:
+        'Elige a alguien del grupo y dile a la cara tu mejor y tu peor defecto',
     sorbos: 2,
   ),
   Reto(
@@ -1053,7 +1072,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-032',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Haz una confesión que haga reír a todos: tu mayor paranoia de pareja',
+    texto:
+        'Haz una confesión que haga reír a todos: tu mayor paranoia de pareja',
     sorbos: 2,
   ),
   Reto(
@@ -1138,7 +1158,8 @@ const List<Reto> retosNhh = [
     id: 'nhh-sinfiltro-044',
     juego: TipoJuego.noHayHuevos,
     nivel: NivelReto.sinFiltro,
-    texto: 'Di quién del grupo sería el peor en una cita contigo y quién el mejor',
+    texto:
+        'Di quién del grupo sería el peor en una cita contigo y quién el mejor',
     sorbos: 2,
   ),
   Reto(

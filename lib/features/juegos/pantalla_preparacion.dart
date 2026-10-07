@@ -150,8 +150,8 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
                     icon: const Icon(Icons.add),
                     style: IconButton.styleFrom(
                       minimumSize: const Size(56, 56),
-                      backgroundColor: ColoresPrevia.primario,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.colores.primario,
+                      foregroundColor: context.colores.sobrePrimario,
                     ),
                   ),
                 ),
@@ -159,8 +159,10 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
             ),
             const SizedBox(height: EspaciadoPrevia.s),
             if (_jugadores.isEmpty)
-              Text('Aún no hay nadie. Añade al menos $minJugadores.',
-                  style: texto.bodySmall)
+              Text(
+                'Aún no hay nadie. Añade al menos $minJugadores.',
+                style: texto.bodySmall,
+              )
             else
               Wrap(
                 spacing: EspaciadoPrevia.s,
@@ -175,8 +177,10 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
                 ],
               ),
             const SizedBox(height: EspaciadoPrevia.xs),
-            Text('${_jugadores.length} de $maxJugadores jugadores',
-                style: texto.bodySmall),
+            Text(
+              '${_jugadores.length} de $maxJugadores jugadores',
+              style: texto.bodySmall,
+            ),
             const SizedBox(height: EspaciadoPrevia.l),
             Semantics(
               header: true,
@@ -211,7 +215,9 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
                     // con el color, pero ayuda a quien no distingue colores.
                     materialTapTargetSize: MaterialTapTargetSize.padded,
                     labelStyle: TextStyle(
-                      color: _rondas == r ? Colors.white : ColoresPrevia.texto,
+                      color: _rondas == r
+                          ? context.colores.sobrePrimario
+                          : context.colores.texto,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -221,9 +227,7 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Sin alcohol'),
-              subtitle: const Text(
-                'Vale cualquier bebida o una prenda suave.',
-              ),
+              subtitle: const Text('Vale cualquier bebida o una prenda suave.'),
               value: _sinAlcohol,
               onChanged: (v) => setState(() => _sinAlcohol = v),
             ),
@@ -234,8 +238,11 @@ class _PantallaPreparacionState extends State<PantallaPreparacion> {
             ),
             if (!_listo) ...[
               const SizedBox(height: EspaciadoPrevia.s),
-              Text('Hacen falta al menos $minJugadores jugadores.',
-                  style: texto.bodySmall, textAlign: TextAlign.center),
+              Text(
+                'Hacen falta al menos $minJugadores jugadores.',
+                style: texto.bodySmall,
+                textAlign: TextAlign.center,
+              ),
             ],
             const SizedBox(height: EspaciadoPrevia.m),
             Text(
@@ -273,13 +280,14 @@ class _OpcionNivel extends StatelessWidget {
       onTap: onTap,
       child: Material(
         color: seleccionado
-            ? ColoresPrevia.primario.withValues(alpha: 0.22)
-            : ColoresPrevia.superficie,
+            ? context.colores.primario.withValues(alpha: 0.22)
+            : context.colores.superficie,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
           side: BorderSide(
-            color:
-                seleccionado ? ColoresPrevia.primarioSuave : ColoresPrevia.bordeCampo,
+            color: seleccionado
+                ? context.colores.primarioTexto
+                : context.colores.borde,
             width: seleccionado ? 2 : 1,
           ),
         ),
@@ -297,8 +305,8 @@ class _OpcionNivel extends StatelessWidget {
                         ? Icons.radio_button_checked
                         : Icons.radio_button_unchecked,
                     color: seleccionado
-                        ? ColoresPrevia.primarioSuave
-                        : ColoresPrevia.textoSuave,
+                        ? context.colores.primarioTexto
+                        : context.colores.textoSuave,
                   ),
                   const SizedBox(width: EspaciadoPrevia.m),
                   Expanded(

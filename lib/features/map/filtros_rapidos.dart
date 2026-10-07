@@ -2,71 +2,56 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/tema.dart';
-import '../../core/ambientes.dart';
 import '../../core/entorno.dart';
 import 'proveedores_mapa.dart';
 
-/// Fila de chips de filtro rapido sobre el mapa: "Ahora", "Cerca" y los
-/// ambientes mas habituales.
+/// Atajos para lo que mas se pide: "que hay ya" y "que hay aqui al lado".
 ///
-/// Por que existen ademas de la hoja de filtros: el caso de uso mas comun
-/// ("que hay ya, aqui al lado") debe ser un toque, sin abrir nada. Son
-/// FilterChip de Material (no chips a mano) para heredar `selected` en la
-/// semantica, foco de teclado y el area tactil de 48 dp del tema.
+/// Viven arriba de la hoja de filtros y no sobre el mapa: el mapa tiene una
+/// sola pastilla y un carrusel, y no se vuelve a llenar de botones. Un toque
+/// los pone y otro los quita, volviendo al valor por defecto.
+///
+/// Son `FilterChip` de Material para heredar `selected` en la semantica, el
+/// foco de teclado y el area tactil de 48 dp.
 class FiltrosRapidos extends ConsumerWidget {
   const FiltrosRapidos({super.key});
 
   /// "Ahora": previas que empiezan en las proximas 2 horas.
   static const horasAhora = 2;
 
-  /// "Cerca": a pie, ~1 km.
-  static const radioCerca = 1000;
-
-  /// Cuantos ambientes caben como atajo; el resto, en la hoja de filtros.
-  static const _ambientesRapidos = 5;
+  /// "A pie": ~1 km, un paseo de diez minutos.
+  static const radioAPie = 1000;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filtros = ref.watch(filtrosProvider);
     final notificador = ref.read(filtrosProvider.notifier);
-
     final ahora = filtros.horas == horasAhora;
-    final cerca = filtros.radioMetros == radioCerca;
+    final aPie = filtros.radioMetros == radioAPie;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: EspaciadoPrevia.m),
-      child: Row(
-        children: [
-          _Atajo(
-            etiqueta: 'Ahora',
-            icono: Icons.bolt,
-            activo: ahora,
-            onTap: () => notificador.fijarHoras(
-              ahora ? Entorno.horasPorDefecto : horasAhora,
-            ),
+    return Wrap(
+      spacing: EspaciadoPrevia.s,
+      runSpacing: EspaciadoPrevia.s,
+      children: [
+        _Atajo(
+          etiqueta: 'Ahora',
+          detalle: 'empiezan en menos de 2 horas',
+          icono: Icons.bolt_rounded,
+          activo: ahora,
+          onTap: () => notificador.fijarHoras(
+            ahora ? Entorno.horasPorDefecto : horasAhora,
           ),
-          const SizedBox(width: EspaciadoPrevia.s),
-          _Atajo(
-            etiqueta: 'Cerca',
-            icono: Icons.directions_walk,
-            activo: cerca,
-            onTap: () => notificador.fijarRadio(
-              cerca ? Entorno.radioBusquedaPorDefecto : radioCerca,
-            ),
+        ),
+        _Atajo(
+          etiqueta: 'A pie',
+          detalle: 'a menos de 1 km',
+          icono: Icons.directions_walk_rounded,
+          activo: aPie,
+          onTap: () => notificador.fijarRadio(
+            aPie ? Entorno.radioBusquedaPorDefecto : radioAPie,
           ),
-          for (final etiqueta in ambientesDisponibles.take(
-            _ambientesRapidos,
-          )) ...[
-            const SizedBox(width: EspaciadoPrevia.s),
-            _Atajo(
-              etiqueta: etiqueta,
-              activo: filtros.ambiente.contains(etiqueta),
-              onTap: () => notificador.alternarAmbiente(etiqueta),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -74,37 +59,39 @@ class FiltrosRapidos extends ConsumerWidget {
 class _Atajo extends StatelessWidget {
   const _Atajo({
     required this.etiqueta,
+    required this.detalle,
+    required this.icono,
     required this.activo,
     required this.onTap,
-    this.icono,
   });
 
   final String etiqueta;
-  final IconData? icono;
+
+  /// Lo que significa el atajo, para el lector de pantalla.
+  final String detalle;
+  final IconData icono;
   final bool activo;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(etiqueta),
-      avatar: icono == null
-          ? null
-          : Icon(
-              icono,
-              size: 16,
-              color: activo ? Colors.white : ColoresPrevia.textoSuave,
-            ),
-      selected: activo,
-      onSelected: (_) => onTap(),
-      // Sin marca de verificacion: el relleno de color ya indica "activo" y
-      // la marca ensancharia el chip al cambiar, moviendo los vecinos.
-      showCheckmark: false,
-      // Fondo opaco: flota sobre el mapa y debe leerse sobre cualquier tesela.
-      backgroundColor: ColoresPrevia.superficie,
-      elevation: 2,
-      shadowColor: Colors.black,
-      pressElevation: 0,
+    final c = context.colores;
+    return Semantics(
+      hint: 'Previas que $detalle',
+      child: FilterChip(
+        label: Text(etiqueta),
+        avatar: Icon(
+          icono,
+          size: 18,
+          color: activo ? c.sobrePrimario : c.primarioTexto,
+        ),
+        selected: activo,
+        onSelected: (_) => onTap(),
+        // Sin marca: el relleno amarillo ya dice "activo", y la marca
+        // ensancharia el chip al cambiar, empujando al de al lado.
+        showCheckmark: false,
+        selectedColor: c.primario,
+      ),
     );
   }
 }

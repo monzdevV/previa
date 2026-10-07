@@ -1,170 +1,211 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/rutas.dart';
 import '../../app/tema.dart';
-import '../onboarding/ilustraciones.dart';
-import '../party/estados_pantalla.dart';
+import '../party/estados_pantalla.dart' show mensajeResponsable;
 import 'aparece.dart';
+import 'piezas_acceso.dart';
 
+/// La entrada: un cartel amarillo a sangre.
+///
+/// Es la unica pantalla donde el amarillo es el fondo entero. Aqui aun no hay
+/// contenido de nadie que pueda perder protagonismo, y el primer golpe de
+/// vista tiene que decir "esto es la noche", no "esto es un formulario".
+///
+/// Un titular, una frase y un boton. Todo lo que se explicaba aqui antes se
+/// entiende mejor dentro de la app que leido en la puerta.
 class PantallaBienvenida extends StatelessWidget {
   const PantallaBienvenida({super.key});
 
+  static const _amarillo = BloquesPrevia.amarillo;
+  static const _tinta = BloquesPrevia.tintaSobreBloque;
+
   @override
   Widget build(BuildContext context) {
-    final textos = Theme.of(context).textTheme;
+    final reducido = MovimientoPrevia.reducido(context);
 
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF1A1030), ColoresPrevia.fondo],
-          ),
-        ),
-        child: SafeArea(
-          // Con scroll y altura mínima: con el tamaño de letra del sistema muy
-          // grande el contenido no cabe y antes se cortaba. Con letra normal
-          // se comporta igual que antes (los Spacer reparten el hueco).
-          child: CustomScrollView(
-            slivers: [
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Padding(
-                  padding: const EdgeInsets.all(EspaciadoPrevia.l),
+    Widget entrar(Widget hijo, int orden) => Aparece(orden: orden, child: hijo);
+
+    // Las pegatinas caen despues del titular y con un pequeño rebote: es lo
+    // unico de la pantalla que se permite jugar.
+    Widget pegar(Widget hijo, int orden) => reducido
+        ? hijo
+        : hijo
+              .animate(delay: MovimientoPrevia.escalon * (orden * 2))
+              .fadeIn(duration: MovimientoPrevia.rapido)
+              .scaleXY(
+                begin: 0.7,
+                end: 1,
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutBack,
+              );
+
+    // Con letra normal todo cabe en una pantalla y el titular encoge para
+    // repartirse el hueco. Con la letra del sistema muy grande eso ya no
+    // basta: el titular se queda a su tamaño y la pantalla se desplaza.
+    final letraGrande = MediaQuery.textScalerOf(context).scale(10) > 13;
+    Widget hueco(Widget hijo) => letraGrande
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: EspaciadoPrevia.l),
+            child: hijo,
+          )
+        : Expanded(child: hijo);
+    Widget desplazable(Widget hijo) =>
+        letraGrande ? SingleChildScrollView(child: hijo) : hijo;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // Iconos de la barra de estado en negro sobre el amarillo.
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: _amarillo,
+        body: SafeArea(
+          child: desplazable(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    EspaciadoPrevia.l,
+                    EspaciadoPrevia.m,
+                    EspaciadoPrevia.l,
+                    0,
+                  ),
+                  child: Titular('Previa', tamano: 26, color: _tinta),
+                ),
+
+                hueco(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: EspaciadoPrevia.l,
+                    ),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: entrar(
+                              Semantics(
+                                header: true,
+                                child: const Titular(
+                                  'La noche\nempieza\nantes',
+                                  tamano: 80,
+                                  color: _tinta,
+                                ),
+                              ),
+                              1,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: EspaciadoPrevia.l,
+                          right: 0,
+                          child: pegar(
+                            const Pegatina('🌙', tamano: 64, giro: 0.3),
+                            3,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: EspaciadoPrevia.l,
+                          right: EspaciadoPrevia.m,
+                          child: pegar(
+                            const Pegatina('🥚', tamano: 56, giro: -0.25),
+                            4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const Marquesina(
+                  texto: 'Previas cerca · Quién va esta noche · No hay huevos',
+                  fondo: _tinta,
+                  tinta: _amarillo,
+                  inclinacion: -0.03,
+                ),
+                const SizedBox(height: EspaciadoPrevia.l),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: EspaciadoPrevia.l,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Aparece(child: _Logotipo()),
-                      const Spacer(),
-
-                      // Composición gráfica: da personalidad a la primera
-                      // pantalla y cuenta "gente cerca" sin leer nada.
-                      const Aparece(
-                        orden: 1,
-                        child: Ilustracion(
-                          tipo: TipoIlustracion.previa,
-                          descripcion:
-                              'Una chincheta de mapa rodeada de personas',
-                          altura: 210,
+                      entrar(
+                        Text(
+                          'Previas con sitio y gente con la que salir, '
+                          'esta misma noche.',
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(
+                                color: _tinta,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                height: 1.35,
+                              ),
                         ),
+                        2,
                       ),
-
-                      const Spacer(),
-
-                      Aparece(
-                        orden: 2,
-                        child: Semantics(
-                          header: true,
-                          child: Text(
-                            'La noche empieza antes',
-                            style: textos.displaySmall,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: EspaciadoPrevia.s),
-                      Aparece(
-                        orden: 3,
-                        child: Text(
-                          'Encuentra previas cerca de ti, o abre la tuya y '
-                          'conoce gente nueva antes de salir.',
-                          style: textos.bodyLarge?.copyWith(
-                            color: ColoresPrevia.textoSuave,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: EspaciadoPrevia.xl),
-
-                      // Una acción primaria clara; la secundaria, con menos peso.
-                      Aparece(
-                        orden: 4,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            FilledButton(
-                              onPressed: () => context.push(Rutas.registro),
-                              child: const Text('Crear cuenta'),
-                            ),
-                            const SizedBox(height: EspaciadoPrevia.s),
-                            OutlinedButton(
-                              onPressed: () => context.push(Rutas.entrar),
-                              child: const Text('Ya tengo cuenta'),
-                            ),
-                          ],
-                        ),
-                      ),
-
                       const SizedBox(height: EspaciadoPrevia.l),
-                      Aparece(
-                        orden: 5,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const ExcludeSemantics(
-                              child: Icon(
-                                Icons.verified_user_outlined,
-                                size: 15,
-                                color: ColoresPrevia.textoTenue,
-                              ),
-                            ),
-                            const SizedBox(width: EspaciadoPrevia.xs),
-                            Flexible(
-                              child: Text(
-                                mensajeResponsable,
-                                style: textos.bodyMedium?.copyWith(
-                                  color: ColoresPrevia.textoTenue,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                      BotonAcceso(
+                        texto: 'Empezar',
+                        fondo: _tinta,
+                        tinta: _amarillo,
+                        onPressed: () => context.push(Rutas.registro),
                       ),
-                      const SizedBox(height: EspaciadoPrevia.s),
+                      const SizedBox(height: EspaciadoPrevia.xs),
+                      TextButton(
+                        onPressed: () => context.push(Rutas.entrar),
+                        style: TextButton.styleFrom(
+                          foregroundColor: _tinta,
+                          minimumSize: const Size.fromHeight(48),
+                          textStyle: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        child: const Text('Ya tengo cuenta'),
+                      ),
+                      const SizedBox(height: EspaciadoPrevia.xs),
+                      // Mismo aviso que el registro y el mapa. La tinta entera
+                      // y no rebajada: sobre el amarillo, el negro al 65 % se
+                      // quedaba corto de contraste para un texto tan pequeño.
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const ExcludeSemantics(
+                            child: Icon(
+                              Icons.verified_user_outlined,
+                              size: 14,
+                              color: _tinta,
+                            ),
+                          ),
+                          const SizedBox(width: EspaciadoPrevia.xs),
+                          Flexible(
+                            child: Text(
+                              mensajeResponsable,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _tinta,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: EspaciadoPrevia.m),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Logotipo extends StatelessWidget {
-  const _Logotipo();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [ColoresPrevia.primario, ColoresPrevia.acento],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(EspaciadoPrevia.radio * 0.75),
-          ),
-          child: const ExcludeSemantics(
-            child: Icon(Icons.location_on, color: Colors.white, size: 26),
-          ),
-        ),
-        const SizedBox(width: EspaciadoPrevia.m - 4),
-        Flexible(
-          child: Text(
-            'Previa',
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(fontSize: 26, fontWeight: FontWeight.w800),
-          ),
-        ),
-      ],
     );
   }
 }

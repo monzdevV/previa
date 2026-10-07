@@ -29,7 +29,7 @@ class AvatarPrevia extends StatelessWidget {
     final textoIniciales = Text(
       iniciales,
       style: TextStyle(
-        color: Colors.white,
+        color: context.colores.sobrePrimario,
         fontWeight: FontWeight.w700,
         fontSize: radio * 0.7,
       ),
@@ -37,7 +37,7 @@ class AvatarPrevia extends StatelessWidget {
 
     final avatar = CircleAvatar(
       radius: radio,
-      backgroundColor: ColoresPrevia.primario,
+      backgroundColor: context.colores.primario,
       foregroundImage: (url == null || url!.isEmpty)
           ? null
           : NetworkImage(url!),

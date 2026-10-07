@@ -9,14 +9,9 @@ List<Reto> _fuente() => todosLosRetos;
 /// Retos de un juego hasta el nivel elegido (incluye los inferiores).
 /// Si el contenido real no tuviera nada para esa combinación, se cae a las
 /// cartas de prueba para no dejar una partida sin cartas.
-List<Reto> retosPara(
-  TipoJuego juego,
-  NivelReto nivel, {
-  List<Reto>? fuente,
-}) {
-  List<Reto> filtrar(List<Reto> l) => l
-      .where((r) => r.juego == juego && r.nivel.index <= nivel.index)
-      .toList();
+List<Reto> retosPara(TipoJuego juego, NivelReto nivel, {List<Reto>? fuente}) {
+  List<Reto> filtrar(List<Reto> l) =>
+      l.where((r) => r.juego == juego && r.nivel.index <= nivel.index).toList();
   final res = filtrar(fuente ?? _fuente());
   return res.isNotEmpty ? res : filtrar(retosDePrueba);
 }

@@ -5,7 +5,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.4
+  sdk: ^3.13.0
 
 dependencies:
   flutter:
@@ -42,8 +42,18 @@ dependencies:
   # Imagenes de perfil con cache.
   cached_network_image: ^3.4.1
   image_picker: ^1.2.3
+  video_player: ^2.14.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.4.2
+  url_launcher: ^6.3.2
   share_plus: ^13.3.0
   shared_preferences: ^2.5.5
+
+  # Movimiento declarativo (entradas, rebotes, meneos) sin un
+  # AnimationController por widget.
+  flutter_animate: ^4.5.2
+  font_awesome_flutter: ^11.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -63,6 +73,18 @@ flutter:
     - .env
     - assets/images/
     - assets/icons/
+
+  # Rubik (licencia OFL, ver assets/fonts/OFL-Rubik.txt): la letra gorda y
+  # redondeada de los titulares. El cuerpo sigue en la del sistema.
+  fonts:
+    - family: Rubik
+      fonts:
+        - asset: assets/fonts/Rubik-700.ttf
+          weight: 700
+        - asset: assets/fonts/Rubik-800.ttf
+          weight: 800
+        - asset: assets/fonts/Rubik-900.ttf
+          weight: 900
 
 flutter_launcher_icons:
   android: true

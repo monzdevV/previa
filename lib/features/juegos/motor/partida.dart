@@ -40,11 +40,11 @@ List<String> limpiarNombres(Iterable<String> nombres) {
 
 /// Fórmula de cada juego delante del texto guardado en [Reto.texto].
 String formatearTextoCarta(TipoJuego juego, String texto) => switch (juego) {
-      TipoJuego.noHayHuevos => '¿A que no hay huevos a... $texto?',
-      TipoJuego.yoNunca => 'Yo nunca $texto',
-      TipoJuego.masProbable => '¿Quién es más probable que $texto?',
-      TipoJuego.verdadOReto => texto,
-    };
+  TipoJuego.noHayHuevos => '¿A que no hay huevos a... $texto?',
+  TipoJuego.yoNunca => 'Yo nunca $texto',
+  TipoJuego.masProbable => '¿Quién es más probable que $texto?',
+  TipoJuego.verdadOReto => texto,
+};
 
 class ConfiguracionPartida {
   const ConfiguracionPartida({
@@ -127,6 +127,7 @@ class Partida {
 
   /// Texto ya con {otro} sustituido.
   String get textoActual => _texto;
+
   /// Texto tal y como se lee en la carta. El contenido guarda solo la parte
   /// variable (convención del fichero de datos), así que aquí se antepone la
   /// fórmula de cada juego. Verdad o reto ya viene completo.

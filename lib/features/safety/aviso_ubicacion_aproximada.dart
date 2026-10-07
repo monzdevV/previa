@@ -21,15 +21,15 @@ class AvisoUbicacionAproximada extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(compacto ? EspaciadoPrevia.s : EspaciadoPrevia.m),
         decoration: BoxDecoration(
-          color: ColoresPrevia.superficie,
+          color: context.colores.superficie,
           borderRadius: BorderRadius.circular(EspaciadoPrevia.radio),
-          border: Border.all(color: ColoresPrevia.borde),
+          border: Border.all(color: context.colores.borde),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(Icons.lock_outline,
-                size: compacto ? 16 : 20, color: ColoresPrevia.primarioSuave),
+                size: compacto ? 16 : 20, color: context.colores.primarioTexto),
             const SizedBox(width: EspaciadoPrevia.s),
             Expanded(
               child: Text(
