@@ -48,7 +48,7 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 - [x] Reportar usuarios y previas
 - [x] Bloquear usuarios
 - [x] Valoraciones tras el evento y reputación
-- [ ] Caducidad automática de previas pasadas
+- [x] Caducidad automática de previas pasadas
 - [x] Textos legales: privacidad y condiciones de uso
 
 **Hito:** la aplicación es defendible desde el punto de vista de la seguridad.
@@ -56,8 +56,8 @@ para pulido, pruebas y memoria, porque esa es la parte que siempre se come el ma
 ### Fase 5 — Pulido · *abril*
 - [ ] Diseño visual definitivo
 - [ ] Animaciones y transiciones
-- [ ] Estados vacíos, de carga y de error
-- [ ] Accesibilidad
+- [x] Estados vacíos, de carga y de error
+- [x] Accesibilidad (primera pasada, ver docs/07-auditoria.md)
 - [ ] Rendimiento y optimización
 
 ### Fase 6 — Cierre · *mayo y primeros de junio*

@@ -69,7 +69,28 @@ con su contexto para poder ser revisados.
 
 - Todas las tablas con seguridad a nivel de fila activada; **ninguna** consulta confía
   en el cliente
-- Limitación de frecuencia en la creación de previas y solicitudes, para frenar el spam
+- Limitación de frecuencia **en la base de datos** (disparadores, no solo cliente), por
+  usuario y ventana móvil: 5 previas por día, 20 solicitudes de plaza por hora, 30
+  mensajes de chat por minuto y 10 reportes por día. Al superarlo la operación falla con
+  el error `program_limit_exceeded`. Es un control de mejor esfuerzo: dos inserciones
+  exactamente simultáneas podrían colarse. No se limita a operaciones sin sesión de
+  usuario (service role, SQL, tareas programadas). No hay límite de peticiones HTTP
+  generales ni de intentos de inicio de sesión más allá del que aplique Supabase Auth.
+- **Fecha de nacimiento**: una vez fijada no puede borrarse ni cambiarse desde la app
+  (disparador); solo se admite pasar de vacía a un valor (registro con Google) o un
+  cambio administrativo sin sesión de usuario.
+- **Cautela automática por reportes**: con reportes abiertos de 3 personas distintas,
+  una previa deja de verse para extraños y en las búsquedas, y una persona no puede
+  crear previas, pedir plaza ni escribir en chats. No borra nada y solo la levanta el
+  equipo de moderación con el service role (función `levantar_cautela`; la vista
+  `revision_reportes` permite revisarlos). Limitación: tres cuentas falsas podrían
+  ocultar una previa ajena hasta la revisión.
+- **Caducidad**: `caducar_previas()` se ejecuta cada hora con pg_cron (minuto 7):
+  cierra las previas pasadas a las 8 h y las borra a las 48 h.
+- **Borrado de cuenta**: `eliminar_mi_cuenta()` borra de forma explícita los datos de
+  Previa de la persona, libera sus plazas en previas ajenas, elimina su foto de
+  `avatars` y la cuenta. Los reportes que otras personas hayan hecho contra ella se
+  eliminan con la cuenta.
 - Validación del contenido tanto en cliente como en servidor
 - Las claves de API nunca se incluyen en el repositorio: variables de entorno y fichero
   de configuración excluido del control de versiones
@@ -80,7 +101,8 @@ con su contexto para poder ser revisados.
 Declararlas es preferible a que las descubra el tribunal:
 
 1. La verificación de edad se basa en una declaración del usuario, no en documentación.
-2. No existe moderación automática de contenido; los reportes se revisarían manualmente.
+2. No existe moderación automática de contenido: solo la cautela por número de reportes
+   descrita arriba; el resto de reportes se revisaría manualmente.
 3. La aplicación no puede garantizar la seguridad física de un encuentro presencial.
 4. No hay verificación de identidad, por lo que caben perfiles falsos.
 
